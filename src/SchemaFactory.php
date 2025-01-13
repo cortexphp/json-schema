@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cortex\JsonSchema;
+
+use Cortex\JsonSchema\Types\NullSchema;
+use Cortex\JsonSchema\Types\ArraySchema;
+use Cortex\JsonSchema\Types\NumberSchema;
+use Cortex\JsonSchema\Types\ObjectSchema;
+use Cortex\JsonSchema\Types\StringSchema;
+use Cortex\JsonSchema\Types\BooleanSchema;
+use Cortex\JsonSchema\Types\IntegerSchema;
+
+class SchemaFactory
+{
+    public static function string(?string $title = null): StringSchema
+    {
+        return new StringSchema($title);
+    }
+
+    public static function object(?string $title = null): ObjectSchema
+    {
+        return new ObjectSchema($title);
+    }
+
+    public static function array(?string $title = null): ArraySchema
+    {
+        return new ArraySchema($title);
+    }
+
+    public static function number(?string $title = null): NumberSchema
+    {
+        return new NumberSchema($title);
+    }
+
+    public static function integer(?string $title = null): IntegerSchema
+    {
+        return new IntegerSchema($title);
+    }
+
+    public static function boolean(?string $title = null): BooleanSchema
+    {
+        return new BooleanSchema($title);
+    }
+
+    public static function null(?string $title = null): NullSchema
+    {
+        return new NullSchema($title);
+    }
+}
