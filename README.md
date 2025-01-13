@@ -16,26 +16,26 @@ use Cortex\JsonSchema\SchemaFactory;
 // Create a basic user schema
 $schema = SchemaFactory::object('user')
     ->description('User schema')
-    ->properties([
-        'name' => SchemaFactory::string('name')
+    ->properties(
+        SchemaFactory::string('name')
             ->minLength(2)
-            ->maxLength(100),
-        'email' => SchemaFactory::string('email')
-            ->format('email'),
-        'age' => SchemaFactory::integer('age')
+            ->maxLength(100)
+            ->required(),
+        SchemaFactory::string('email')
+            ->format('email')
+            ->required(),
+        SchemaFactory::integer('age')
             ->minimum(0)
             ->maximum(120),
-        'active' => SchemaFactory::boolean('active')
+        SchemaFactory::boolean('active')
             ->default(true),
-        'settings' => SchemaFactory::object('settings')
+        SchemaFactory::object('settings')
             ->additionalProperties(false)
             ->properties([
-                'theme' => SchemaFactory::string('theme')
-                    ->enum(['light', 'dark']),
-                'notifications' => SchemaFactory::boolean('notifications')
-            ])
-    ])
-    ->required(['name', 'email']);
+                SchemaFactory::string('theme')->enum(['light', 'dark']),
+                SchemaFactory::boolean('notifications')
+            ]),
+    );
 
 // Convert to array
 $schema->toArray();
@@ -49,7 +49,7 @@ $schema->validate([
     'settings' => [
         'theme' => 'dark',
         'notifications' => true
-    ]
+    ],
 ]);
 ```
 
@@ -58,11 +58,13 @@ $schema->validate([
 ### String Schema
 
 ```php
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
 SchemaFactory::string('name')
     ->minLength(2)
     ->maxLength(100)
     ->pattern('^[A-Za-z]+$')
-    ->format('email')  // Available formats: date-time, email, hostname, ipv4, ipv6, uri
+    ->format(SchemaFormat::Email)
     ->nullable()
     ->readOnly()
     ->writeOnly();
@@ -136,15 +138,13 @@ SchemaFactory::array('coordinates')
 
 ```php
 SchemaFactory::object('user')
-    ->properties([
-        'name' => SchemaFactory::string('name'),
-        'email' => SchemaFactory::string('email'),
-        'settings' => SchemaFactory::object('settings')
-            ->properties([
-                'theme' => SchemaFactory::string('theme')
-            ])
-    ])
-    ->required(['name', 'email'])
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required(),
+        SchemaFactory::object('settings')->properties(
+            SchemaFactory::string('theme')
+        ),
+    )
     ->minProperties(1)
     ->maxProperties(10)
     ->additionalProperties(false);
