@@ -134,3 +134,51 @@ it('can create a read-only string schema', function (): void {
 
     expect(fn() => $schema->validate('2024-03-14T12:00:00Z'))->not->toThrow(SchemaException::class);
 });
+
+it('can create a string schema with enum values', function (): void {
+    $schema = Schema::string('status')
+        ->description('Current status of the record')
+        ->enum(['draft', 'published', 'archived']);
+
+    $schemaArray = $schema->toArray();
+
+    expect($schemaArray)->toHaveKey('type', 'string');
+    expect($schemaArray)->toHaveKey('title', 'status');
+    expect($schemaArray)->toHaveKey('description', 'Current status of the record');
+    expect($schemaArray)->toHaveKey('enum', ['draft', 'published', 'archived']);
+
+    // Validation tests
+    expect(fn() => $schema->validate('pending'))->toThrow(
+        SchemaException::class,
+        'The data should match one item from enum',
+    );
+
+    expect(fn() => $schema->validate('draft'))->not->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate('published'))->not->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate('archived'))->not->toThrow(SchemaException::class);
+});
+
+it('can create a nullable string schema with enum values', function (): void {
+    $schema = Schema::string('priority')
+        ->description('Task priority level')
+        ->enum(['low', 'medium', 'high', null])
+        ->nullable();
+
+    $schemaArray = $schema->toArray();
+
+    expect($schemaArray)->toHaveKey('type', ['string', 'null']);
+    expect($schemaArray)->toHaveKey('title', 'priority');
+    expect($schemaArray)->toHaveKey('description', 'Task priority level');
+    expect($schemaArray)->toHaveKey('enum', ['low', 'medium', 'high', null]);
+
+    // Validation tests
+    expect(fn() => $schema->validate('critical'))->toThrow(
+        SchemaException::class,
+        'The data should match one item from enum',
+    );
+
+    expect(fn() => $schema->validate('low'))->not->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate('medium'))->not->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate('high'))->not->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate(null))->not->toThrow(SchemaException::class);
+});

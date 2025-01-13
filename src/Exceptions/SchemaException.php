@@ -33,6 +33,9 @@ class SchemaException extends Exception
         return $this->error;
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function getErrors(): array
     {
         return (new ErrorFormatter())->format($this->error);

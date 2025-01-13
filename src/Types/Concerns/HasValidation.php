@@ -7,7 +7,6 @@ namespace Cortex\JsonSchema\Types\Concerns;
 use Opis\JsonSchema\Helper;
 use InvalidArgumentException;
 use Opis\JsonSchema\Validator;
-use Opis\JsonSchema\Errors\ErrorFormatter;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 use Opis\JsonSchema\Exceptions\SchemaException as OpisSchemaException;
 

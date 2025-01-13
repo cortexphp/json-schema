@@ -140,3 +140,94 @@ it('can create a nullable number schema', function (): void {
         'The data (string) must match the type: number, null',
     );
 });
+
+it('can create a number schema with enum values', function (): void {
+    $schema = Schema::number('rating')
+        ->description('Product rating')
+        ->enum([1.0, 2.5, 3.0, 4.5, 5.0]);
+
+    $schemaArray = $schema->toArray();
+
+    expect($schemaArray)->toHaveKey('type', 'number');
+    expect($schemaArray)->toHaveKey('title', 'rating');
+    expect($schemaArray)->toHaveKey('description', 'Product rating');
+    expect($schemaArray)->toHaveKey('enum', [1.0, 2.5, 3.0, 4.5, 5.0]);
+
+    // Validation tests
+    expect(fn() => $schema->validate(3.5))->toThrow(
+        SchemaException::class,
+        'The data should match one item from enum',
+    );
+
+    expect(fn() => $schema->validate(1.0))->not->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate(2.5))->not->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate(5.0))->not->toThrow(SchemaException::class);
+});
+
+it('can create a nullable number schema with enum values', function (): void {
+    $schema = Schema::number('discount')
+        ->description('Product discount percentage')
+        ->enum([0.1, 0.25, 0.5, null])
+        ->nullable();
+
+    $schemaArray = $schema->toArray();
+
+    expect($schemaArray)->toHaveKey('type', ['number', 'null']);
+    expect($schemaArray)->toHaveKey('title', 'discount');
+    expect($schemaArray)->toHaveKey('description', 'Product discount percentage');
+    expect($schemaArray)->toHaveKey('enum', [0.1, 0.25, 0.5, null]);
+
+    // Validation tests
+    expect(fn() => $schema->validate(0.75))->toThrow(
+        SchemaException::class,
+        'The data should match one item from enum',
+    );
+
+    expect(fn() => $schema->validate(0.1))->not->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate(0.25))->not->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate(0.5))->not->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate(null))->not->toThrow(SchemaException::class);
+});
+
+it('can create a number schema with const value', function (): void {
+    $schema = Schema::number('tax_rate')
+        ->description('Fixed tax rate percentage')
+        ->const(0.21); // 21% VAT
+
+    $schemaArray = $schema->toArray();
+
+    expect($schemaArray)->toHaveKey('type', 'number');
+    expect($schemaArray)->toHaveKey('title', 'tax_rate');
+    expect($schemaArray)->toHaveKey('description', 'Fixed tax rate percentage');
+    expect($schemaArray)->toHaveKey('const', 0.21);
+
+    // Validation tests
+    expect(fn() => $schema->validate(0.20))->toThrow(
+        SchemaException::class,
+        'The data must match the const value',
+    );
+
+    expect(fn() => $schema->validate(0.21))->not->toThrow(SchemaException::class);
+});
+
+it('can create a nullable number schema with const value', function (): void {
+    $schema = Schema::number('standard_fee')
+        ->description('Standard processing fee')
+        ->nullable()
+        ->const(null);
+
+    $schemaArray = $schema->toArray();
+
+    expect($schemaArray)->toHaveKey('type', ['number', 'null']);
+    expect($schemaArray)->toHaveKey('title', 'standard_fee');
+    expect($schemaArray)->toHaveKey('description', 'Standard processing fee');
+    expect($schemaArray)->toHaveKey('const', null);
+
+    // Validation tests
+    expect(fn() => $schema->validate(0.0))->toThrow(
+        SchemaException::class,
+        'The data must match the const value',
+    );
+
+    expect(fn() => $schema->validate(null))->not->toThrow(SchemaException::class);
+});

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit;
 
 use Cortex\JsonSchema\Enums\SchemaFormat;
-use Opis\JsonSchema\Errors\ErrorFormatter;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -95,7 +94,7 @@ it('can get the underlying errors', function (): void {
         expect($e->getMessage())->toBe('The properties must match schema: email');
         expect($e->getErrors())->toBe([
             '/email' => [
-                'The data must match the \'email\' format'
+                "The data must match the 'email' format",
             ],
         ]);
 
