@@ -29,8 +29,10 @@ abstract class AbstractSchema implements Schema
      */
     public function __construct(
         protected SchemaType|array $type,
-        protected ?string $title = null,
-    ) {}
+        ?string $title = null,
+    ) {
+        $this->title = $title;
+    }
 
     /**
      * Get the type or types.

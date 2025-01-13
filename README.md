@@ -11,11 +11,13 @@ composer require cortex/json-schema
 ## Usage
 
 ```php
-$schema = ObjectSchema::make('user')
+use Cortex\JsonSchema\SchemaFactory;
+
+$schema = SchemaFactory::object('user')
     ->description('User schema')
     ->properties(
-        StringSchema::make('name'),
-        StringSchema::make('email'),
+        SchemaFactory::string('name'),
+        SchemaFactory::string('email'),
     );
 
 $schema->toArray();
