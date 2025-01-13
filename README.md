@@ -70,6 +70,24 @@ SchemaFactory::string('name')
     ->writeOnly();
 ```
 
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": ["string", "null"],
+    "title": "name",
+    "minLength": 2,
+    "maxLength": 100,
+    "pattern": "^[A-Za-z]+$",
+    "format": "email",
+    "readOnly": true,
+    "writeOnly": true
+}
+```
+</details>
+
 ### Number Schema
 
 ```php
@@ -81,6 +99,23 @@ SchemaFactory::number('price')
     ->multipleOf(0.01)
     ->nullable();
 ```
+
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": ["number", "null"],
+    "title": "price",
+    "minimum": 0,
+    "maximum": 1000,
+    "exclusiveMinimum": 0,
+    "exclusiveMaximum": 1000,
+    "multipleOf": 0.01
+}
+```
+</details>
 
 ### Integer Schema
 
@@ -94,6 +129,23 @@ SchemaFactory::integer('age')
     ->nullable();
 ```
 
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": ["integer", "null"],
+    "title": "age",
+    "minimum": 0,
+    "maximum": 120,
+    "exclusiveMinimum": 0,
+    "exclusiveMaximum": 120,
+    "multipleOf": 1
+}
+```
+</details>
+
 ### Boolean Schema
 
 ```php
@@ -103,12 +155,39 @@ SchemaFactory::boolean('active')
     ->readOnly();
 ```
 
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": ["boolean", "null"],
+    "title": "active",
+    "default": true,
+    "readOnly": true
+}
+```
+</details>
+
 ### Null Schema
 
 ```php
 SchemaFactory::null('deleted_at')
     ->readOnly();
 ```
+
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "null",
+    "title": "deleted_at",
+    "readOnly": true
+}
+```
+</details>
 
 ### Array Schema
 
@@ -134,6 +213,48 @@ SchemaFactory::array('coordinates')
     ->maxItems(2);
 ```
 
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    // Simple array of strings
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "title": "tags",
+    "items": {
+        "type": "string"
+    },
+    "minItems": 1,
+    "maxItems": 10,
+    "uniqueItems": true
+}
+
+{
+    // Tuple validation
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "title": "coordinates",
+    "prefixItems": [
+        {
+            "type": "number",
+            "title": "latitude",
+            "minimum": -90,
+            "maximum": 90
+        },
+        {
+            "type": "number",
+            "title": "longitude",
+            "minimum": -180,
+            "maximum": 180
+        }
+    ],
+    "minItems": 2,
+    "maxItems": 2
+}
+```
+</details>
+
 ### Object Schema
 
 ```php
@@ -149,6 +270,42 @@ SchemaFactory::object('user')
     ->maxProperties(10)
     ->additionalProperties(false);
 ```
+
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "user",
+    "properties": {
+        "name": {
+            "type": "string",
+            "title": "name"
+        },
+        "email": {
+            "type": "string",
+            "title": "email"
+        },
+        "settings": {
+            "type": "object",
+            "title": "settings",
+            "properties": {
+                "theme": {
+                    "type": "string",
+                    "title": "theme"
+                }
+            }
+        }
+    },
+    "required": ["name", "email"],
+    "minProperties": 1,
+    "maxProperties": 10,
+    "additionalProperties": false
+}
+```
+</details>
 
 ## Validation
 
@@ -188,8 +345,7 @@ $jsonSchemaArray = $schema->toArray();
 
 // Convert to JSON string
 $jsonSchemaString = $schema->toJson();
-// or with pretty printing
-$jsonSchemaString = $schema->toJson(JSON_PRETTY_PRINT);
+$jsonSchemaString = $schema->toJson(JSON_PRETTY_PRINT); // with pretty printing
 ```
 
 This will output a valid JSON Schema that can be used with any JSON Schema validator.
