@@ -54,9 +54,12 @@ abstract class AbstractSchema implements Schema
         }
 
         if (is_array($this->type)) {
-            $this->type = [...$this->type, SchemaType::Null];
+            $this->type[] = SchemaType::Null;
         } else {
-            $this->type = SchemaType::Null;
+            $this->type = [
+                $this->type,
+                SchemaType::Null,
+            ];
         }
 
         return $this;
