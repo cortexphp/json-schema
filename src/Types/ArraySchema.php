@@ -19,11 +19,6 @@ class ArraySchema extends AbstractSchema
 
     protected bool $uniqueItems = false;
 
-    /**
-     * @var array<int, \Cortex\JsonSchema\Contracts\Schema>
-     */
-    protected array $prefixItems = [];
-
     protected ?Schema $contains = null;
 
     protected ?int $minContains = null;
@@ -92,16 +87,6 @@ class ArraySchema extends AbstractSchema
     }
 
     /**
-     * Set the prefix item schemas.
-     */
-    public function prefixItems(Schema ...$schemas): static
-    {
-        $this->prefixItems = array_values($schemas);
-
-        return $this;
-    }
-
-    /**
      * Convert the schema to an array.
      *
      * @return array<string, mixed>
@@ -125,13 +110,6 @@ class ArraySchema extends AbstractSchema
 
         if ($this->uniqueItems) {
             $schema['uniqueItems'] = true;
-        }
-
-        if ($this->prefixItems !== []) {
-            $schema['prefixItems'] = array_map(
-                fn(Schema $schema): array => $schema->toArray(),
-                $this->prefixItems,
-            );
         }
 
         if ($this->contains !== null) {

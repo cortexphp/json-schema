@@ -7,6 +7,7 @@ namespace Cortex\JsonSchema\Types\Concerns;
 use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
+/** @mixin \Cortex\JsonSchema\Contracts\Schema */
 trait HasConditionals
 {
     protected ?Schema $if = null;
@@ -133,21 +134,21 @@ trait HasConditionals
 
         if ($this->allOf !== []) {
             $schema['allOf'] = array_map(
-                fn(Schema $s): array => $s->toArray(includeSchemaRef: false),
+                static fn(Schema $s): array => $s->toArray(includeSchemaRef: false),
                 $this->allOf,
             );
         }
 
         if ($this->anyOf !== []) {
             $schema['anyOf'] = array_map(
-                fn(Schema $s): array => $s->toArray(includeSchemaRef: false),
+                static fn(Schema $s): array => $s->toArray(includeSchemaRef: false),
                 $this->anyOf,
             );
         }
 
         if ($this->oneOf !== []) {
             $schema['oneOf'] = array_map(
-                fn(Schema $s): array => $s->toArray(includeSchemaRef: false),
+                static fn(Schema $s): array => $s->toArray(includeSchemaRef: false),
                 $this->oneOf,
             );
         }

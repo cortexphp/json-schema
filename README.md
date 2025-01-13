@@ -228,19 +228,6 @@ SchemaFactory::array('tags')
     ->minItems(1)
     ->maxItems(10)
     ->uniqueItems(true);
-
-// Tuple validation (fixed array format)
-SchemaFactory::array('coordinates')
-    ->prefixItems([
-        SchemaFactory::number('latitude')
-            ->minimum(-90)
-            ->maximum(90),
-        SchemaFactory::number('longitude')
-            ->minimum(-180)
-            ->maximum(180)
-    ])
-    ->minItems(2)
-    ->maxItems(2);
 ```
 
 <details>
@@ -258,29 +245,6 @@ SchemaFactory::array('coordinates')
     "minItems": 1,
     "maxItems": 10,
     "uniqueItems": true
-}
-
-{
-    // Tuple validation
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "array",
-    "title": "coordinates",
-    "prefixItems": [
-        {
-            "type": "number",
-            "title": "latitude",
-            "minimum": -90,
-            "maximum": 90
-        },
-        {
-            "type": "number",
-            "title": "longitude",
-            "minimum": -180,
-            "maximum": 180
-        }
-    ],
-    "minItems": 2,
-    "maxItems": 2
 }
 ```
 </details>

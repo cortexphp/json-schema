@@ -6,6 +6,7 @@ namespace Cortex\JsonSchema\Types\Concerns;
 
 use Cortex\JsonSchema\Enums\SchemaFormat;
 
+/** @mixin \Cortex\JsonSchema\Contracts\Schema */
 trait HasFormat
 {
     protected SchemaFormat|string|null $format = null;

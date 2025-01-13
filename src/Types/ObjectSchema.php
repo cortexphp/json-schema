@@ -19,27 +19,15 @@ class ObjectSchema extends AbstractSchema
     /**
      * @var array<int, string>
      */
-    public array $requiredProperties = [];
+    protected array $requiredProperties = [];
 
     protected ?bool $additionalProperties = null;
-
-    protected bool|Schema|null $unevaluatedProperties = null;
 
     protected ?int $minProperties = null;
 
     protected ?int $maxProperties = null;
 
     protected ?Schema $propertyNames = null;
-
-    /**
-     * @var array<string, array<int, string>>
-     */
-    protected array $dependentRequired = [];
-
-    /**
-     * @var array<string, \Cortex\JsonSchema\Contracts\Schema>
-     */
-    protected array $dependentSchemas = [];
 
     public function __construct(?string $title = null)
     {
@@ -88,24 +76,6 @@ class ObjectSchema extends AbstractSchema
     public function getPropertyKeys(): array
     {
         return array_keys($this->properties);
-    }
-
-    /**
-     * Set whether unevaluated properties are allowed and optionally their schema.
-     */
-    public function unevaluatedProperties(bool|Schema $value): static
-    {
-        $this->unevaluatedProperties = $value;
-
-        return $this;
-    }
-
-    /**
-     * Get the unevaluated properties setting
-     */
-    public function getUnevaluatedProperties(): bool|Schema|null
-    {
-        return $this->unevaluatedProperties;
     }
 
     /**
@@ -183,48 +153,6 @@ class ObjectSchema extends AbstractSchema
     }
 
     /**
-     * Set properties that are required when a property is present
-     *
-     * @param array<int, string> $requiredProperties
-     */
-    public function dependentRequired(string $property, array $requiredProperties): static
-    {
-        $this->dependentRequired[$property] = $requiredProperties;
-
-        return $this;
-    }
-
-    /**
-     * Get the dependent required properties
-     *
-     * @return array<string, array<int, string>>
-     */
-    public function getDependentRequired(): array
-    {
-        return $this->dependentRequired;
-    }
-
-    /**
-     * Set a schema that must be valid when a property is present
-     */
-    public function dependentSchema(string $property, Schema $schema): static
-    {
-        $this->dependentSchemas[$property] = $schema;
-
-        return $this;
-    }
-
-    /**
-     * Get the dependent schemas
-     *
-     * @return array<string, Schema>
-     */
-    public function getDependentSchemas(): array
-    {
-        return $this->dependentSchemas;
-    }
-
-    /**
      * Add properties to schema array
      *
      * @param array<string, mixed> $schema
@@ -264,23 +192,6 @@ class ObjectSchema extends AbstractSchema
 
         if ($this->propertyNames !== null) {
             $schema['propertyNames'] = $this->propertyNames->toArray($includeSchemaRef, $includeTitle);
-        }
-
-        if ($this->dependentRequired !== []) {
-            $schema['dependentRequired'] = $this->dependentRequired;
-        }
-
-        if ($this->dependentSchemas !== []) {
-            $schema['dependentSchemas'] = array_map(
-                fn(Schema $schema): array => $schema->toArray($includeSchemaRef, $includeTitle),
-                $this->dependentSchemas,
-            );
-        }
-
-        if ($this->unevaluatedProperties !== null) {
-            $schema['unevaluatedProperties'] = $this->unevaluatedProperties instanceof Schema
-                ? $this->unevaluatedProperties->toArray($includeSchemaRef, $includeTitle)
-                : $this->unevaluatedProperties;
         }
 
         if ($this->minProperties !== null) {

@@ -249,10 +249,9 @@ it('can create a schema with oneOf condition', function (): void {
 });
 
 it('can create a schema with not condition', function (): void {
-    $schema = Schema::string('status')
-        ->not(
-            Schema::string()->enum(['deleted', 'banned']),
-        );
+    $schema = Schema::string('status')->not(
+        Schema::string()->enum(['deleted', 'banned']),
+    );
 
     $schemaArray = $schema->toArray();
 

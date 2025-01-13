@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Types\Concerns;
 
+/** @mixin \Cortex\JsonSchema\Contracts\Schema */
 trait HasEnum
 {
     /**

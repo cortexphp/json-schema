@@ -23,7 +23,7 @@ class SchemaException extends Exception
         return $exception;
     }
 
-    protected function setError(ValidationError $error): void
+    public function setError(ValidationError $error): void
     {
         $this->error = $error;
     }
