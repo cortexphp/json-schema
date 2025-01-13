@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit;
 
 use Cortex\JsonSchema\Enums\SchemaFormat;
+use Opis\JsonSchema\Errors\ErrorFormatter;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -21,7 +22,7 @@ it('can create a basic object schema', function (): void {
                 ->format(SchemaFormat::Email)
                 ->required(),
             Schema::integer('age')
-                ->minimum(0)
+                ->minimum(18)
                 ->maximum(150),
         );
 
@@ -37,7 +38,7 @@ it('can create a basic object schema', function (): void {
     expect($schemaArray)->toHaveKey('properties.email.type', 'string');
     expect($schemaArray)->toHaveKey('properties.email.format', 'email');
     expect($schemaArray)->toHaveKey('properties.age.type', 'integer');
-    expect($schemaArray)->toHaveKey('properties.age.minimum', 0);
+    expect($schemaArray)->toHaveKey('properties.age.minimum', 18);
     expect($schemaArray)->toHaveKey('properties.age.maximum', 150);
     expect($schemaArray)->toHaveKey('required', ['name', 'email']);
 
@@ -77,6 +78,30 @@ it('can create a basic object schema', function (): void {
         'The properties must match schema: name',
     );
 });
+
+it('can get the underlying errors', function (): void {
+    $schema = Schema::object('user')
+        ->properties(
+            Schema::string('name')->required(),
+            Schema::string('email')->format(SchemaFormat::Email),
+        );
+
+    try {
+        $schema->validate([
+            'name' => 'John Doe',
+            'email' => 'foo',
+        ]);
+    } catch (SchemaException $e) {
+        expect($e->getMessage())->toBe('The properties must match schema: email');
+        expect($e->getErrors())->toBe([
+            '/email' => [
+                'The data must match the \'email\' format'
+            ],
+        ]);
+
+        throw $e;
+    }
+})->throws(SchemaException::class);
 
 it('can create an object schema with additional properties control', function (): void {
     $schema = Schema::object('config')

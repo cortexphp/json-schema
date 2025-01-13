@@ -5,13 +5,14 @@ A PHP library for fluently building and validating JSON Schemas.
 ## Installation
 
 ```bash
-composer require cortex/json-schema
+composer require cortexphp/json-schema
 ```
 
 ## Usage
 
 ```php
 use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaFormat;
 
 // Create a basic user schema
 $schema = SchemaFactory::object('user')
@@ -22,11 +23,11 @@ $schema = SchemaFactory::object('user')
             ->maxLength(100)
             ->required(),
         SchemaFactory::string('email')
-            ->format('email')
+            ->format(SchemaFormat::Email)
             ->required(),
         SchemaFactory::integer('age')
-            ->minimum(0)
-            ->maximum(120),
+            ->minimum(18)
+            ->maximum(150),
         SchemaFactory::boolean('active')
             ->default(true),
         SchemaFactory::object('settings')
@@ -40,17 +41,27 @@ $schema = SchemaFactory::object('user')
 // Convert to array
 $schema->toArray();
 
-// Validate data
-$schema->validate([
-    'name' => 'John Doe',
-    'email' => 'john@example.com',
-    'age' => 30,
-    'active' => true,
-    'settings' => [
-        'theme' => 'dark',
-        'notifications' => true
-    ],
-]);
+// Convert to JSON string
+$schema->toJson();
+
+// Validate data against the schema
+try {
+    $schema->validate([
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'age' => 16,
+        'active' => true,
+        'settings' => [
+            'theme' => 'dark',
+            'notifications' => true,
+        ],
+    ]);
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "The data must match the 'email' format"
+}
+
+// Validate data against the schema
+$schema->isValid($data);
 ```
 
 ## Available Schema Types
@@ -58,16 +69,15 @@ $schema->validate([
 ### String Schema
 
 ```php
+use Cortex\JsonSchema\SchemaFactory;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 
-SchemaFactory::string('name')
+$schema = SchemaFactory::string('name')
     ->minLength(2)
     ->maxLength(100)
     ->pattern('^[A-Za-z]+$')
-    ->format(SchemaFormat::Email)
     ->nullable()
-    ->readOnly()
-    ->writeOnly();
+    ->readOnly();
 ```
 
 <details>
@@ -81,12 +91,32 @@ SchemaFactory::string('name')
     "minLength": 2,
     "maxLength": 100,
     "pattern": "^[A-Za-z]+$",
-    "format": "email",
-    "readOnly": true,
-    "writeOnly": true
+    "readOnly": true
 }
 ```
 </details>
+
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
+$schema = SchemaFactory::string('email')
+    ->format(SchemaFormat::Email)
+    ->nullable()
+```
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": ["string", "null"],
+    "format": "email"
+}
+```
+</details>
+
 
 ### Number Schema
 
@@ -371,3 +401,18 @@ Example JSON output:
     }
 }
 ```
+
+## Testing
+
+```bash
+composer test
+```
+
+## Credits
+
+- [Sean Tymon](https://github.com/tymondesigns)
+- [All Contributors](../../contributors)
+
+## License
+
+The MIT License (MIT). Please see [License File](LICENSE.md) for more information.

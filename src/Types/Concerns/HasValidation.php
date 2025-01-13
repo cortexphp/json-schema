@@ -35,9 +35,7 @@ trait HasValidation
         $error = $result->error();
 
         if ($error !== null) {
-            throw new SchemaException(
-                (new ErrorFormatter())->formatErrorMessage($error),
-            );
+            throw SchemaException::failedValidation($error);
         }
     }
 
