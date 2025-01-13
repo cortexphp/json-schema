@@ -325,6 +325,7 @@ $schema
     ->description('Schema description')
     ->default('default value')
     ->examples(['example1', 'example2'])
+    ->comment('Schema comment')
     ->readOnly()
     ->writeOnly();
 ```
