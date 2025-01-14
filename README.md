@@ -75,7 +75,6 @@ $schema->isValid($data);
 
 ```php
 use Cortex\JsonSchema\SchemaFactory;
-use Cortex\JsonSchema\Enums\SchemaFormat;
 
 $schema = SchemaFactory::string('name')
     ->minLength(2)
@@ -141,6 +140,8 @@ $schema->isValid(null); // true
 ### Number Schema
 
 ```php
+use Cortex\JsonSchema\SchemaFactory;
+
 $schema = SchemaFactory::number('price')
     ->minimum(0)
     ->maximum(1000)
@@ -174,6 +175,8 @@ $schema->isValid(1.011); // false (not a multiple of 0.01)
 ### Integer Schema
 
 ```php
+use Cortex\JsonSchema\SchemaFactory;
+
 $schema = SchemaFactory::integer('age')
     ->exclusiveMinimum(0)
     ->exclusiveMaximum(150)
@@ -207,6 +210,8 @@ $schema->isValid(150.01); // false (not an integer)
 ### Boolean Schema
 
 ```php
+use Cortex\JsonSchema\SchemaFactory;
+
 $schema = SchemaFactory::boolean('active')
     ->default(true)
     ->readOnly();
@@ -237,6 +242,8 @@ $schema->isValid(null); // false
 ### Null Schema
 
 ```php
+use Cortex\JsonSchema\SchemaFactory;
+
 $schema = SchemaFactory::null('deleted_at');
 ```
 
@@ -263,6 +270,8 @@ $schema->isValid(false); // false
 ### Array Schema
 
 ```php
+use Cortex\JsonSchema\SchemaFactory;
+
 // Simple array of strings
 $schema = SchemaFactory::array('tags')
     ->items(SchemaFactory::string())
