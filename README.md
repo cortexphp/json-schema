@@ -169,6 +169,8 @@ $schema->isValid(1.011); // false (not a multiple of 0.01)
 
 </details>
 
+---
+
 ### Integer Schema
 
 ```php
@@ -200,6 +202,8 @@ $schema->isValid(150.01); // false (not an integer)
 ```
 </details>
 
+---
+
 ### Boolean Schema
 
 ```php
@@ -228,6 +232,8 @@ $schema->isValid(null); // false
 ```
 </details>
 
+---
+
 ### Null Schema
 
 ```php
@@ -251,6 +257,8 @@ $schema->isValid(false); // false
 }
 ```
 </details>
+
+---
 
 ### Array Schema
 
@@ -287,6 +295,8 @@ $schema->isValid(['foo', 'bar', 'baz', 'qux']); // false (too many items)
 }
 ```
 </details>
+
+---
 
 ### Object Schema
 
@@ -362,6 +372,8 @@ $schema->isValid([
 }
 ```
 </details>
+
+---
 
 ## Validation
 
