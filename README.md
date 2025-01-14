@@ -1,6 +1,9 @@
-# json-schema
+# Fluently build and validate JSON Schemas
 
-A PHP library for fluently building and validating JSON Schemas.
+[![Latest Version](https://img.shields.io/packagist/v/cortexphp/json-schema.svg?style=flat-square&logo=composer)](https://packagist.org/packages/cortexphp/json-schema)
+![GitHub License](https://img.shields.io/github/license/cortexphp/json-schema?style=flat-square&logo=github)
+
+Currently only supports https://json-schema.org/draft-07.
 
 ## Installation
 
@@ -37,7 +40,9 @@ $schema = SchemaFactory::object('user')
                 SchemaFactory::boolean('notifications')
             ]),
     );
+```
 
+```php
 // Convert to array
 $schema->toArray();
 
@@ -76,8 +81,13 @@ $schema = SchemaFactory::string('name')
     ->minLength(2)
     ->maxLength(100)
     ->pattern('^[A-Za-z]+$')
-    ->nullable()
     ->readOnly();
+```
+
+```php
+$schema->isValid('John Doe'); // true
+$schema->isValid('John Doe123'); // false (contains numbers)
+$schema->isValid('J'); // false (too short)
 ```
 
 <details>
@@ -86,7 +96,7 @@ $schema = SchemaFactory::string('name')
 ```json
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": ["string", "null"],
+    "type": "string",
     "title": "name",
     "minLength": 2,
     "maxLength": 100,
@@ -94,6 +104,7 @@ $schema = SchemaFactory::string('name')
     "readOnly": true
 }
 ```
+
 </details>
 
 
@@ -103,8 +114,15 @@ use Cortex\JsonSchema\Enums\SchemaFormat;
 
 $schema = SchemaFactory::string('email')
     ->format(SchemaFormat::Email)
-    ->nullable()
+    ->nullable();
 ```
+
+```php
+$schema->isValid('john@example.com'); // true
+$schema->isValid('foo'); // false
+$schema->isValid(null); // true
+```
+
 <details>
 <summary>View JSON Schema</summary>
 
@@ -115,19 +133,24 @@ $schema = SchemaFactory::string('email')
     "format": "email"
 }
 ```
+
 </details>
 
+---
 
 ### Number Schema
 
 ```php
-SchemaFactory::number('price')
+$schema = SchemaFactory::number('price')
     ->minimum(0)
     ->maximum(1000)
-    ->exclusiveMinimum(0)
-    ->exclusiveMaximum(1000)
-    ->multipleOf(0.01)
-    ->nullable();
+    ->multipleOf(0.01);
+```
+```php
+$schema->isValid(100); // true
+$schema->isValid(1000.01); // false (too high)
+$schema->isValid(0.01); // true
+$schema->isValid(1.011); // false (not a multiple of 0.01)
 ```
 
 <details>
@@ -136,27 +159,30 @@ SchemaFactory::number('price')
 ```json
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": ["number", "null"],
+    "type": "number",
     "title": "price",
     "minimum": 0,
     "maximum": 1000,
-    "exclusiveMinimum": 0,
-    "exclusiveMaximum": 1000,
     "multipleOf": 0.01
 }
 ```
+
 </details>
 
 ### Integer Schema
 
 ```php
-SchemaFactory::integer('age')
-    ->minimum(0)
-    ->maximum(120)
+$schema = SchemaFactory::integer('age')
     ->exclusiveMinimum(0)
-    ->exclusiveMaximum(120)
-    ->multipleOf(1)
-    ->nullable();
+    ->exclusiveMaximum(150)
+    ->multipleOf(1);
+```
+
+```php
+$schema->isValid(18); // true
+$schema->isValid(150); // false (too high)
+$schema->isValid(0); // false (too low)
+$schema->isValid(150.01); // false (not an integer)
 ```
 
 <details>
@@ -165,12 +191,10 @@ SchemaFactory::integer('age')
 ```json
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": ["integer", "null"],
+    "type": "integer",
     "title": "age",
-    "minimum": 0,
-    "maximum": 120,
     "exclusiveMinimum": 0,
-    "exclusiveMaximum": 120,
+    "exclusiveMaximum": 150,
     "multipleOf": 1
 }
 ```
@@ -179,10 +203,15 @@ SchemaFactory::integer('age')
 ### Boolean Schema
 
 ```php
-SchemaFactory::boolean('active')
+$schema = SchemaFactory::boolean('active')
     ->default(true)
-    ->nullable()
     ->readOnly();
+```
+
+```php
+$schema->isValid(true); // true
+$schema->isValid(false); // true
+$schema->isValid(null); // false
 ```
 
 <details>
@@ -191,7 +220,7 @@ SchemaFactory::boolean('active')
 ```json
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": ["boolean", "null"],
+    "type": "boolean",
     "title": "active",
     "default": true,
     "readOnly": true
@@ -202,8 +231,13 @@ SchemaFactory::boolean('active')
 ### Null Schema
 
 ```php
-SchemaFactory::null('deleted_at')
-    ->readOnly();
+$schema = SchemaFactory::null('deleted_at');
+```
+
+```php
+$schema->isValid(null); // true
+$schema->isValid(true); // false
+$schema->isValid(false); // false
 ```
 
 <details>
@@ -213,8 +247,7 @@ SchemaFactory::null('deleted_at')
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "null",
-    "title": "deleted_at",
-    "readOnly": true
+    "title": "deleted_at"
 }
 ```
 </details>
@@ -223,11 +256,18 @@ SchemaFactory::null('deleted_at')
 
 ```php
 // Simple array of strings
-SchemaFactory::array('tags')
+$schema = SchemaFactory::array('tags')
     ->items(SchemaFactory::string())
     ->minItems(1)
-    ->maxItems(10)
+    ->maxItems(3)
     ->uniqueItems(true);
+```
+
+```php
+$schema->isValid(['foo', 'bar']); // true
+$schema->isValid(['foo', 'foo']); // false (not unique)
+$schema->isValid([]); // false (too few items)
+$schema->isValid(['foo', 'bar', 'baz', 'qux']); // false (too many items)
 ```
 
 <details>
@@ -235,7 +275,6 @@ SchemaFactory::array('tags')
 
 ```json
 {
-    // Simple array of strings
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "array",
     "title": "tags",
@@ -243,7 +282,7 @@ SchemaFactory::array('tags')
         "type": "string"
     },
     "minItems": 1,
-    "maxItems": 10,
+    "maxItems": 3,
     "uniqueItems": true
 }
 ```
@@ -252,17 +291,42 @@ SchemaFactory::array('tags')
 ### Object Schema
 
 ```php
-SchemaFactory::object('user')
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
+$schema = SchemaFactory::object('user')
     ->properties(
         SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->required(),
+        SchemaFactory::string('email')->format(SchemaFormat::Email)->required(),
         SchemaFactory::object('settings')->properties(
-            SchemaFactory::string('theme')
+            SchemaFactory::string('theme')->enum(['light', 'dark'])
         ),
     )
-    ->minProperties(1)
-    ->maxProperties(10)
     ->additionalProperties(false);
+```
+
+```php
+$schema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+]); // true
+
+$schema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'settings' => [
+        'theme' => 'dark',
+    ],
+]); // true
+
+$schema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'settings' => [
+        'theme' => 'dark',
+    ],
+    'foo' => 'bar',
+]); // false (additional properties)
 ```
 
 <details>
@@ -294,8 +358,6 @@ SchemaFactory::object('user')
         }
     },
     "required": ["name", "email"],
-    "minProperties": 1,
-    "maxProperties": 10,
     "additionalProperties": false
 }
 ```
@@ -340,7 +402,7 @@ $jsonSchemaArray = $schema->toArray();
 
 // Convert to JSON string
 $jsonSchemaString = $schema->toJson();
-$jsonSchemaString = $schema->toJson(JSON_PRETTY_PRINT); // with pretty printing
+$jsonSchemaString = $schema->toJson(JSON_PRETTY_PRINT);
 ```
 
 This will output a valid JSON Schema that can be used with any JSON Schema validator.
