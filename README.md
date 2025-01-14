@@ -3,9 +3,13 @@
 [![Latest Version](https://img.shields.io/packagist/v/cortexphp/json-schema.svg?style=flat-square&logo=composer)](https://packagist.org/packages/cortexphp/json-schema)
 ![GitHub License](https://img.shields.io/github/license/cortexphp/json-schema?style=flat-square&logo=github)
 
-Currently only supports https://json-schema.org/draft-07.
+[What is JSON Schema?](https://json-schema.org/overview/what-is-jsonschema)
+
+At the moment support is limited to [draft-07](https://json-schema.org/draft-07) since that is probably the most widely adopted version.
 
 ## Installation
+
+Minimum PHP version: 8.3
 
 ```bash
 composer require cortexphp/json-schema
@@ -17,7 +21,7 @@ composer require cortexphp/json-schema
 use Cortex\JsonSchema\SchemaFactory;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 
-// Create a basic user schema
+// Create a basic user schema using the SchemaFactory
 $schema = SchemaFactory::object('user')
     ->description('User schema')
     ->properties(
@@ -39,6 +43,21 @@ $schema = SchemaFactory::object('user')
                 SchemaFactory::string('theme')->enum(['light', 'dark']),
                 SchemaFactory::boolean('notifications')
             ]),
+    );
+```
+
+Or you can use the objects directly
+```php
+$schema = new ObjectSchema('user')
+    ->description('User schema')
+    ->properties(
+        new StringSchema('name')
+            ->minLength(2)
+            ->maxLength(100)
+            ->required(),
+        new StringSchema('email')
+            ->format(SchemaFormat::Email)
+            ->required(),
     );
 ```
 
@@ -101,35 +120,6 @@ $schema->isValid('J'); // false (too short)
     "maxLength": 100,
     "pattern": "^[A-Za-z]+$",
     "readOnly": true
-}
-```
-
-</details>
-
-
-```php
-use Cortex\JsonSchema\SchemaFactory;
-use Cortex\JsonSchema\Enums\SchemaFormat;
-
-$schema = SchemaFactory::string('email')
-    ->format(SchemaFormat::Email)
-    ->nullable();
-```
-
-```php
-$schema->isValid('john@example.com'); // true
-$schema->isValid('foo'); // false
-$schema->isValid(null); // true
-```
-
-<details>
-<summary>View JSON Schema</summary>
-
-```json
-{
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": ["string", "null"],
-    "format": "email"
 }
 ```
 
@@ -448,12 +438,6 @@ Example JSON output:
         }
     }
 }
-```
-
-## Testing
-
-```bash
-composer test
 ```
 
 ## Credits
