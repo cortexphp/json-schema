@@ -17,11 +17,15 @@ use Cortex\JsonSchema\Types\UnionSchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-class FromClosure
+class ClosureConverter
 {
-    public static function convert(Closure $closure): ObjectSchema
+    public function __construct(
+        protected Closure $closure,
+    ) {}
+
+    public function convert(): ObjectSchema
     {
-        $reflection = new ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($this->closure);
         $schema = new ObjectSchema();
 
         // TODO: handle descriptions
@@ -40,6 +44,7 @@ class FromClosure
     {
         $type = $parameter->getType();
 
+        // @phpstan-ignore argument.type
         $schema = self::getSchemaFromReflectionType($type);
 
         $schema->title($parameter->getName());
@@ -64,6 +69,7 @@ class FromClosure
                 $reflection = new ReflectionEnum($typeName);
 
                 if ($reflection->isBacked()) {
+                    /** @var non-empty-array<array-key, \BackedEnum> */
                     $cases = $typeName::cases();
                     $schema->enum(array_map(fn($case): int|string => $case->value, $cases));
                 }
@@ -81,10 +87,12 @@ class FromClosure
     ): Schema {
         $schemaTypes = match (true) {
             $type instanceof ReflectionUnionType, $type instanceof ReflectionIntersectionType => array_map(
+                // @phpstan-ignore argument.type
                 fn(ReflectionNamedType $t): SchemaType => self::resolveSchemaType($t),
                 $type->getTypes(),
             ),
             // If the parameter is not typed or explicitly typed as mixed, we use all schema types
+            // TODO: use phpstan parser to get the type also
             in_array($type?->getName(), ['mixed', null], true) => SchemaType::cases(),
             default => [self::resolveSchemaType($type)],
         };

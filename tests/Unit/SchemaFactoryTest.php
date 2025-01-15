@@ -50,3 +50,32 @@ it('can create schemas with default metadata', function (): void {
     expect($schemaArray)->toHaveKey('readOnly', true);
     expect($schemaArray)->toHaveKey('writeOnly', true);
 });
+
+it('can create a schema from a closure', function (): void {
+    $closure = function (string $name, array $fooArray, ?int $age = null): void {};
+    $schema = Schema::fromClosure($closure);
+
+    expect($schema)->toBeInstanceOf(ObjectSchema::class);
+    expect($schema->toArray())->toBe([
+        'type' => 'object',
+        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        'properties' => [
+            'name' => [
+                'type' => 'string',
+            ],
+            'fooArray' => [
+                'type' => 'array',
+            ],
+            'age' => [
+                'type' => [
+                    'integer',
+                    'null',
+                ],
+            ],
+        ],
+        'required' => [
+            'name',
+            'fooArray',
+        ],
+    ]);
+});

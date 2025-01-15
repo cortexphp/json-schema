@@ -14,7 +14,7 @@ use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
-use Cortex\JsonSchema\Converters\FromClosure;
+use Cortex\JsonSchema\Converters\ClosureConverter;
 
 class SchemaFactory
 {
@@ -68,6 +68,6 @@ class SchemaFactory
 
     public static function fromClosure(Closure $closure): ObjectSchema
     {
-        return FromClosure::convert($closure);
+        return (new ClosureConverter($closure))->convert();
     }
 }

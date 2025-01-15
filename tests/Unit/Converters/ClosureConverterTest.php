@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit\Converters;
 
 use Cortex\JsonSchema\Types\ObjectSchema;
-use Cortex\JsonSchema\Converters\FromClosure;
+use Cortex\JsonSchema\Converters\ClosureConverter;
 
 it('can create a schema from a closure', function (): void {
     $closure = function (string $name, array $fooArray, ?int $age = null): void {};
-    $schema = FromClosure::convert($closure);
+    $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
@@ -44,7 +44,7 @@ it('can create a schema from a closure with a string backed enum', function (): 
     }
 
     $closure = function (MyEnum $myEnum, bool $foo = true): void {};
-    $schema = FromClosure::convert($closure);
+    $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
@@ -78,7 +78,7 @@ it('can create a schema from a closure with an integer backed enum', function ()
     }
 
     $closure = function (Status $status): void {};
-    $schema = FromClosure::convert($closure);
+    $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
@@ -102,7 +102,7 @@ it('can create a schema from a closure with an integer backed enum', function ()
 
 it('can create a schema from a closure with a union type', function (): void {
     $closure = function (int|string $foo): void {};
-    $schema = FromClosure::convert($closure);
+    $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
@@ -124,7 +124,7 @@ it('can create a schema from a closure with a union type', function (): void {
 
 it('can create a schema from a closure with a nullable union type', function (): void {
     $closure = function (int|string|null $foo): void {};
-    $schema = FromClosure::convert($closure);
+    $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
@@ -147,7 +147,7 @@ it('can create a schema from a closure with a nullable union type', function ():
 
 it('can create a schema from a closure with array type hints', function (): void {
     $closure = function (array $items, array $tags = ['default']): void {};
-    $schema = FromClosure::convert($closure);
+    $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
@@ -170,7 +170,7 @@ it('can create a schema from a closure with array type hints', function (): void
 
 it('can create a schema from a closure with mixed type', function (): void {
     $closure = function (mixed $data): void {};
-    $schema = FromClosure::convert($closure);
+    $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
@@ -197,7 +197,7 @@ it('can create a schema from a closure with mixed type', function (): void {
 
 it('can create a schema from a closure with object type', function (): void {
     $closure = function (object $data): void {};
-    $schema = FromClosure::convert($closure);
+    $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
@@ -216,7 +216,7 @@ it('can create a schema from a closure with object type', function (): void {
 
 it('can create a schema from a closure with float type', function (): void {
     $closure = function (float $amount = 0.0): void {};
-    $schema = FromClosure::convert($closure);
+    $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
@@ -240,7 +240,7 @@ it('can create a schema from a closure with default values', function (): void {
         bool $active = true,
     ): void {};
 
-    $schema = FromClosure::convert($closure);
+    $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
@@ -277,7 +277,7 @@ it('can create a schema from a closure with default values', function (): void {
 
 it('can create a schema from a closure with array type', function (): void {
     $closure = function (array $items = ['default']): void {};
-    $schema = FromClosure::convert($closure);
+    $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
