@@ -13,25 +13,39 @@ use ReflectionUnionType;
 use ReflectionIntersectionType;
 use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\UnionSchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 class ClosureConverter
 {
+    protected ReflectionFunction $reflection;
+
     public function __construct(
         protected Closure $closure,
-    ) {}
+    ) {
+        $this->reflection = new ReflectionFunction($this->closure);
+    }
 
     public function convert(): ObjectSchema
     {
-        $reflection = new ReflectionFunction($this->closure);
         $schema = new ObjectSchema();
 
-        // TODO: handle descriptions
+        // Get the description from the doc parser
+        $description = $this->getDocParser()?->description() ?? null;
 
-        foreach ($reflection->getParameters() as $parameter) {
-            $schema->properties(self::getSchemaFromReflectionParameter($parameter));
+        // Add the description to the schema if it exists
+        if ($description !== null) {
+            $schema->description($description);
+        }
+
+        // Get the parameters from the doc parser
+        $params = $this->getDocParser()?->params() ?? [];
+
+        // Add the parameters to the objectschema
+        foreach ($this->reflection->getParameters() as $parameter) {
+            $schema->properties(self::getSchemaFromReflectionParameter($parameter, $params));
         }
 
         return $schema;
@@ -39,15 +53,27 @@ class ClosureConverter
 
     /**
      * Create a schema from a given type.
+     *
+     * @param array<array-key, array{name: string, type: string|null, description: string|null}> $docParams
      */
-    protected static function getSchemaFromReflectionParameter(ReflectionParameter $parameter): Schema
-    {
+    protected static function getSchemaFromReflectionParameter(
+        ReflectionParameter $parameter,
+        array $docParams = [],
+    ): Schema {
         $type = $parameter->getType();
 
         // @phpstan-ignore argument.type
         $schema = self::getSchemaFromReflectionType($type);
 
         $schema->title($parameter->getName());
+
+        // Add the description to the schema if it exists
+        $param = array_filter($docParams, fn($param): bool => $param['name'] === $parameter->getName());
+        $description = $param[0]['description'] ?? null;
+
+        if ($description !== null) {
+            $schema->description($description);
+        }
 
         if ($type === null || $type->allowsNull()) {
             $schema->nullable();
@@ -119,5 +145,14 @@ class ClosureConverter
         }
 
         return SchemaType::fromScalar($typeName);
+    }
+
+    protected function getDocParser(): ?DocParser
+    {
+        if ($docComment = $this->reflection->getDocComment()) {
+            return new DocParser($docComment);
+        }
+
+        return null;
     }
 }

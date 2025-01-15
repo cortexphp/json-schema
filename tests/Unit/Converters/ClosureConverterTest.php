@@ -77,16 +77,24 @@ it('can create a schema from a closure with an integer backed enum', function ()
         case Archived = 2;
     }
 
+    /**
+     * Do something with the status
+     *
+     * @param Status $status The status of the post
+     */
     $closure = function (Status $status): void {};
+
     $schema = (new ClosureConverter($closure))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
+        'description' => 'Do something with the status',
         'properties' => [
             'status' => [
                 'type' => 'integer',
+                'description' => 'The status of the post',
                 'enum' => [
                     0,
                     1,

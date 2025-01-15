@@ -454,32 +454,49 @@ $schema
 
 ## Converting to JSON Schema
 
+This uses reflection to infer the schema from the closure parameters and docblocks.
+
 ### From a Closure
 
 ```php
 use Cortex\JsonSchema\SchemaFactory;
 
-$closure = function (string $name, array $fooArray, ?int $age = null): void {};
+/**
+ * This is the description of the closure
+ *
+ * @param string $name The name of the user
+ * @param array $meta The meta data of the user
+ * @param ?int $age The age of the user
+ */
+$closure = function (string $name, array $meta, ?int $age = null): void {};
 
+// Build the schema from the closure
 $schema = SchemaFactory::fromClosure($closure);
+
+// Convert to JSON Schema
+$schema->toJson();
 ```
 
 ```json
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
+    "description": "This is the description of the closure",
     "properties": {
         "name": {
-            "type": "string"
+            "type": "string",
+            "description": "The name of the user"
         },
-        "fooArray": {
-            "type": "array"
+        "meta": {
+            "type": "array",
+            "description": "The meta data of the user"
         },
         "age": {
-            "type": ["integer", "null"]
+            "type": ["integer", "null"],
+            "description": "The age of the user"
         }
     },
-    "required": ["name", "fooArray"]
+    "required": ["name", "meta"]
 }
 ```
 
