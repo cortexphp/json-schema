@@ -25,17 +25,9 @@ class FromClosure
         $schema = new ObjectSchema();
 
         // TODO: handle descriptions
-        // $doc = $reflection->getDocComment();
 
         foreach ($reflection->getParameters() as $parameter) {
-            $propertySchema = self::getPropertySchema($parameter);
-
-            // No type hint, skip
-            if ($propertySchema === null) {
-                continue;
-            }
-
-            $schema->properties($propertySchema);
+            $schema->properties(self::getSchemaFromReflectionParameter($parameter));
         }
 
         return $schema;
@@ -44,19 +36,15 @@ class FromClosure
     /**
      * Create a schema from a given type.
      */
-    protected static function getPropertySchema(ReflectionParameter $parameter): ?Schema
+    protected static function getSchemaFromReflectionParameter(ReflectionParameter $parameter): Schema
     {
         $type = $parameter->getType();
-
-        if ($type === null) {
-            return null;
-        }
 
         $schema = self::getSchemaFromReflectionType($type);
 
         $schema->title($parameter->getName());
 
-        if ($type->allowsNull()) {
+        if ($type === null || $type->allowsNull()) {
             $schema->nullable();
         }
 
@@ -89,21 +77,21 @@ class FromClosure
      * Resolve the schema instance from the given reflection type.
      */
     protected static function getSchemaFromReflectionType(
-        ReflectionNamedType|ReflectionUnionType|ReflectionIntersectionType $type,
+        ReflectionNamedType|ReflectionUnionType|ReflectionIntersectionType|null $type,
     ): Schema {
-        $matchedTypes = match (true) {
+        $schemaTypes = match (true) {
             $type instanceof ReflectionUnionType, $type instanceof ReflectionIntersectionType => array_map(
                 fn(ReflectionNamedType $t): SchemaType => self::resolveSchemaType($t),
                 $type->getTypes(),
             ),
-            $type instanceof ReflectionNamedType && $type->getName() === 'mixed' => SchemaType::cases(),
-            $type instanceof ReflectionNamedType => [self::resolveSchemaType($type)],
-            default => throw new SchemaException('Unknown type: ' . $type),
+            // If the parameter is not typed or explicitly typed as mixed, we use all schema types
+            in_array($type?->getName(), ['mixed', null], true) => SchemaType::cases(),
+            default => [self::resolveSchemaType($type)],
         };
 
-        return count($matchedTypes) === 1
-            ? $matchedTypes[0]->instance()
-            : new UnionSchema($matchedTypes);
+        return count($schemaTypes) === 1
+            ? $schemaTypes[0]->instance()
+            : new UnionSchema($schemaTypes);
     }
 
     /**
