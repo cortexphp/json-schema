@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema;
 
+use Closure;
+use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\NullSchema;
 use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Types\UnionSchema;
@@ -12,6 +14,7 @@ use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
+use Cortex\JsonSchema\Converters\FromClosure;
 
 class SchemaFactory
 {
@@ -56,5 +59,15 @@ class SchemaFactory
     public static function union(array $types, ?string $title = null): UnionSchema
     {
         return new UnionSchema($types, $title);
+    }
+
+    public static function mixed(?string $title = null): UnionSchema
+    {
+        return new UnionSchema(SchemaType::cases(), $title);
+    }
+
+    public static function fromClosure(Closure $closure): ObjectSchema
+    {
+        return FromClosure::convert($closure);
     }
 }

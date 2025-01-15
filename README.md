@@ -424,7 +424,7 @@ $schema->isValid('invalid'); // false (not in enum)
 
 ## Validation
 
-The library throws a `SchemaException` when validation fails:
+The validate method throws a `SchemaException` when validation fails:
 
 ```php
 use Cortex\JsonSchema\Exceptions\SchemaException;

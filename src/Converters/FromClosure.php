@@ -52,20 +52,7 @@ class FromClosure
             return null;
         }
 
-        $matchedTypes = match (true) {
-            $type instanceof ReflectionUnionType, $type instanceof ReflectionIntersectionType => array_map(
-                fn(ReflectionNamedType $t): SchemaType => self::resolveSchemaType($t),
-                $type->getTypes(),
-            ),
-            $type instanceof ReflectionNamedType => [self::resolveSchemaType($type)],
-            default => throw new SchemaException('Unknown type: ' . $type),
-        };
-
-        // TODO: handle mixed type
-
-        $schema = count($matchedTypes) === 1
-            ? $matchedTypes[0]->instance()
-            : new UnionSchema($matchedTypes);
+        $schema = self::getSchemaFromReflectionType($type);
 
         $schema->title($parameter->getName());
 
@@ -96,6 +83,27 @@ class FromClosure
         }
 
         return $schema;
+    }
+
+    /**
+     * Resolve the schema instance from the given reflection type.
+     */
+    protected static function getSchemaFromReflectionType(
+        ReflectionNamedType|ReflectionUnionType|ReflectionIntersectionType $type,
+    ): Schema {
+        $matchedTypes = match (true) {
+            $type instanceof ReflectionUnionType, $type instanceof ReflectionIntersectionType => array_map(
+                fn(ReflectionNamedType $t): SchemaType => self::resolveSchemaType($t),
+                $type->getTypes(),
+            ),
+            $type instanceof ReflectionNamedType && $type->getName() === 'mixed' => SchemaType::cases(),
+            $type instanceof ReflectionNamedType => [self::resolveSchemaType($type)],
+            default => throw new SchemaException('Unknown type: ' . $type),
+        };
+
+        return count($matchedTypes) === 1
+            ? $matchedTypes[0]->instance()
+            : new UnionSchema($matchedTypes);
     }
 
     /**
