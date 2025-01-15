@@ -78,10 +78,11 @@ $schema->toArray();
 
 // Convert to JSON string
 $schema->toJson();
+$schema->toJson(JSON_PRETTY_PRINT);
 
 $data = [
     'name' => 'John Doe',
-    'email' => 'john@example.com',
+    'email' => 'foo', // invalid email
     'age' => 16,
     'active' => true,
     'settings' => [
@@ -97,7 +98,7 @@ try {
 }
 
 // Or just get a boolean
-$schema->isValid($data);
+$schema->isValid($data); // false
 ```
 
 ## Available Schema Types
@@ -453,40 +454,8 @@ $schema
 
 ## Converting to JSON Schema
 
-You can convert any schema to a JSON Schema array or JSON string:
+TODO
 
-```php
-// Convert to array
-$jsonSchemaArray = $schema->toArray();
-
-// Convert to JSON string
-$jsonSchemaString = $schema->toJson();
-$jsonSchemaString = $schema->toJson(JSON_PRETTY_PRINT);
-```
-
-This will output a valid JSON Schema that can be used with any JSON Schema validator.
-
-Example JSON output:
-```json
-{
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "title": "user",
-    "description": "User schema",
-    "required": ["name", "email"],
-    "properties": {
-        "name": {
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 100
-        },
-        "email": {
-            "type": "string",
-            "format": "email"
-        }
-    }
-}
-```
 
 ## Credits
 
