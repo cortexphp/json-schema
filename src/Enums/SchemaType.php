@@ -12,6 +12,7 @@ use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
+use Cortex\JsonSchema\Exceptions\SchemaException;
 
 enum SchemaType: string
 {
@@ -36,6 +37,23 @@ enum SchemaType: string
             self::Object => new ObjectSchema($title),
             self::Array => new ArraySchema($title),
             self::Null => new NullSchema($title),
+        };
+    }
+
+    /**
+     * Create a new schema instance from a given scalar type.
+     */
+    public static function fromScalar(string $type): self
+    {
+        return match ($type) {
+            'int' => self::Integer,
+            'float' => self::Number,
+            'string' => self::String,
+            'array' => self::Array,
+            'bool' => self::Boolean,
+            'object' => self::Object,
+            'null' => self::Null,
+            default => throw new SchemaException('Unknown type: ' . $type),
         };
     }
 }

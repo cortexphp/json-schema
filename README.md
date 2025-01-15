@@ -40,24 +40,35 @@ $schema = SchemaFactory::object('user')
         SchemaFactory::object('settings')
             ->additionalProperties(false)
             ->properties([
-                SchemaFactory::string('theme')->enum(['light', 'dark']),
-                SchemaFactory::boolean('notifications')
+                SchemaFactory::string('theme')
+                    ->enum(['light', 'dark']),
             ]),
     );
 ```
 
-Or you can use the objects directly
+You can also use the objects directly instead of the factory methods.
 ```php
-$schema = new ObjectSchema('user')
+$schema = (new ObjectSchema('user'))
     ->description('User schema')
     ->properties(
-        new StringSchema('name')
+        (new StringSchema('name'))
             ->minLength(2)
             ->maxLength(100)
             ->required(),
-        new StringSchema('email')
+        (new StringSchema('email'))
             ->format(SchemaFormat::Email)
             ->required(),
+        (new IntegerSchema('age'))
+            ->minimum(18)
+            ->maximum(150),
+        (new BooleanSchema('active'))
+            ->default(true),
+        (new ObjectSchema('settings'))
+            ->additionalProperties(false)
+            ->properties(
+                (new StringSchema('theme'))
+                    ->enum(['light', 'dark']),
+            ),
     );
 ```
 
@@ -68,23 +79,24 @@ $schema->toArray();
 // Convert to JSON string
 $schema->toJson();
 
+$data = [
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'age' => 16,
+    'active' => true,
+    'settings' => [
+        'theme' => 'dark',
+    ],
+];
+
 // Validate data against the schema
 try {
-    $schema->validate([
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'age' => 16,
-        'active' => true,
-        'settings' => [
-            'theme' => 'dark',
-            'notifications' => true,
-        ],
-    ]);
+    $schema->validate($data);
 } catch (SchemaException $e) {
     echo $e->getMessage(); // "The data must match the 'email' format"
 }
 
-// Validate data against the schema
+// Or just get a boolean
 $schema->isValid($data);
 ```
 
@@ -368,6 +380,42 @@ $schema->isValid([
     },
     "required": ["name", "email"],
     "additionalProperties": false
+}
+```
+</details>
+
+---
+
+### Union Schema
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaType;
+
+$schema = SchemaFactory::union([SchemaType::String, SchemaType::Integer], 'id')
+    ->description('ID can be either a string or an integer')
+    ->enum(['abc123', 'def456', 1, 2, 3])
+    ->nullable();
+```
+
+```php
+$schema->isValid('abc123'); // true
+$schema->isValid(1); // true
+$schema->isValid(null); // true (because it's nullable)
+$schema->isValid(true); // false (not a string or integer)
+$schema->isValid('invalid'); // false (not in enum)
+```
+
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": ["string", "integer", "null"],
+    "title": "id",
+    "description": "ID can be either a string or an integer",
+    "enum": ["abc123", "def456", 1, 2, 3]
 }
 ```
 </details>

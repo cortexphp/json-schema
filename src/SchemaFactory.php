@@ -6,6 +6,7 @@ namespace Cortex\JsonSchema;
 
 use Cortex\JsonSchema\Types\NullSchema;
 use Cortex\JsonSchema\Types\ArraySchema;
+use Cortex\JsonSchema\Types\UnionSchema;
 use Cortex\JsonSchema\Types\NumberSchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
@@ -47,5 +48,13 @@ class SchemaFactory
     public static function null(?string $title = null): NullSchema
     {
         return new NullSchema($title);
+    }
+
+    /**
+     * @param array<int, \Cortex\JsonSchema\Enums\SchemaType> $types
+     */
+    public static function union(array $types, ?string $title = null): UnionSchema
+    {
+        return new UnionSchema($types, $title);
     }
 }

@@ -14,6 +14,11 @@ trait HasMetadata
     protected ?string $comment = null;
 
     /**
+     * @var array<array-key, mixed>|null
+     */
+    protected ?array $examples = null;
+
+    /**
      * Set the default value
      */
     public function default(mixed $value): static
@@ -68,6 +73,18 @@ trait HasMetadata
     }
 
     /**
+     * Add examples to the schema
+     *
+     * @param array<array-key, mixed> $examples
+     */
+    public function examples(array $examples): static
+    {
+        $this->examples = $examples;
+
+        return $this;
+    }
+
+    /**
      * Add metadata to the schema array
      *
      * @param array<string, mixed> $schema
@@ -86,6 +103,10 @@ trait HasMetadata
 
         if ($this->comment !== null) {
             $schema['$comment'] = $this->comment;
+        }
+
+        if ($this->examples !== null) {
+            $schema['examples'] = $this->examples;
         }
 
         return $schema;

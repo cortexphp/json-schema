@@ -21,6 +21,7 @@ trait HasValidation
     public function validate(mixed $value): void
     {
         $validator = new Validator();
+        $validator->parser()->setOption('defaultDraft', '07');
 
         try {
             $result = $validator->validate(

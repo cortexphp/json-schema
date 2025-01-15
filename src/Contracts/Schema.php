@@ -41,6 +41,28 @@ interface Schema
     public function isRequired(): bool;
 
     /**
+     * Add null type to schema.
+     */
+    public function nullable(): static;
+
+    /**
+     * Set the default value
+     */
+    public function default(mixed $value): static;
+
+    /**
+     * Set the allowed enum values.
+     *
+     * @param non-empty-array<int|string|bool|float|null> $values
+     */
+    public function enum(array $values): static;
+
+    /**
+     * Set the schema as required.
+     */
+    public function required(): static;
+
+    /**
      * Convert to array.
      *
      * @return array<string, mixed>
