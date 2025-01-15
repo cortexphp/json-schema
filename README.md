@@ -454,8 +454,34 @@ $schema
 
 ## Converting to JSON Schema
 
-TODO
+### From a Closure
 
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+$closure = function (string $name, array $fooArray, ?int $age = null): void {};
+
+$schema = SchemaFactory::fromClosure($closure);
+```
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "fooArray": {
+            "type": "array"
+        },
+        "age": {
+            "type": ["integer", "null"]
+        }
+    },
+    "required": ["name", "fooArray"]
+}
+```
 
 ## Credits
 
