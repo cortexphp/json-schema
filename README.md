@@ -7,6 +7,22 @@
 
 At the moment support is limited to [draft-07](https://json-schema.org/draft-07) since that is probably the most widely adopted version.
 
+# Why would I need this?
+
+There are many use cases for JSON Schema, but the most prevalent is usage around LLMs, in particular structured outputs and tool calling.
+
+In fact I'm building an AI framework currently that uses this package to generate JSON Schemas in lots of scenarios. More to come on that soon.
+
+## Features
+
+- 🏗️ **Fluent Builder API** - Build JSON Schemas using an intuitive fluent interface
+- 📝 **Draft-07 Support** - Full support for JSON Schema Draft-07 specification
+- ✅ **Validation** - Validate data against schemas with detailed error messages
+- 🔄 **Type Conversion** - Convert PHP types to JSON Schema types automatically
+- 🤝 **Conditional Schemas** - Support for if/then/else, allOf, anyOf, and not conditions
+- 🔄 **Reflection** - Generate schemas from PHP classes and closures
+- 💪 **Type Safety** - Built with PHP 8.3+ features and strict typing
+
 ## Installation
 
 Minimum PHP version: 8.3
