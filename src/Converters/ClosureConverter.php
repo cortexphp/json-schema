@@ -54,7 +54,7 @@ class ClosureConverter
     /**
      * Create a schema from a given type.
      *
-     * @param array<array-key, array{name: string, type: string|null, description: string|null}> $docParams
+     * @param array<array-key, array{name: string, types: array<array-key, string>, description: string|null}> $docParams
      */
     protected static function getSchemaFromReflectionParameter(
         ReflectionParameter $parameter,

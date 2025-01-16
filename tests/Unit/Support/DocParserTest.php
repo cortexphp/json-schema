@@ -20,34 +20,55 @@ it('can parse with no description', function (): void {
     expect($parser->description())->toBeNull();
 });
 
-it('can parse params', function (): void {
-    $docblock = '/**
-        @param ?string $nickname The nickname of the user
-        @param ?int $age The age of the user
-        @param float|int $price The price of the product
-        @param $status
-    */';
+it('can parse params and description', function (): void {
+    $docblock = <<<'EOD'
+        /**
+         * This is the description
+         * @param ?string $nickname The nickname of the user
+         * @param ?int $age The age of the user
+         * @param float|int $price The price of the product
+         * @param \Cortex\JsonSchema\Tests\Unit\Support\DocParserTest $test The test
+         * @param $any
+         */
+        EOD;
     $parser = new DocParser($docblock);
 
+    expect($parser->description())->toBe('This is the description');
     expect($parser->params())->toBe([
         [
             'name' => 'nickname',
-            'type' => '?string',
+            'types' => [
+                'string',
+                'null',
+            ],
             'description' => 'The nickname of the user',
         ],
         [
             'name' => 'age',
-            'type' => '?int',
+            'types' => [
+                'int',
+                'null',
+            ],
             'description' => 'The age of the user',
         ],
         [
             'name' => 'price',
-            'type' => '(float | int)',
+            'types' => [
+                'float',
+                'int',
+            ],
             'description' => 'The price of the product',
         ],
         [
-            'name' => 'status',
-            'type' => null,
+            'name' => 'test',
+            'types' => [
+                '\Cortex\JsonSchema\Tests\Unit\Support\DocParserTest',
+            ],
+            'description' => 'The test',
+        ],
+        [
+            'name' => 'any',
+            'types' => [],
             'description' => null,
         ],
     ]);

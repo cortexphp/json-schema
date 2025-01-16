@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit;
 
+use ArrayObject;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\SchemaFactory as Schema;
@@ -45,7 +46,7 @@ it('can create a schema with if/then/else conditions', function (): void {
     // Business type requires company_name and tax_id
     expect(fn() => $schema->validate([
         'type' => 'business',
-    ]))->toThrow(SchemaException::class);
+    ]))->toThrow(SchemaException::class, "The data is not valid on 'then' branch");
 
     expect(fn() => $schema->validate([
         'type' => 'business',
@@ -57,7 +58,7 @@ it('can create a schema with if/then/else conditions', function (): void {
     expect(fn() => $schema->validate([
         'type' => 'personal',
         'company_name' => 'Acme Inc',
-    ]))->toThrow(SchemaException::class);
+    ]))->toThrow(SchemaException::class, "const contains a value that doesn't match the type keyword");
 
     expect(fn() => $schema->validate([
         'type' => 'personal',
@@ -202,9 +203,9 @@ it('can create a schema with anyOf condition', function (): void {
 
     expect(fn() => $schema->validate([
         'credit_card' => 'invalid',
-    ]))->toThrow(SchemaException::class);
+    ]))->toThrow(SchemaException::class, 'The data should match at least one schema');
 
-    expect(fn() => $schema->validate([]))->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate(new ArrayObject()))->toThrow(SchemaException::class, 'The data should match at least one schema');
 });
 
 it('can create a schema with oneOf condition', function (): void {
