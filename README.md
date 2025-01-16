@@ -454,7 +454,7 @@ $schema
 
 ## Converting to JSON Schema
 
-This uses reflection to infer the schema from the closure parameters and docblocks.
+This uses reflection to infer the schema from the parameters and docblocks.
 
 ### From a Closure
 
@@ -497,6 +497,62 @@ $schema->toJson();
         }
     },
     "required": ["name", "meta"]
+}
+```
+
+### From a Class
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+class User
+{
+    /**
+     * @var string The name of the user
+     */
+    public string $name;
+
+    /**
+     * @var ?int The age of the user
+     */
+    public ?int $age = null;
+
+    /**
+     * @var float The height of the user in meters
+     */
+    public float $height = 1.7;
+}
+
+$schema = SchemaFactory::fromClass(User::class);
+
+$schema->toJson();
+```
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "User",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "The name of the user"
+        },
+        "age": {
+            "type": [
+                "integer",
+                "null"
+            ],
+            "description": "The age of the user",
+            "default": null
+        },
+        "height": {
+            "type": "number",
+            "description": "The height of the user in meters",
+            "default": 1.7
+        }
+    },
+    "required": ["name"]
 }
 ```
 

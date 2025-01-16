@@ -4,4 +4,5 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests;
 
-uses(TestCase::class)->in('Unit');
+arch()->preset()->php();
+arch()->preset()->security();

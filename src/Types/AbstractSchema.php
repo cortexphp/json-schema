@@ -43,16 +43,6 @@ abstract class AbstractSchema implements Schema
     }
 
     /**
-     * Get the type or types.
-     *
-     * @return \Cortex\JsonSchema\Enums\SchemaType|array<int, \Cortex\JsonSchema\Enums\SchemaType>
-     */
-    public function getType(): SchemaType|array
-    {
-        return $this->type;
-    }
-
-    /**
      * Add null type to schema.
      */
     public function nullable(): static

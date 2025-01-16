@@ -14,6 +14,7 @@ use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
+use Cortex\JsonSchema\Converters\ClassConverter;
 use Cortex\JsonSchema\Converters\ClosureConverter;
 
 class SchemaFactory
@@ -66,8 +67,21 @@ class SchemaFactory
         return new UnionSchema(SchemaType::cases(), $title);
     }
 
+    /**
+     * Create a schema from a given closure.
+     */
     public static function fromClosure(Closure $closure): ObjectSchema
     {
         return (new ClosureConverter($closure))->convert();
+    }
+
+    /**
+     * Create a schema from a given class.
+     *
+     * @param object|class-string $class
+     */
+    public static function fromClass(object|string $class, bool $publicOnly = true): ObjectSchema
+    {
+        return (new ClassConverter($class, $publicOnly))->convert();
     }
 }

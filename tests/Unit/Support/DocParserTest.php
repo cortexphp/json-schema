@@ -73,3 +73,25 @@ it('can parse params and description', function (): void {
         ],
     ]);
 });
+
+it('can parse variables', function (): void {
+    $docblock = '/** @var string $nickname The nickname of the user */';
+    $parser = new DocParser($docblock);
+
+    expect($parser->variable())->toBe([
+        'name' => 'nickname',
+        'types' => ['string'],
+        'description' => 'The nickname of the user',
+    ]);
+});
+
+it('can parse variables with multiple types', function (): void {
+    $docblock = '/** @var string|int $nickname The nickname of the user */';
+    $parser = new DocParser($docblock);
+
+    expect($parser->variable())->toBe([
+        'name' => 'nickname',
+        'types' => ['string', 'int'],
+        'description' => 'The nickname of the user',
+    ]);
+});

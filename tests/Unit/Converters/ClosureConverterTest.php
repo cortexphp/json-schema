@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit\Converters;
 
 use Cortex\JsonSchema\Types\ObjectSchema;
+use Cortex\JsonSchema\Exceptions\SchemaException;
 use Cortex\JsonSchema\Converters\ClosureConverter;
 
 it('can create a schema from a closure', function (): void {
@@ -27,6 +28,7 @@ it('can create a schema from a closure', function (): void {
                     'integer',
                     'null',
                 ],
+                'default' => null,
             ],
         ],
         'required' => [
@@ -107,6 +109,18 @@ it('can create a schema from a closure with an integer backed enum', function ()
         ],
     ]);
 });
+
+it('throws an exception if the enum is not a backed enum', function (): void {
+    enum StatusNoBackingType
+    {
+        case Draft;
+        case Published;
+        case Archived;
+    }
+
+    $closure = function (StatusNoBackingType $status): void {};
+    (new ClosureConverter($closure))->convert();
+})->throws(SchemaException::class, 'Enum type has no backing type: Cortex\JsonSchema\Tests\Unit\Converters\StatusNoBackingType');
 
 it('can create a schema from a closure with a union type', function (): void {
     $closure = function (int|string $foo): void {};
@@ -266,6 +280,7 @@ it('can create a schema from a closure with default values', function (): void {
                     'string',
                     'null',
                 ],
+                'default' => null,
             ],
             'tags' => [
                 'type' => 'array',

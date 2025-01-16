@@ -16,6 +16,7 @@ use PHPStan\PhpDocParser\Parser\ConstExprParser;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode;
 use PHPStan\PhpDocParser\Ast\Type\NullableTypeNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocChildNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\VarTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ParamTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\TypelessParamTagValueNode;
 
@@ -46,7 +47,7 @@ class DocParser
         return array_map(
             static fn(ParamTagValueNode|TypelessParamTagValueNode $param): array => [
                 'name' => ltrim($param->parameterName, '$'),
-                'types' => self::mapParamToTypes($param),
+                'types' => self::mapValueNodeToTypes($param),
                 'description' => empty($param->description) ? null : $param->description,
             ],
             array_merge(
@@ -57,12 +58,33 @@ class DocParser
     }
 
     /**
-     * Map the parameter to its types.
+     * Get the variable from the docblock.
+     *
+     * @return array{name: string, types: array<array-key, string>, description: string|null}|array{}
+     */
+    public function variable(): array
+    {
+        $vars = array_map(
+            static fn(VarTagValueNode $var): array => [
+                'name' => ltrim($var->variableName, '$'),
+                'types' => self::mapValueNodeToTypes($var),
+                'description' => $var->description === '' ? null : $var->description,
+            ],
+            $this->parse()->getVarTagValues(),
+        );
+
+        // There should only be one variable in the docblock.
+        return $vars[0] ?? [];
+    }
+
+    /**
+     * Map the value node to its types.
      *
      * @return array<array-key, string>
      */
-    protected static function mapParamToTypes(ParamTagValueNode|TypelessParamTagValueNode $param): array
-    {
+    protected static function mapValueNodeToTypes(
+        ParamTagValueNode|TypelessParamTagValueNode|VarTagValueNode $param,
+    ): array {
         if ($param instanceof TypelessParamTagValueNode) {
             return [];
         }

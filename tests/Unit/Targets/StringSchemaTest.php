@@ -37,6 +37,22 @@ it('can create a string schema with length constraints', function (): void {
     expect(fn() => $schema->validate('valid-username'))->not->toThrow(SchemaException::class);
 });
 
+it('throws an exception if the minLength is greater than the maxLength', function (): void {
+    Schema::string('username')
+        ->minLength(51)
+        ->maxLength(50);
+})->throws(SchemaException::class, 'Maximum length must be greater than or equal to minimum length');
+
+it('throws an exception if the minLength is less than 0', function (): void {
+    Schema::string('username')
+        ->minLength(-1);
+})->throws(SchemaException::class, 'Minimum length must be greater than or equal to 0');
+
+it('throws an exception if the maxLength is less than 0', function (): void {
+    Schema::string('username')
+        ->maxLength(-1);
+})->throws(SchemaException::class, 'Maximum length must be greater than or equal to 0');
+
 it('can create a string schema with pattern validation', function (): void {
     $schema = Schema::string('password')
         ->description('User password')
@@ -181,4 +197,20 @@ it('can create a nullable string schema with enum values', function (): void {
     expect(fn() => $schema->validate('medium'))->not->toThrow(SchemaException::class);
     expect(fn() => $schema->validate('high'))->not->toThrow(SchemaException::class);
     expect(fn() => $schema->validate(null))->not->toThrow(SchemaException::class);
+});
+
+it('can mark a string schema as deprecated', function (): void {
+    $schema = Schema::string('foo')
+        ->comment("Don't use this")
+        ->deprecated();
+
+    expect($schema->toArray())
+        ->toHaveKey('deprecated', true)
+        ->toHaveKey('$comment', "Don't use this");
+});
+
+it('can create a string schema with examples', function (): void {
+    $schema = Schema::string('foo')->examples(['foo', 'bar']);
+
+    expect($schema->toArray())->toHaveKey('examples', ['foo', 'bar']);
 });

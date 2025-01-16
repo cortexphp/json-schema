@@ -36,14 +36,6 @@ class ArraySchema extends AbstractSchema
     }
 
     /**
-     * Get the contains schema
-     */
-    public function getContains(): ?Schema
-    {
-        return $this->contains;
-    }
-
-    /**
      * Set the minimum number of items that must match the contains schema
      *
      * @throws \Cortex\JsonSchema\Exceptions\SchemaException
@@ -64,14 +56,6 @@ class ArraySchema extends AbstractSchema
     }
 
     /**
-     * Get the minimum number of items that must match the contains schema
-     */
-    public function getMinContains(): ?int
-    {
-        return $this->minContains;
-    }
-
-    /**
      * Set the maximum number of items that can match the contains schema
      *
      * @throws \Cortex\JsonSchema\Exceptions\SchemaException
@@ -89,14 +73,6 @@ class ArraySchema extends AbstractSchema
         $this->maxContains = $max;
 
         return $this;
-    }
-
-    /**
-     * Get the maximum number of items that can match the contains schema
-     */
-    public function getMaxContains(): ?int
-    {
-        return $this->maxContains;
     }
 
     /**

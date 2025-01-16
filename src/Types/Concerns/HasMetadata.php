@@ -9,6 +9,8 @@ trait HasMetadata
 {
     protected mixed $default = null;
 
+    protected bool $hasDefault = false;
+
     protected bool $deprecated = false;
 
     protected ?string $comment = null;
@@ -24,16 +26,9 @@ trait HasMetadata
     public function default(mixed $value): static
     {
         $this->default = $value;
+        $this->hasDefault = true;
 
         return $this;
-    }
-
-    /**
-     * Get the default value
-     */
-    public function getDefault(): mixed
-    {
-        return $this->default;
     }
 
     /**
@@ -47,14 +42,6 @@ trait HasMetadata
     }
 
     /**
-     * Check if the schema is deprecated
-     */
-    public function isDeprecated(): bool
-    {
-        return $this->deprecated;
-    }
-
-    /**
      * Set a comment for the schema
      */
     public function comment(string $comment): static
@@ -62,14 +49,6 @@ trait HasMetadata
         $this->comment = $comment;
 
         return $this;
-    }
-
-    /**
-     * Get the schema comment
-     */
-    public function getComment(): ?string
-    {
-        return $this->comment;
     }
 
     /**
@@ -93,7 +72,7 @@ trait HasMetadata
      */
     protected function addMetadataToSchema(array $schema): array
     {
-        if ($this->default !== null) {
+        if ($this->hasDefault) {
             $schema['default'] = $this->default;
         }
 

@@ -63,16 +63,6 @@ trait HasProperties
     }
 
     /**
-     * Get the property keys
-     *
-     * @return array<int, string>
-     */
-    public function getPropertyKeys(): array
-    {
-        return array_keys($this->properties);
-    }
-
-    /**
      * Set the minimum number of properties
      *
      * @throws \Cortex\JsonSchema\Exceptions\SchemaException
@@ -90,14 +80,6 @@ trait HasProperties
         $this->minProperties = $min;
 
         return $this;
-    }
-
-    /**
-     * Get the minimum number of properties
-     */
-    public function getMinProperties(): ?int
-    {
-        return $this->minProperties;
     }
 
     /**
@@ -121,14 +103,6 @@ trait HasProperties
     }
 
     /**
-     * Get the maximum number of properties
-     */
-    public function getMaxProperties(): ?int
-    {
-        return $this->maxProperties;
-    }
-
-    /**
      * Set the schema for property names
      */
     public function propertyNames(Schema $schema): static
@@ -136,14 +110,6 @@ trait HasProperties
         $this->propertyNames = $schema;
 
         return $this;
-    }
-
-    /**
-     * Get the property names schema
-     */
-    public function getPropertyNames(): ?Schema
-    {
-        return $this->propertyNames;
     }
 
     /**

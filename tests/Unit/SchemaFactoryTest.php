@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit;
 
+use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\NullSchema;
 use Cortex\JsonSchema\Types\ArraySchema;
+use Cortex\JsonSchema\Types\UnionSchema;
 use Cortex\JsonSchema\Types\NumberSchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
@@ -34,6 +36,12 @@ it('can create different schema types', function (): void {
 
     // Test string schema creation
     expect(Schema::string('name'))->toBeInstanceOf(StringSchema::class);
+
+    // Test union schema creation
+    expect(Schema::union([SchemaType::String, SchemaType::Integer]))->toBeInstanceOf(UnionSchema::class);
+
+    // Test mixed schema creation
+    expect(Schema::mixed())->toBeInstanceOf(UnionSchema::class);
 });
 
 it('can create schemas with default metadata', function (): void {
@@ -71,6 +79,7 @@ it('can create a schema from a closure', function (): void {
                     'integer',
                     'null',
                 ],
+                'default' => null,
             ],
         ],
         'required' => [

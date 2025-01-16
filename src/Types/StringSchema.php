@@ -27,7 +27,7 @@ class StringSchema extends AbstractSchema
     public function minLength(int $length): static
     {
         if ($length < 0) {
-            throw new SchemaException('Minimum length must be non-negative');
+            throw new SchemaException('Minimum length must be greater than or equal to 0');
         }
 
         $this->minLength = $length;
@@ -43,7 +43,7 @@ class StringSchema extends AbstractSchema
     public function maxLength(int $length): static
     {
         if ($length < 0) {
-            throw new SchemaException('Maximum length must be non-negative');
+            throw new SchemaException('Maximum length must be greater than or equal to 0');
         }
 
         if ($this->minLength !== null && $length < $this->minLength) {

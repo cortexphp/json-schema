@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Contracts;
 
-use Cortex\JsonSchema\Enums\SchemaType;
-
 interface Schema
 {
     /**
@@ -22,18 +20,6 @@ interface Schema
      * Set the description
      */
     public function description(string $description): static;
-
-    /**
-     * Get the description
-     */
-    public function getDescription(): ?string;
-
-    /**
-     * Get the type or types
-     *
-     * @return \Cortex\JsonSchema\Enums\SchemaType|array<int, \Cortex\JsonSchema\Enums\SchemaType>
-     */
-    public function getType(): SchemaType|array;
 
     /**
      * Determine if the schema is required

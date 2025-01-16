@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit;
 
 use Cortex\JsonSchema\Enums\SchemaFormat;
+use Opis\JsonSchema\Errors\ValidationError;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -97,6 +98,7 @@ it('can get the underlying errors', function (): void {
                 "The data must match the 'email' format",
             ],
         ]);
+        expect($e->getError())->toBeInstanceOf(ValidationError::class);
 
         throw $e;
     }

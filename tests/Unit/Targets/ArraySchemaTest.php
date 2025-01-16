@@ -75,3 +75,51 @@ it('can create an array schema', function (): void {
         'All array items must match schema',
     );
 });
+
+it('can validate array contains', function (): void {
+    // First test just contains without min/max
+    $basicSchema = Schema::array('numbers')
+        ->description('List of numbers')
+        // Must contain at least one number between 10 and 20
+        ->contains(Schema::number()->minimum(10)->maximum(20));
+
+    // Test basic contains validation
+    expect(fn() => $basicSchema->validate([15, 5, 6]))->not->toThrow(SchemaException::class);
+    expect(fn() => $basicSchema->validate([1, 2, 3]))->toThrow(
+        SchemaException::class,
+        'At least one array item must match schema',
+    );
+
+    // Now test with minContains and maxContains
+    $schema = Schema::array('numbers')
+        ->description('List of numbers')
+        ->contains(
+            Schema::number()
+                ->minimum(10)
+                ->maximum(20),
+        )
+        ->minContains(2)
+        ->maxContains(3);
+
+    $schemaArray = $schema->toArray();
+
+    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('type', 'array');
+    expect($schemaArray)->toHaveKey('title', 'numbers');
+    expect($schemaArray)->toHaveKey('description', 'List of numbers');
+    expect($schemaArray)->toHaveKey('contains.type', 'number');
+    expect($schemaArray)->toHaveKey('contains.minimum', 10);
+    expect($schemaArray)->toHaveKey('contains.maximum', 20);
+    expect($schemaArray)->toHaveKey('minContains', 2);
+    expect($schemaArray)->toHaveKey('maxContains', 3);
+
+    // Valid cases - arrays with 2-3 numbers between 10-20
+    expect(fn() => $schema->validate([15, 12, 5]))->not->toThrow(SchemaException::class);
+    expect(fn() => $schema->validate([15, 12, 18, 5]))->not->toThrow(SchemaException::class);
+
+    // Test no matching items
+    expect(fn() => $schema->validate([1, 2, 3]))->toThrow(
+        SchemaException::class,
+        'At least one array item must match schema',
+    );
+});

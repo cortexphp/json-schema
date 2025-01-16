@@ -4,28 +4,34 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Converters;
 
-use Closure;
 use BackedEnum;
 use ReflectionEnum;
-use ReflectionFunction;
+use ReflectionClass;
+use ReflectionProperty;
 use ReflectionNamedType;
-use ReflectionParameter;
 use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
 use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
 
-class ClosureConverter implements Converter
+class ClassConverter implements Converter
 {
     use InteractsWithTypes;
 
-    protected ReflectionFunction $reflection;
+    /**
+     * @var ReflectionClass<object>
+     */
+    protected ReflectionClass $reflection;
 
+    /**
+     * @param object|class-string $class
+     */
     public function __construct(
-        protected Closure $closure,
+        protected object|string $class,
+        protected bool $publicOnly = true,
     ) {
-        $this->reflection = new ReflectionFunction($this->closure);
+        $this->reflection = new ReflectionClass($this->class);
     }
 
     public function convert(): ObjectSchema
@@ -33,19 +39,20 @@ class ClosureConverter implements Converter
         $schema = new ObjectSchema();
 
         // Get the description from the doc parser
-        $description = $this->getDocParser()?->description() ?? null;
+        $description = $this->getDocParser($this->reflection)?->description() ?? null;
 
         // Add the description to the schema if it exists
         if ($description !== null) {
             $schema->description($description);
         }
 
-        // Get the parameters from the doc parser
-        $params = $this->getDocParser()?->params() ?? [];
+        $properties = $this->reflection->getProperties(
+            $this->publicOnly ? ReflectionProperty::IS_PUBLIC : null,
+        );
 
-        // Add the parameters to the objectschema
-        foreach ($this->reflection->getParameters() as $parameter) {
-            $schema->properties(self::getSchemaFromReflectionParameter($parameter, $params));
+        // Add the properties to the object schema
+        foreach ($properties as $property) {
+            $schema->properties(self::getSchemaFromReflectionProperty($property));
         }
 
         return $schema;
@@ -53,34 +60,31 @@ class ClosureConverter implements Converter
 
     /**
      * Create a schema from a given type.
-     *
-     * @param array<array-key, array{name: string, types: array<array-key, string>, description: string|null}> $docParams
      */
-    protected function getSchemaFromReflectionParameter(
-        ReflectionParameter $parameter,
-        array $docParams = [],
+    protected function getSchemaFromReflectionProperty(
+        ReflectionProperty $property,
     ): Schema {
-        $type = $parameter->getType();
+        $type = $property->getType();
 
         // @phpstan-ignore argument.type
         $schema = self::getSchemaFromReflectionType($type);
 
-        $schema->title($parameter->getName());
+        $schema->title($property->getName());
 
         // Add the description to the schema if it exists
-        $param = array_filter($docParams, static fn(array $param): bool => $param['name'] === $parameter->getName());
-        $description = $param[0]['description'] ?? null;
+        $variable = $this->getDocParser($property)?->variable();
 
-        if ($description !== null) {
-            $schema->description($description);
+        // Add the description to the schema if it exists
+        if (isset($variable['description']) && $variable['description'] !== '') {
+            $schema->description($variable['description']);
         }
 
         if ($type === null || $type->allowsNull()) {
             $schema->nullable();
         }
 
-        if ($parameter->isDefaultValueAvailable() && ! $parameter->isDefaultValueConstant()) {
-            $defaultValue = $parameter->getDefaultValue();
+        if ($property->hasDefaultValue()) {
+            $defaultValue = $property->getDefaultValue();
 
             // If the default value is a backed enum, use its value
             if ($defaultValue instanceof BackedEnum) {
@@ -88,9 +92,7 @@ class ClosureConverter implements Converter
             }
 
             $schema->default($defaultValue);
-        }
-
-        if (! $parameter->isOptional()) {
+        } else {
             $schema->required();
         }
 
@@ -112,9 +114,12 @@ class ClosureConverter implements Converter
         return $schema;
     }
 
-    protected function getDocParser(): ?DocParser
+    /**
+     * @param ReflectionProperty|ReflectionClass<object> $reflection
+     */
+    protected function getDocParser(ReflectionProperty|ReflectionClass $reflection): ?DocParser
     {
-        if ($docComment = $this->reflection->getDocComment()) {
+        if ($docComment = $reflection->getDocComment()) {
             return new DocParser($docComment);
         }
 
