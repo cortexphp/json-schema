@@ -7,9 +7,11 @@
 
 At the moment support is limited to [draft-07](https://json-schema.org/draft-07) since that is probably the most widely adopted version.
 
-# Why would I need this?
+## Why?
 
 There are many use cases for JSON Schema, but the most prevalent is usage around LLMs, in particular structured outputs and tool calling.
+
+I found myself looking for a nice, fluent way to build JSON Schemas, but couldn't find anything that fit my needs.
 
 In fact I'm building an AI framework currently that uses this package to generate JSON Schemas in lots of scenarios. More to come on that soon.
 
