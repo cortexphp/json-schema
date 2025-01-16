@@ -505,6 +505,9 @@ $schema->toJson();
 ```php
 use Cortex\JsonSchema\SchemaFactory;
 
+/**
+ * This is the description of the class
+ */
 class User
 {
     /**
@@ -523,8 +526,10 @@ class User
     public float $height = 1.7;
 }
 
+// Build the schema from the class
 $schema = SchemaFactory::fromClass(User::class);
 
+// Convert to JSON Schema
 $schema->toJson();
 ```
 
@@ -533,6 +538,7 @@ $schema->toJson();
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "title": "User",
+    "description": "This is the description of the class",
     "properties": {
         "name": {
             "type": "string",

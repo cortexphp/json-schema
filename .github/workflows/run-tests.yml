@@ -39,3 +39,6 @@ jobs:
 
       - name: Execute tests
         run: vendor/bin/pest --colors=always
+
+      - name: Check type coverage
+        run: vendor/bin/pest --type-coverage --min=100
