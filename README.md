@@ -1,4 +1,4 @@
-![banner](https://github.com/user-attachments/assets/d1e4b686-ca17-4850-8fda-6dbec7da1ae8)
+![banner](https://github.com/user-attachments/assets/ec631b0d-103b-46c4-864e-d5b85eb17597)
 
 # Fluently build and validate JSON Schemas
 
