@@ -3,6 +3,7 @@
 # Fluently build and validate JSON Schemas
 
 [![Latest Version](https://img.shields.io/packagist/v/cortexphp/json-schema.svg?style=flat-square&logo=composer)](https://packagist.org/packages/cortexphp/json-schema)
+![GitHub Actions Test Workflow Status](https://img.shields.io/github/actions/workflow/status/cortexphp/json-schema/run-tests.yml?style=flat-square&logo=github)
 ![GitHub License](https://img.shields.io/github/license/cortexphp/json-schema?style=flat-square&logo=github)
 
 [What is JSON Schema?](https://json-schema.org/overview/what-is-jsonschema)
