@@ -5,29 +5,30 @@
 
 [What is JSON Schema?](https://json-schema.org/overview/what-is-jsonschema)
 
-At the moment support is limited to [draft-07](https://json-schema.org/draft-07) since that is probably the most widely adopted version.
-
-## Why?
-
-There are many use cases for JSON Schema, but the most prevalent is usage around LLMs, in particular structured outputs and tool calling.
-
-I found myself looking for a nice, fluent way to build JSON Schemas, but couldn't find anything that fit my needs.
-
-In fact I'm building an AI framework currently that uses this package to generate JSON Schemas in lots of scenarios. More to come on that soon.
+Support is limited to [draft-07](https://json-schema.org/draft-07) at the moment.
 
 ## Features
 
 - 🏗️ **Fluent Builder API** - Build JSON Schemas using an intuitive fluent interface
 - 📝 **Draft-07 Support** - Full support for JSON Schema Draft-07 specification
 - ✅ **Validation** - Validate data against schemas with detailed error messages
-- 🔄 **Type Conversion** - Convert PHP types to JSON Schema types automatically
 - 🤝 **Conditional Schemas** - Support for if/then/else, allOf, anyOf, and not conditions
 - 🔄 **Reflection** - Generate schemas from PHP classes and closures
 - 💪 **Type Safety** - Built with PHP 8.3+ features and strict typing
 
-## Installation
+## Why?
 
-Minimum PHP version: 8.3
+I found myself looking for a nice, fluent way to build JSON Schemas, but couldn't find anything that fit my needs.
+
+There are many use cases, but the most prevalent right now is usage around LLMs, in particular structured outputs and tool calling.
+
+In fact I'm building an AI framework currently that uses this package to generate JSON Schemas in lots of scenarios. More to come on that soon!
+
+## Requirements
+
+- PHP 8.3+
+
+## Installation
 
 ```bash
 composer require cortexphp/json-schema
