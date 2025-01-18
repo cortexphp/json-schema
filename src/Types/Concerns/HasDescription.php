@@ -20,6 +20,14 @@ trait HasDescription
     }
 
     /**
+     * Get the description
+     */
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    /**
      * Add description field to schema array
      *
      * @param array<string, mixed> $schema

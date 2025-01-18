@@ -22,6 +22,11 @@ interface Schema
     public function description(string $description): static;
 
     /**
+     * Get the description
+     */
+    public function getDescription(): ?string;
+
+    /**
      * Determine if the schema is required
      */
     public function isRequired(): bool;
