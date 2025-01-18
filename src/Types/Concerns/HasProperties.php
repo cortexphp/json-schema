@@ -113,6 +113,14 @@ trait HasProperties
     }
 
     /**
+     * @return array<int, string>
+     */
+    public function getPropertyKeys(): array
+    {
+        return array_keys($this->properties);
+    }
+
+    /**
      * Add properties to schema array
      *
      * @param array<string, mixed> $schema

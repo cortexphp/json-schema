@@ -41,6 +41,7 @@ it('can create a basic object schema', function (): void {
     expect($schemaArray)->toHaveKey('properties.age.minimum', 18);
     expect($schemaArray)->toHaveKey('properties.age.maximum', 150);
     expect($schemaArray)->toHaveKey('required', ['name', 'email']);
+    expect($schema->getPropertyKeys())->toBe(['name', 'email', 'age']);
 
     // Validation tests
     expect(fn() => $schema->validate([

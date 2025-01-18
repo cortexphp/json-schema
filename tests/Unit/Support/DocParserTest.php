@@ -92,3 +92,13 @@ it('can parse variables with multiple types', function (): void {
     expect($variable->types)->toBe(['string', 'int']);
     expect($variable->description)->toBe('The nickname of the user');
 });
+
+it('can parse a multiline description', function (): void {
+    $docblock = '/** This is a test docblock
+     * with multiple lines
+     * and a new line
+     */';
+    $parser = new DocParser($docblock);
+
+    expect($parser->description())->toBe("This is a test docblock\nwith multiple lines\nand a new line");
+});
