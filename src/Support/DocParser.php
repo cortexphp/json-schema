@@ -40,41 +40,41 @@ class DocParser
     /**
      * Get the parameters from the docblock.
      *
-     * @return array<array-key, array{name: string, types: array<array-key, string>, description: string|null}>
+     * @return \Cortex\JsonSchema\Support\NodeCollection<array-key, \Cortex\JsonSchema\Support\NodeData>
      */
-    public function params(): array
+    public function params(): NodeCollection
     {
-        return array_map(
-            static fn(ParamTagValueNode|TypelessParamTagValueNode $param): array => [
-                'name' => ltrim($param->parameterName, '$'),
-                'types' => self::mapValueNodeToTypes($param),
-                'description' => empty($param->description) ? null : $param->description,
-            ],
+        $nodes = array_map(
+            static fn(ParamTagValueNode|TypelessParamTagValueNode $param): NodeData => new NodeData(
+                name: ltrim($param->parameterName, '$'),
+                types: self::mapValueNodeToTypes($param),
+                description: empty($param->description) ? null : $param->description,
+            ),
             array_merge(
                 $this->parse()->getParamTagValues(),
                 $this->parse()->getTypelessParamTagValues(),
             ),
         );
+
+        return new NodeCollection($nodes);
     }
 
     /**
      * Get the variable from the docblock.
-     *
-     * @return array{name: string, types: array<array-key, string>, description: string|null}|array{}
      */
-    public function variable(): array
+    public function variable(): ?NodeData
     {
         $vars = array_map(
-            static fn(VarTagValueNode $var): array => [
-                'name' => ltrim($var->variableName, '$'),
-                'types' => self::mapValueNodeToTypes($var),
-                'description' => $var->description === '' ? null : $var->description,
-            ],
+            static fn(VarTagValueNode $var): NodeData => new NodeData(
+                name: ltrim($var->variableName, '$'),
+                types: self::mapValueNodeToTypes($var),
+                description: $var->description === '' ? null : $var->description,
+            ),
             $this->parse()->getVarTagValues(),
         );
 
         // There should only be one variable in the docblock.
-        return $vars[0] ?? [];
+        return $vars[0] ?? null;
     }
 
     /**

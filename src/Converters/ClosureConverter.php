@@ -14,6 +14,7 @@ use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
+use Cortex\JsonSchema\Support\NodeCollection;
 use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
 
 class ClosureConverter implements Converter
@@ -41,7 +42,7 @@ class ClosureConverter implements Converter
         }
 
         // Get the parameters from the doc parser
-        $params = $this->getDocParser()?->params() ?? [];
+        $params = $this->getDocParser()?->params();
 
         // Add the parameters to the objectschema
         foreach ($this->reflection->getParameters() as $parameter) {
@@ -54,11 +55,11 @@ class ClosureConverter implements Converter
     /**
      * Create a schema from a given type.
      *
-     * @param array<array-key, array{name: string, types: array<array-key, string>, description: string|null}> $docParams
+     * @param \Cortex\JsonSchema\Support\NodeCollection<array-key, \Cortex\JsonSchema\Support\NodeData> $docParams
      */
     protected function getSchemaFromReflectionParameter(
         ReflectionParameter $parameter,
-        array $docParams = [],
+        ?NodeCollection $docParams = null,
     ): Schema {
         $type = $parameter->getType();
 
@@ -67,12 +68,11 @@ class ClosureConverter implements Converter
 
         $schema->title($parameter->getName());
 
-        // Add the description to the schema if it exists
-        $param = array_filter($docParams, static fn(array $param): bool => $param['name'] === $parameter->getName());
-        $description = $param[0]['description'] ?? null;
+        $docParam = $docParams?->get($parameter->getName());
 
-        if ($description !== null) {
-            $schema->description($description);
+        // Add the description to the schema if it exists
+        if ($docParam?->description !== null) {
+            $schema->description($docParam->description);
         }
 
         if ($type === null || $type->allowsNull()) {

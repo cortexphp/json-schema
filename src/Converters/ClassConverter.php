@@ -71,12 +71,11 @@ class ClassConverter implements Converter
 
         $schema->title($property->getName());
 
-        // Add the description to the schema if it exists
         $variable = $this->getDocParser($property)?->variable();
 
         // Add the description to the schema if it exists
-        if (isset($variable['description']) && $variable['description'] !== '') {
-            $schema->description($variable['description']);
+        if ($variable?->description !== null) {
+            $schema->description($variable->description);
         }
 
         if ($type === null || $type->allowsNull()) {

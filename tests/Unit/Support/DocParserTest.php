@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit;
 
+use Cortex\JsonSchema\Support\NodeData;
 use Cortex\JsonSchema\Support\DocParser;
+use Cortex\JsonSchema\Support\NodeCollection;
 
 it('can parse description', function (): void {
     $docblock = '/** This is a test docblock */';
@@ -34,64 +36,59 @@ it('can parse params and description', function (): void {
     $parser = new DocParser($docblock);
 
     expect($parser->description())->toBe('This is the description');
-    expect($parser->params())->toBe([
-        [
-            'name' => 'nickname',
-            'types' => [
-                'string',
-                'null',
-            ],
-            'description' => 'The nickname of the user',
-        ],
-        [
-            'name' => 'age',
-            'types' => [
-                'int',
-                'null',
-            ],
-            'description' => 'The age of the user',
-        ],
-        [
-            'name' => 'price',
-            'types' => [
-                'float',
-                'int',
-            ],
-            'description' => 'The price of the product',
-        ],
-        [
-            'name' => 'test',
-            'types' => [
-                '\Cortex\JsonSchema\Tests\Unit\Support\DocParserTest',
-            ],
-            'description' => 'The test',
-        ],
-        [
-            'name' => 'any',
-            'types' => [],
-            'description' => null,
-        ],
-    ]);
+
+    $params = $parser->params();
+
+    expect($params)->toBeInstanceOf(NodeCollection::class);
+
+    expect($params->get('nickname'))->toBeInstanceOf(NodeData::class);
+    expect($params->get('nickname')->name)->toBe('nickname');
+    expect($params->get('nickname')->description)->toBe('The nickname of the user');
+    expect($params->get('nickname')->types)->toBe(['string', 'null']);
+
+    expect($params->get('age'))->toBeInstanceOf(NodeData::class);
+    expect($params->get('age')->name)->toBe('age');
+    expect($params->get('age')->description)->toBe('The age of the user');
+    expect($params->get('age')->types)->toBe(['int', 'null']);
+
+    expect($params->get('price'))->toBeInstanceOf(NodeData::class);
+    expect($params->get('price')->name)->toBe('price');
+    expect($params->get('price')->description)->toBe('The price of the product');
+    expect($params->get('price')->types)->toBe(['float', 'int']);
+
+    expect($params->get('test'))->toBeInstanceOf(NodeData::class);
+    expect($params->get('test')->name)->toBe('test');
+    expect($params->get('test')->description)->toBe('The test');
+    expect($params->get('test')->types)->toBe(['\Cortex\JsonSchema\Tests\Unit\Support\DocParserTest']);
+
+    expect($params->get('any'))->toBeInstanceOf(NodeData::class);
+    expect($params->get('any')->name)->toBe('any');
+    expect($params->get('any')->description)->toBeNull();
+    expect($params->get('any')->types)->toBe([]);
 });
 
 it('can parse variables', function (): void {
     $docblock = '/** @var string $nickname The nickname of the user */';
     $parser = new DocParser($docblock);
 
-    expect($parser->variable())->toBe([
-        'name' => 'nickname',
-        'types' => ['string'],
-        'description' => 'The nickname of the user',
-    ]);
+    $variable = $parser->variable();
+
+    expect($variable)->toBeInstanceOf(NodeData::class);
+
+    expect($variable->name)->toBe('nickname');
+    expect($variable->types)->toBe(['string']);
+    expect($variable->description)->toBe('The nickname of the user');
 });
 
 it('can parse variables with multiple types', function (): void {
     $docblock = '/** @var string|int $nickname The nickname of the user */';
     $parser = new DocParser($docblock);
 
-    expect($parser->variable())->toBe([
-        'name' => 'nickname',
-        'types' => ['string', 'int'],
-        'description' => 'The nickname of the user',
-    ]);
+    $variable = $parser->variable();
+
+    expect($variable)->toBeInstanceOf(NodeData::class);
+
+    expect($variable->name)->toBe('nickname');
+    expect($variable->types)->toBe(['string', 'int']);
+    expect($variable->description)->toBe('The nickname of the user');
 });
