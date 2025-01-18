@@ -87,4 +87,6 @@ it('can create a schema from a closure', function (): void {
             'fooArray',
         ],
     ]);
+
+    expect($schema->toJson())->toBe(json_encode($schema->toArray()));
 });

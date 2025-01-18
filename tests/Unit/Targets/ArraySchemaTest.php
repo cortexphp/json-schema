@@ -123,3 +123,15 @@ it('can validate array contains', function (): void {
         'At least one array item must match schema',
     );
 });
+
+it('throws an exception if the minContains is less than 0', function (): void {
+    Schema::array('numbers')
+        ->description('List of numbers')
+        ->minContains(-1);
+})->throws(SchemaException::class, 'minContains must be greater than or equal to 0');
+
+it('throws an exception if the maxContains is less than 0', function (): void {
+    Schema::array('numbers')
+        ->description('List of numbers')
+        ->maxContains(-1);
+})->throws(SchemaException::class, 'maxContains must be greater than or equal to 0');

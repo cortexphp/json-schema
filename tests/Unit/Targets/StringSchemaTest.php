@@ -105,6 +105,12 @@ it('can create a string schema with format', function (): void {
     );
 
     expect(fn() => $schema->validate('test@example.com'))->not->toThrow(SchemaException::class);
+
+    $schema = Schema::string('email')
+        ->description('User email address')
+        ->format('custom');
+
+    expect($schema->toArray())->toHaveKey('format', 'custom');
 });
 
 it('can create a nullable string schema', function (): void {
@@ -122,10 +128,14 @@ it('can create a nullable string schema', function (): void {
     expect(fn() => $schema->validate(null))->not->toThrow(SchemaException::class);
     expect(fn() => $schema->validate('John'))->not->toThrow(SchemaException::class);
 
+    expect($schema->isValid(null))->toBeTrue();
+    expect($schema->isValid('John'))->toBeTrue();
+
     expect(fn() => $schema->validate(123))->toThrow(
         SchemaException::class,
         'The data (integer) must match the type: string, null',
     );
+    expect($schema->isValid(123))->toBeFalse();
 });
 
 it('can create a read-only string schema', function (): void {

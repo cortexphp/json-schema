@@ -173,3 +173,25 @@ it('can create an object schema with property count constraints', function (): v
         'key2' => 'value2',
     ]))->not->toThrow(SchemaException::class);
 });
+
+it('can specify a propertyNames schema', function (): void {
+    $schema = Schema::object('user')
+        ->properties(
+            Schema::string('name')->required(),
+        )
+        // ->additionalProperties(true)
+        ->propertyNames(Schema::string()->pattern('^[a-zA-Z]+$'));
+
+    $schemaArray = $schema->toArray();
+
+    expect($schemaArray)->toHaveKey('propertyNames.pattern', '^[a-zA-Z]+$');
+
+    // Validation tests
+    expect(fn() => $schema->validate([
+        'name' => 'John Doe',
+    ]))->not->toThrow(SchemaException::class);
+
+    expect(fn() => $schema->validate([
+        'name' => 123, // invalid property name pattern
+    ]))->toThrow(SchemaException::class, 'The properties must match schema: name');
+});

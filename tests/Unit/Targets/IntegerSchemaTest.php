@@ -156,3 +156,9 @@ it('can create a nullable integer schema', function (): void {
         'The data (string) must match the type: integer, null',
     );
 });
+
+it('throws an exception if the multipleOf is less than 0', function (): void {
+    Schema::integer('age')
+        ->description('User age')
+        ->multipleOf(-1);
+})->throws(SchemaException::class, 'multipleOf must be greater than 0');

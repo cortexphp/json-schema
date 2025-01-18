@@ -43,7 +43,7 @@ class ArraySchema extends AbstractSchema
     public function minContains(int $min): static
     {
         if ($min < 0) {
-            throw new SchemaException('minContains must be non-negative');
+            throw new SchemaException('minContains must be greater than or equal to 0');
         }
 
         if ($this->maxContains !== null && $min > $this->maxContains) {
@@ -63,7 +63,7 @@ class ArraySchema extends AbstractSchema
     public function maxContains(int $max): static
     {
         if ($max < 0) {
-            throw new SchemaException('maxContains must be non-negative');
+            throw new SchemaException('maxContains must be greater than or equal to 0');
         }
 
         if ($this->minContains !== null && $max < $this->minContains) {
