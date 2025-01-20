@@ -6,6 +6,7 @@ namespace Cortex\JsonSchema\Types;
 
 use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Types\Concerns\HasRef;
 use Cortex\JsonSchema\Types\Concerns\HasEnum;
 use Cortex\JsonSchema\Types\Concerns\HasConst;
 use Cortex\JsonSchema\Types\Concerns\HasTitle;
@@ -14,11 +15,13 @@ use Cortex\JsonSchema\Types\Concerns\HasMetadata;
 use Cortex\JsonSchema\Types\Concerns\HasRequired;
 use Cortex\JsonSchema\Types\Concerns\HasReadWrite;
 use Cortex\JsonSchema\Types\Concerns\HasValidation;
+use Cortex\JsonSchema\Types\Concerns\HasDefinitions;
 use Cortex\JsonSchema\Types\Concerns\HasDescription;
 use Cortex\JsonSchema\Types\Concerns\HasConditionals;
 
 abstract class AbstractSchema implements Schema
 {
+    use HasRef;
     use HasEnum;
     use HasConst;
     use HasTitle;
@@ -29,6 +32,7 @@ abstract class AbstractSchema implements Schema
     use HasValidation;
     use HasDescription;
     use HasConditionals;
+    use HasDefinitions;
 
     protected string $schemaVersion = 'http://json-schema.org/draft-07/schema#';
 
@@ -95,6 +99,8 @@ abstract class AbstractSchema implements Schema
         $schema = $this->addConstToSchema($schema);
         $schema = $this->addConditionalsToSchema($schema);
         $schema = $this->addMetadataToSchema($schema);
+        $schema = $this->addRefToSchema($schema);
+        $schema = $this->addDefinitionsToSchema($schema);
 
         return $this->addReadWriteToSchema($schema);
     }
