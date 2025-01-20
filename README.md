@@ -358,16 +358,14 @@ You can also validate tuple-like arrays with different schemas for specific posi
 use Cortex\JsonSchema\SchemaFactory;
 
 $schema = SchemaFactory::array('coordinates')
-    ->items([
+    ->items(
         SchemaFactory::number()->description('latitude'),
         SchemaFactory::number()->description('longitude'),
-    ])
-    ->additionalItems(false); // no additional items allowed
+    );
 ```
 
 ```php
 $schema->isValid([51.5074, -0.1278]); // true (valid lat/long)
-$schema->isValid([51.5074, -0.1278, 0]); // false (additional item not allowed)
 $schema->isValid(['invalid', -0.1278]); // false (first item must be number)
 ```
 
