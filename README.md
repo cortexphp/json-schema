@@ -424,49 +424,16 @@ $schema = SchemaFactory::object('config')
     ->propertyNames(
         SchemaFactory::string()->pattern('^[a-zA-Z]+$')
     )
-    // Apply schema to properties matching a pattern
-    ->patternProperties([
-        '^x-' => SchemaFactory::string(),
-    ])
     // Control number of properties
     ->minProperties(1)
     ->maxProperties(10)
-    // Property dependencies (if 'credit_card' exists, 'billing_address' must also exist)
-    ->dependentRequired([
-        'credit_card' => ['billing_address'],
-    ])
-    // Schema dependencies (if 'credit_card' exists, apply additional schema)
-    ->dependentSchemas([
-        'credit_card' => SchemaFactory::object()
-            ->properties(
-                SchemaFactory::string('billing_address')->required(),
-                SchemaFactory::string('cvv')
-                    ->pattern('^\d{3,4}$')
-                    ->required(),
-            ),
-    ]);
+    ->additionalProperties(false);
 ```
 
 ```php
 // Property names must be alphabetic
 $schema->isValid(['123' => 'value']); // false
 $schema->isValid(['validKey' => 'value']); // true
-
-// Pattern properties starting with 'x-' must be strings
-$schema->isValid(['x-custom' => 123]); // false
-$schema->isValid(['x-custom' => 'value']); // true
-
-// Dependencies
-$schema->isValid([
-    'credit_card' => '4111111111111111',
-    // missing billing_address
-]); // false
-
-$schema->isValid([
-    'credit_card' => '4111111111111111',
-    'billing_address' => '123 Main St',
-    'cvv' => '123',
-]); // true
 ```
 
 <details>
