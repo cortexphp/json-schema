@@ -61,10 +61,10 @@ $schema = SchemaFactory::object('user')
             ->default(true),
         SchemaFactory::object('settings')
             ->additionalProperties(false)
-            ->properties([
+            ->properties(
                 SchemaFactory::string('theme')
                     ->enum(['light', 'dark']),
-            ]),
+            ),
     );
 ```
 
@@ -571,7 +571,7 @@ $schema = SchemaFactory::object('user')
 
 // allOf - all schemas must match
 $schema = SchemaFactory::object()
-    ->allOf([
+    ->allOf(
         SchemaFactory::object()
             ->properties(
                 SchemaFactory::string('name')->required(),
@@ -582,11 +582,11 @@ $schema = SchemaFactory::object()
                     ->minimum(18)
                     ->required(),
             ),
-    ]);
+    );
 
 // anyOf - at least one schema must match
 $schema = SchemaFactory::object('payment')
-    ->anyOf([
+    ->anyOf(
         SchemaFactory::object()
             ->properties(
                 SchemaFactory::string('credit_card')
@@ -599,11 +599,11 @@ $schema = SchemaFactory::object('payment')
                     ->pattern('^\w{8,}$')
                     ->required(),
             ),
-    ]);
+    );
 
 // oneOf - exactly one schema must match
 $schema = SchemaFactory::object('contact')
-    ->oneOf([
+    ->oneOf(
         SchemaFactory::object()
             ->properties(
                 SchemaFactory::string('email')
@@ -616,7 +616,7 @@ $schema = SchemaFactory::object('contact')
                     ->pattern('^\+\d{10,}$')
                     ->required(),
             ),
-    ]);
+    );
 
 // not - schema must not match
 $schema = SchemaFactory::string('status')
