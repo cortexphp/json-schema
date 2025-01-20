@@ -330,6 +330,47 @@ $schema->isValid(['foo', 'bar', 'baz', 'qux']); // false (too many items)
 ```
 </details>
 
+Arrays also support validation of specific items using `contains`:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+// Array must contain at least one number between 10 and 20
+$schema = SchemaFactory::array('numbers')
+    ->contains(
+        SchemaFactory::number()
+            ->minimum(10)
+            ->maximum(20)
+    )
+    ->minContains(2) // must contain at least 2 such numbers
+    ->maxContains(3); // must contain at most 3 such numbers
+```
+
+```php
+$schema->isValid([15, 12, 18]); // true (contains 3 numbers between 10-20)
+$schema->isValid([15, 5, 25]); // false (only contains 1 number between 10-20)
+$schema->isValid([15, 12, 18, 19]); // false (contains 4 numbers between 10-20)
+```
+
+You can also validate tuple-like arrays with different schemas for specific positions:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+$schema = SchemaFactory::array('coordinates')
+    ->items([
+        SchemaFactory::number()->description('latitude'),
+        SchemaFactory::number()->description('longitude'),
+    ])
+    ->additionalItems(false); // no additional items allowed
+```
+
+```php
+$schema->isValid([51.5074, -0.1278]); // true (valid lat/long)
+$schema->isValid([51.5074, -0.1278, 0]); // false (additional item not allowed)
+$schema->isValid(['invalid', -0.1278]); // false (first item must be number)
+```
+
 ---
 
 ### Object Schema
@@ -371,6 +412,61 @@ $schema->isValid([
     ],
     'foo' => 'bar',
 ]); // false (additional properties)
+```
+
+Objects support additional validation features:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+$schema = SchemaFactory::object('config')
+    // Validate property names against a pattern
+    ->propertyNames(
+        SchemaFactory::string()->pattern('^[a-zA-Z]+$')
+    )
+    // Apply schema to properties matching a pattern
+    ->patternProperties([
+        '^x-' => SchemaFactory::string(),
+    ])
+    // Control number of properties
+    ->minProperties(1)
+    ->maxProperties(10)
+    // Property dependencies (if 'credit_card' exists, 'billing_address' must also exist)
+    ->dependentRequired([
+        'credit_card' => ['billing_address'],
+    ])
+    // Schema dependencies (if 'credit_card' exists, apply additional schema)
+    ->dependentSchemas([
+        'credit_card' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('billing_address')->required(),
+                SchemaFactory::string('cvv')
+                    ->pattern('^\d{3,4}$')
+                    ->required(),
+            ),
+    ]);
+```
+
+```php
+// Property names must be alphabetic
+$schema->isValid(['123' => 'value']); // false
+$schema->isValid(['validKey' => 'value']); // true
+
+// Pattern properties starting with 'x-' must be strings
+$schema->isValid(['x-custom' => 123]); // false
+$schema->isValid(['x-custom' => 'value']); // true
+
+// Dependencies
+$schema->isValid([
+    'credit_card' => '4111111111111111',
+    // missing billing_address
+]); // false
+
+$schema->isValid([
+    'credit_card' => '4111111111111111',
+    'billing_address' => '123 Main St',
+    'cvv' => '123',
+]); // true
 ```
 
 <details>
@@ -439,6 +535,220 @@ $schema->isValid('invalid'); // false (not in enum)
     "title": "id",
     "description": "ID can be either a string or an integer",
     "enum": ["abc123", "def456", 1, 2, 3]
+}
+```
+</details>
+
+---
+
+### String Formats
+
+Strings can be validated against various formats:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
+$schema = SchemaFactory::object('user')
+    ->properties(
+        SchemaFactory::string('email')->format(SchemaFormat::Email),
+        SchemaFactory::string('website')->format(SchemaFormat::Uri),
+        SchemaFactory::string('hostname')->format(SchemaFormat::Hostname),
+        SchemaFactory::string('ipv4')->format(SchemaFormat::Ipv4),
+        SchemaFactory::string('ipv6')->format(SchemaFormat::Ipv6),
+        SchemaFactory::string('date')->format(SchemaFormat::Date),
+        SchemaFactory::string('time')->format(SchemaFormat::Time),
+        SchemaFactory::string('date_time')->format(SchemaFormat::DateTime),
+        SchemaFactory::string('duration')->format(SchemaFormat::Duration),
+        SchemaFactory::string('json_pointer')->format(SchemaFormat::JsonPointer),
+        SchemaFactory::string('relative_json_pointer')->format(SchemaFormat::RelativeJsonPointer),
+        SchemaFactory::string('uri_template')->format(SchemaFormat::UriTemplate),
+        SchemaFactory::string('idn_email')->format(SchemaFormat::IdnEmail),
+        SchemaFactory::string('idn_hostname')->format(SchemaFormat::Hostname),
+        SchemaFactory::string('iri')->format(SchemaFormat::Iri),
+        SchemaFactory::string('iri_reference')->format(SchemaFormat::IriReference),
+    );
+```
+
+---
+
+### Conditional Validation
+
+The schema specification supports several types of conditional validation:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+// if/then/else condition
+$schema = SchemaFactory::object('user')
+    ->properties(
+        SchemaFactory::string('type')->enum(['personal', 'business']),
+        SchemaFactory::string('company_name'),
+        SchemaFactory::string('tax_id'),
+    )
+    ->if(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('type')->const('business'),
+        ),
+    )
+    ->then(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('company_name')->required(),
+            SchemaFactory::string('tax_id')->required(),
+        ),
+    )
+    ->else(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('company_name')->const(null),
+            SchemaFactory::string('tax_id')->const(null),
+        ),
+    );
+
+// allOf - all schemas must match
+$schema = SchemaFactory::object()
+    ->allOf([
+        SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('name')->required(),
+            ),
+        SchemaFactory::object()
+            ->properties(
+                SchemaFactory::integer('age')
+                    ->minimum(18)
+                    ->required(),
+            ),
+    ]);
+
+// anyOf - at least one schema must match
+$schema = SchemaFactory::object('payment')
+    ->anyOf([
+        SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('credit_card')
+                    ->pattern('^\d{16}$')
+                    ->required(),
+            ),
+        SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('bank_transfer')
+                    ->pattern('^\w{8,}$')
+                    ->required(),
+            ),
+    ]);
+
+// oneOf - exactly one schema must match
+$schema = SchemaFactory::object('contact')
+    ->oneOf([
+        SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('email')
+                    ->format(SchemaFormat::Email)
+                    ->required(),
+            ),
+        SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('phone')
+                    ->pattern('^\+\d{10,}$')
+                    ->required(),
+            ),
+    ]);
+
+// not - schema must not match
+$schema = SchemaFactory::string('status')
+    ->not(
+        SchemaFactory::string()
+            ->enum(['deleted', 'banned']),
+    );
+```
+
+---
+
+### Schema Definitions & References
+
+You can define reusable schema components using definitions and reference them using `$ref`:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+$schema = SchemaFactory::object('user')
+    // Define a reusable address schema
+    ->addDefinition(
+        'address',
+        SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('street')->required(),
+                SchemaFactory::string('city')->required(),
+                SchemaFactory::string('country')->required(),
+            ),
+    )
+    // Use the address schema multiple times via $ref
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::object('billing_address')
+            ->ref('#/definitions/address')
+            ->required(),
+        SchemaFactory::object('shipping_address')
+            ->ref('#/definitions/address')
+            ->required(),
+    );
+```
+
+You can also add multiple definitions at once:
+
+```php
+$schema = SchemaFactory::object('user')
+    ->addDefinitions([
+        'address' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('street')->required(),
+                SchemaFactory::string('city')->required(),
+            ),
+        'contact' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('email')
+                    ->format(SchemaFormat::Email)
+                    ->required(),
+                SchemaFactory::string('phone'),
+            ),
+    ]);
+```
+
+The resulting JSON Schema will include both the definitions and references:
+
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "user",
+    "definitions": {
+        "address": {
+            "type": "object",
+            "properties": {
+                "street": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                }
+            },
+            "required": ["street", "city"]
+        }
+    },
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "billing_address": {
+            "$ref": "#/definitions/address"
+        },
+        "shipping_address": {
+            "$ref": "#/definitions/address"
+        }
+    },
+    "required": ["name", "billing_address", "shipping_address"]
 }
 ```
 </details>
