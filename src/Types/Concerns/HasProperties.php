@@ -29,6 +29,11 @@ trait HasProperties
     protected ?Schema $propertyNames = null;
 
     /**
+     * @var array<string, \Cortex\JsonSchema\Contracts\Schema>
+     */
+    protected array $patternProperties = [];
+
+    /**
      * Set properties.
      *
      * @throws \Cortex\JsonSchema\Exceptions\SchemaException
@@ -113,6 +118,39 @@ trait HasProperties
     }
 
     /**
+     * Add a pattern property schema.
+     *
+     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
+     */
+    public function patternProperty(string $pattern, Schema $schema): static
+    {
+        // Validate the pattern is a valid regex
+        if (@preg_match('/' . $pattern . '/', '') === false) {
+            throw new SchemaException('Invalid pattern: ' . $pattern);
+        }
+
+        $this->patternProperties[$pattern] = $schema;
+
+        return $this;
+    }
+
+    /**
+     * Add multiple pattern property schemas.
+     *
+     * @param array<string, \Cortex\JsonSchema\Contracts\Schema> $patterns
+     *
+     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
+     */
+    public function patternProperties(array $patterns): static
+    {
+        foreach ($patterns as $pattern => $schema) {
+            $this->patternProperty($pattern, $schema);
+        }
+
+        return $this;
+    }
+
+    /**
      * @return array<int, string>
      */
     public function getPropertyKeys(): array
@@ -134,6 +172,14 @@ trait HasProperties
 
             foreach ($this->properties as $name => $prop) {
                 $schema['properties'][$name] = $prop->toArray(includeSchemaRef: false, includeTitle: false);
+            }
+        }
+
+        if ($this->patternProperties !== []) {
+            $schema['patternProperties'] = [];
+
+            foreach ($this->patternProperties as $pattern => $prop) {
+                $schema['patternProperties'][$pattern] = $prop->toArray(includeSchemaRef: false, includeTitle: false);
             }
         }
 
