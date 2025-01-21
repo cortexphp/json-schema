@@ -69,6 +69,7 @@ $schema = SchemaFactory::object('user')
 ```
 
 You can also use the objects directly instead of the factory methods.
+
 ```php
 $schema = (new ObjectSchema('user'))
     ->description('User schema')
@@ -172,6 +173,7 @@ $schema = SchemaFactory::number('price')
     ->maximum(1000)
     ->multipleOf(0.01);
 ```
+
 ```php
 $schema->isValid(100); // true
 $schema->isValid(1000.01); // false (too high)
@@ -228,6 +230,7 @@ $schema->isValid(150.01); // false (not an integer)
     "multipleOf": 1
 }
 ```
+
 </details>
 
 ---
@@ -260,6 +263,7 @@ $schema->isValid(null); // false
     "readOnly": true
 }
 ```
+
 </details>
 
 ---
@@ -288,6 +292,7 @@ $schema->isValid(false); // false
     "title": "deleted_at"
 }
 ```
+
 </details>
 
 ---
@@ -328,6 +333,7 @@ $schema->isValid(['foo', 'bar', 'baz', 'qux']); // false (too many items)
     "uniqueItems": true
 }
 ```
+
 </details>
 
 Arrays also support validation of specific items using `contains`:
@@ -466,6 +472,7 @@ $schema->isValid(['validKey' => 'value']); // true
     "additionalProperties": false
 }
 ```
+
 </details>
 
 ---
@@ -502,6 +509,7 @@ $schema->isValid('invalid'); // false (not in enum)
     "enum": ["abc123", "def456", 1, 2, 3]
 }
 ```
+
 </details>
 
 ---
@@ -716,6 +724,7 @@ The resulting JSON Schema will include both the definitions and references:
     "required": ["name", "billing_address", "shipping_address"]
 }
 ```
+
 </details>
 
 ---
