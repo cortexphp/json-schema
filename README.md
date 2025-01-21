@@ -440,6 +440,63 @@ $schema->isValid(['123' => 'value']); // false
 $schema->isValid(['validKey' => 'value']); // true
 ```
 
+Objects also support pattern-based property validation using `patternProperties`:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+$schema = SchemaFactory::object('config')
+    // Add a single pattern property
+    ->patternProperty('^prefix_',
+        SchemaFactory::string()->minLength(5)
+    )
+    // Add multiple pattern properties
+    ->patternProperties([
+        '^[A-Z][a-z]+$' => SchemaFactory::string(), // CamelCase properties
+        '^\d+$' => SchemaFactory::number(),         // Numeric properties
+    ]);
+
+// Valid data
+$schema->isValid([
+    'prefix_hello' => 'world123',  // Matches ^prefix_ and meets minLength
+    'Name' => 'John',              // Matches ^[A-Z][a-z]+$
+    '123' => 42,                   // Matches ^\d+$
+]); // true
+
+// Invalid data
+$schema->isValid([
+    'prefix_hi' => 'hi',           // Too short for minLength
+    'invalid' => 'no pattern',     // Doesn't match any pattern
+    '123' => 'not a number',       // Wrong type for pattern
+]); // false
+```
+
+Pattern properties can be combined with regular properties and `additionalProperties`:
+
+```php
+$schema = SchemaFactory::object('user')
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::integer('age')->required(),
+    )
+    ->patternProperty('^custom_', SchemaFactory::string())
+    ->additionalProperties(false);
+
+// Valid:
+$schema->isValid([
+    'name' => 'John',
+    'age' => 30,
+    'custom_field' => 'value',  // Matches pattern
+]);
+
+// Invalid (property doesn't match pattern):
+$schema->isValid([
+    'name' => 'John',
+    'age' => 30,
+    'invalid_field' => 'value',
+]);
+```
+
 <details>
 <summary>View JSON Schema</summary>
 
@@ -450,25 +507,18 @@ $schema->isValid(['validKey' => 'value']); // true
     "title": "user",
     "properties": {
         "name": {
-            "type": "string",
-            "title": "name"
+            "type": "string"
         },
-        "email": {
-            "type": "string",
-            "title": "email"
-        },
-        "settings": {
-            "type": "object",
-            "title": "settings",
-            "properties": {
-                "theme": {
-                    "type": "string",
-                    "title": "theme"
-                }
-            }
+        "age": {
+            "type": "integer"
         }
     },
-    "required": ["name", "email"],
+    "patternProperties": {
+        "^custom_": {
+            "type": "string"
+        }
+    },
+    "required": ["name", "age"],
     "additionalProperties": false
 }
 ```

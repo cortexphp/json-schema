@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit;
 
 use Cortex\JsonSchema\Enums\SchemaFormat;
+use Cortex\JsonSchema\Types\ObjectSchema;
 use Opis\JsonSchema\Errors\ValidationError;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
@@ -195,4 +196,87 @@ it('can specify a propertyNames schema', function (): void {
     expect(fn() => $schema->validate([
         'name' => 123, // invalid property name pattern
     ]))->toThrow(SchemaException::class, 'The properties must match schema: name');
+});
+
+it('can create an object schema with pattern properties', function (): void {
+    $schema = Schema::object('config')
+        ->patternProperty('^prefix_', Schema::string()->minLength(5))
+        ->patternProperties([
+            '^[A-Z][a-z]+$' => Schema::string(),
+            '^\d+$' => Schema::number(),
+        ]);
+
+    $schemaArray = $schema->toArray();
+
+    // Check schema structure
+    expect($schemaArray)->toHaveKey('patternProperties');
+    expect($schemaArray['patternProperties'])->toHaveKey('^prefix_');
+    expect($schemaArray['patternProperties'])->toHaveKey('^[A-Z][a-z]+$');
+    expect($schemaArray['patternProperties'])->toHaveKey('^\d+$');
+
+    // Valid data tests
+    expect(fn() => $schema->validate([
+        'prefix_hello' => 'world123',  // Matches ^prefix_ and meets minLength
+        'Name' => 'John',              // Matches ^[A-Z][a-z]+$
+        '123' => 42,                   // Matches ^\d+$
+    ]))->not->toThrow(SchemaException::class);
+
+    // Invalid pattern property value (too short)
+    expect(fn() => $schema->validate([
+        'prefix_hello' => 'hi',  // Matches pattern but fails minLength
+    ]))->toThrow(SchemaException::class);
+
+    // Invalid pattern property type
+    expect(fn() => $schema->validate([
+        '123' => 'not a number',  // Matches pattern but wrong type
+    ]))->toThrow(SchemaException::class);
+});
+
+it('throws exception for invalid regex patterns', function (): void {
+    $schema = Schema::object('test');
+
+    expect(fn(): ObjectSchema => $schema->patternProperty('[a-z', Schema::string()))
+        ->toThrow(SchemaException::class, 'Invalid pattern: [a-z');
+
+    expect(fn(): ObjectSchema => $schema->patternProperties([
+        '^valid$' => Schema::string(),
+        '[a-z' => Schema::string(),
+    ]))->toThrow(SchemaException::class, 'Invalid pattern: [a-z');
+});
+
+it('can combine pattern properties with regular properties', function (): void {
+    $schema = Schema::object('user')
+        ->properties(
+            Schema::string('name')->required(),
+            Schema::integer('age')->required(),
+        )
+        ->patternProperty('^custom_', Schema::string())
+        ->additionalProperties(false);
+
+    $schemaArray = $schema->toArray();
+
+    // Check schema structure
+    expect($schemaArray)->toHaveKey('properties');
+    expect($schemaArray)->toHaveKey('patternProperties');
+    expect($schemaArray)->toHaveKey('additionalProperties', false);
+
+    // Valid data
+    expect(fn() => $schema->validate([
+        'name' => 'John',
+        'age' => 30,
+        'custom_field' => 'value',
+    ]))->not->toThrow(SchemaException::class);
+
+    // Missing required property
+    expect(fn() => $schema->validate([
+        'name' => 'John',
+        'custom_field' => 'value',
+    ]))->toThrow(SchemaException::class);
+
+    // Invalid additional property (doesn't match pattern)
+    expect(fn() => $schema->validate([
+        'name' => 'John',
+        'age' => 30,
+        'invalid_field' => 'value',
+    ]))->toThrow(SchemaException::class);
 });
