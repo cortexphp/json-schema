@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Converters;
 
+use BackedEnum;
 use ReflectionEnum;
+use ReflectionEnumBackedCase;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
@@ -15,7 +17,7 @@ use Cortex\JsonSchema\Exceptions\SchemaException;
 class EnumConverter implements Converter
 {
     /**
-     * @var \ReflectionEnum<object>
+     * @var \ReflectionEnum<\BackedEnum>
      */
     protected ReflectionEnum $reflection;
 
@@ -25,6 +27,11 @@ class EnumConverter implements Converter
     public function __construct(
         protected string $enum,
     ) {
+        // @phpstan-ignore function.alreadyNarrowedType
+        if (! is_subclass_of($this->enum, BackedEnum::class)) {
+            throw new SchemaException('Enum must be a backed enum');
+        }
+
         $this->reflection = new ReflectionEnum($this->enum);
     }
 
@@ -44,8 +51,8 @@ class EnumConverter implements Converter
         $parts = explode('\\', $this->enum);
         $enumName = end($parts);
 
-        // Get the possible values of the enum cases
-        $values = array_map(fn($case) => $case->getValue()->value, $this->reflection->getCases());
+        /** @var non-empty-array<int, string|int> $values */
+        $values = array_column($this->enum::cases(), 'value');
 
         // Determine the backing type
         return match ($this->reflection->getBackingType()?->getName()) {
