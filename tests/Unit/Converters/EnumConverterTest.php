@@ -37,12 +37,12 @@ it('can create a schema from an enum', function (): void {
 });
 
 it('throws an exception if the enum is not a backed enum', function (): void {
-    enum UserStatus
+    enum UserStatusNotBacked
     {
         case Active;
         case Inactive;
         case Pending;
     }
 
-    (new EnumConverter(UserStatus::class))->convert();
+    new EnumConverter(UserStatusNotBacked::class);
 })->throws(SchemaException::class);

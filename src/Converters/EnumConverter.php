@@ -6,7 +6,6 @@ namespace Cortex\JsonSchema\Converters;
 
 use BackedEnum;
 use ReflectionEnum;
-use ReflectionEnumBackedCase;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
