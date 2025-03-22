@@ -10,14 +10,14 @@ use Cortex\JsonSchema\Exceptions\SchemaException;
 
 it('can create a schema from an enum', function (): void {
     /** This is the description of the enum */
-    enum UserStatus: string
+    enum PostStatus: string
     {
-        case Active = 'active';
-        case Inactive = 'inactive';
-        case Pending = 'pending';
+        case Draft = 'draft';
+        case Published = 'published';
+        case Archived = 'archived';
     }
 
-    $schema = (new EnumConverter(UserStatus::class))->convert();
+    $schema = (new EnumConverter(PostStatus::class))->convert();
 
     expect($schema)->toBeInstanceOf(ObjectSchema::class);
     expect($schema->toArray())->toBe([
@@ -25,13 +25,13 @@ it('can create a schema from an enum', function (): void {
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'description' => 'This is the description of the enum',
         'properties' => [
-            'UserStatus' => [
+            'PostStatus' => [
                 'type' => 'string',
-                'enum' => ['active', 'inactive', 'pending'],
+                'enum' => ['draft', 'published', 'archived'],
             ],
         ],
         'required' => [
-            'UserStatus',
+            'PostStatus',
         ],
     ]);
 });
