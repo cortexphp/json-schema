@@ -136,6 +136,48 @@ it('can create an object schema with additional properties control', function ()
     ]))->not->toThrow(SchemaException::class);
 });
 
+it('can create an object schema with additional properties schema', function (): void {
+    $schema = Schema::object('config')
+        ->description('Configuration object')
+        ->properties(
+            Schema::string('name')->required(),
+            Schema::string('type')->required(),
+        )
+        ->additionalProperties(Schema::string()->minLength(3));
+
+    $schemaArray = $schema->toArray();
+
+    expect($schemaArray['additionalProperties'])->toHaveKey('type', 'string');
+    expect($schemaArray['additionalProperties'])->toHaveKey('minLength', 3);
+
+    // Validation tests - valid additional property
+    expect(fn() => $schema->validate([
+        'name' => 'config1',
+        'type' => 'test',
+        'extra' => 'valid', // additional property matching schema
+    ]))->not->toThrow(SchemaException::class);
+
+    // Validation tests - invalid additional property (too short)
+    expect(fn() => $schema->validate([
+        'name' => 'config1',
+        'type' => 'test',
+        'extra' => 'no', // additional property not matching schema
+    ]))->toThrow(
+        SchemaException::class,
+        'All additional object properties must match schema: extra',
+    );
+
+    // Validation tests - invalid additional property (wrong type)
+    expect(fn() => $schema->validate([
+        'name' => 'config1',
+        'type' => 'test',
+        'extra' => 123, // additional property not matching schema
+    ]))->toThrow(
+        SchemaException::class,
+        'All additional object properties must match schema: extra',
+    );
+});
+
 it('can create an object schema with property count constraints', function (): void {
     $schema = Schema::object('metadata')
         ->description('Metadata object')

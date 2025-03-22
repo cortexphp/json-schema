@@ -20,7 +20,10 @@ trait HasProperties
      */
     protected array $requiredProperties = [];
 
-    protected ?bool $additionalProperties = null;
+    /**
+     * @var bool|\Cortex\JsonSchema\Contracts\Schema|null
+     */
+    protected mixed $additionalProperties = null;
 
     protected ?int $minProperties = null;
 
@@ -58,9 +61,11 @@ trait HasProperties
     }
 
     /**
-     * Allow or disallow additional properties
+     * Set whether additional properties are allowed and optionally their schema
+     *
+     * @param bool|\Cortex\JsonSchema\Contracts\Schema $allowed Whether additional properties are allowed, or a schema they must match
      */
-    public function additionalProperties(bool $allowed): static
+    public function additionalProperties(bool|Schema $allowed): static
     {
         $this->additionalProperties = $allowed;
 
@@ -188,7 +193,9 @@ trait HasProperties
         }
 
         if ($this->additionalProperties !== null) {
-            $schema['additionalProperties'] = $this->additionalProperties;
+            $schema['additionalProperties'] = $this->additionalProperties instanceof Schema
+                ? $this->additionalProperties->toArray(includeSchemaRef: false, includeTitle: false)
+                : $this->additionalProperties;
         }
 
         if ($this->propertyNames !== null) {

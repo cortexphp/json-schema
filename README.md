@@ -431,13 +431,43 @@ $schema = SchemaFactory::object('config')
     // Control number of properties
     ->minProperties(1)
     ->maxProperties(10)
-    ->additionalProperties(false);
+    // Control additional properties
+    ->additionalProperties(false); // Disallow additional properties
+
+// Or validate additional properties against a schema
+$schema = SchemaFactory::object('config')
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('type')->required(),
+    )
+    ->additionalProperties(
+        SchemaFactory::string()->minLength(3)
+    );
 ```
 
 ```php
 // Property names must be alphabetic
 $schema->isValid(['123' => 'value']); // false
 $schema->isValid(['validKey' => 'value']); // true
+
+// Additional properties must match schema
+$schema->isValid([
+    'name' => 'config1',
+    'type' => 'test',
+    'extra' => 'valid', // valid: string with length >= 3
+]); // true
+
+$schema->isValid([
+    'name' => 'config1',
+    'type' => 'test',
+    'extra' => 'no', // invalid: string too short
+]); // false
+
+$schema->isValid([
+    'name' => 'config1',
+    'type' => 'test',
+    'extra' => 123, // invalid: wrong type
+]); // false
 ```
 
 Objects also support pattern-based property validation using `patternProperties`:
@@ -915,6 +945,43 @@ $schema->toJson();
         }
     },
     "required": ["name"]
+}
+```
+
+### From an Backed Enum
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+/**
+ * This is the description of the enum
+ */
+enum PostType: int
+{
+    case Article = 1;
+    case News = 2;
+    case Tutorial = 3;
+}
+
+// Build the schema from the enum
+$schema = SchemaFactory::fromEnum(PostType::class);
+
+// Convert to JSON Schema
+$schema->toJson();
+```
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "description": "This is the description of the enum",
+    "properties": {
+        "PostType": {
+            "type": "integer",
+            "enum": [1, 2, 3]
+        }
+    },
+    "required": ["PostType"]
 }
 ```
 
