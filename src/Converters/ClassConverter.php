@@ -20,7 +20,7 @@ class ClassConverter implements Converter
     use InteractsWithTypes;
 
     /**
-     * @var ReflectionClass<object>
+     * @var \ReflectionClass<object>
      */
     protected ReflectionClass $reflection;
 
