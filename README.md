@@ -918,6 +918,43 @@ $schema->toJson();
 }
 ```
 
+### From an Backed Enum
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+/**
+ * This is the description of the enum
+ */
+enum PostType: int
+{
+    case Article = 1;
+    case News = 2;
+    case Tutorial = 3;
+}
+
+// Build the schema from the enum
+$schema = SchemaFactory::fromEnum(PostType::class);
+
+// Convert to JSON Schema
+$schema->toJson();
+```
+
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "description": "This is the description of the enum",
+    "properties": {
+        "PostType": {
+            "type": "integer",
+            "enum": [1, 2, 3]
+        }
+    },
+    "required": ["PostType"]
+}
+```
+
 ## Credits
 
 - [Sean Tymon](https://github.com/tymondesigns)
