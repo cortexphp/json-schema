@@ -14,6 +14,7 @@ use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
+use Cortex\JsonSchema\Converters\EnumConverter;
 use Cortex\JsonSchema\Converters\ClassConverter;
 use Cortex\JsonSchema\Converters\ClosureConverter;
 
@@ -83,5 +84,15 @@ class SchemaFactory
     public static function fromClass(object|string $class, bool $publicOnly = true): ObjectSchema
     {
         return (new ClassConverter($class, $publicOnly))->convert();
+    }
+
+    /**
+     * Create a schema from a given enum.
+     *
+     * @param class-string<\BackedEnum> $enum
+     */
+    public static function fromEnum(string $enum): ObjectSchema
+    {
+        return (new EnumConverter($enum))->convert();
     }
 }
