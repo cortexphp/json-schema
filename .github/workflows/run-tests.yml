@@ -41,5 +41,10 @@ jobs:
       - name: Install dependencies
         run: composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
-      - name: Execute tests
+      - name: Execute tests with mutation
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: vendor/bin/pest --colors=always --mutate --parallel --min=80
+
+      - name: Execute tests
+        if: ${{ matrix.os != 'ubuntu-latest' }}
+        run: vendor/bin/pest --colors=always
