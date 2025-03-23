@@ -9,6 +9,8 @@ use Cortex\JsonSchema\Types\UnionSchema;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
+covers(UnionSchema::class);
+
 it('can create a union schema with multiple types', function (): void {
     $schema = Schema::union([SchemaType::String, SchemaType::Integer], 'id')
         ->description('ID can be either a string or an integer');

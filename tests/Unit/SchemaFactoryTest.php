@@ -15,6 +15,8 @@ use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 
+covers(Schema::class);
+
 it('can create different schema types', function (): void {
     // Test array schema creation
     expect(Schema::array('items'))->toBeInstanceOf(ArraySchema::class);
@@ -89,4 +91,36 @@ it('can create a schema from a closure', function (): void {
     ]);
 
     expect($schema->toJson())->toBe(json_encode($schema->toArray()));
+});
+
+it('can create a schema from a class', function (): void {
+    /** This is the description of the class */
+    $class = new class ('John Doe') {
+        public function __construct(
+            public string $name,
+            public int $age = 20,
+            protected ?string $email = null,
+        ) {}
+    };
+
+    $schema = Schema::fromClass($class, publicOnly: true);
+
+    expect($schema)->toBeInstanceOf(ObjectSchema::class);
+    expect($schema->toArray())->toBe([
+        'type' => 'object',
+        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        'description' => 'This is the description of the class',
+        'properties' => [
+            'name' => [
+                'type' => 'string',
+            ],
+            'age' => [
+                'type' => 'integer',
+            ],
+        ],
+        'required' => [
+            'name',
+            'age',
+        ],
+    ]);
 });

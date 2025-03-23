@@ -8,6 +8,8 @@ use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 use Cortex\JsonSchema\Converters\ClosureConverter;
 
+covers(ClosureConverter::class);
+
 it('can create a schema from a closure', function (): void {
     $closure = function (string $name, array $fooArray, ?int $age = null): void {};
     $schema = (new ClosureConverter($closure))->convert();

@@ -8,6 +8,8 @@ use Cortex\JsonSchema\Support\NodeData;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Support\NodeCollection;
 
+covers(DocParser::class);
+
 it('can parse description', function (): void {
     $docblock = '/** This is a test docblock */';
     $parser = new DocParser($docblock);

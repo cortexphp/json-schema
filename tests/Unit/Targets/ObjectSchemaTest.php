@@ -10,6 +10,8 @@ use Opis\JsonSchema\Errors\ValidationError;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
+covers(ObjectSchema::class);
+
 it('can create a basic object schema', function (): void {
     $schema = Schema::object('user')
         ->description('User schema')

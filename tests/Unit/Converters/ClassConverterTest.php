@@ -7,6 +7,8 @@ namespace Cortex\JsonSchema\Tests\Unit\Converters;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Converters\ClassConverter;
 
+covers(ClassConverter::class);
+
 it('can create a schema from a class', function (): void {
     $schema = (new ClassConverter(new class () {
         public string $name;

@@ -8,6 +8,8 @@ use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Converters\EnumConverter;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
+covers(EnumConverter::class);
+
 it('can create a schema from an string backed enum', function (): void {
     /** This is the description of the string backed enum */
     enum PostStatus: string
