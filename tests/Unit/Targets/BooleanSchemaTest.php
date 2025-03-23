@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit;
 
+use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
+
+covers(BooleanSchema::class);
 
 it('can create a boolean schema', function (): void {
     $schema = Schema::boolean('is_active')

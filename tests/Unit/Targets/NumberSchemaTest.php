@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit;
 
+use Cortex\JsonSchema\Types\NumberSchema;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
+
+covers(NumberSchema::class);
 
 it('can create a basic number schema', function (): void {
     $schema = Schema::number('price')

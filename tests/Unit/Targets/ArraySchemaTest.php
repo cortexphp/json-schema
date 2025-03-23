@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit;
 
+use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
+
+covers(ArraySchema::class);
 
 it('can create an array schema', function (): void {
     $schema = Schema::array('tags')

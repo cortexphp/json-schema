@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit;
 
 use stdClass;
+use Cortex\JsonSchema\Types\NullSchema;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
+
+covers(NullSchema::class);
 
 it('can create a basic null schema', function (): void {
     $schema = Schema::null('deleted_at')

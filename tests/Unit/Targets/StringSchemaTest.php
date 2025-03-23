@@ -7,6 +7,9 @@ namespace Cortex\JsonSchema\Tests\Unit;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
+use Cortex\JsonSchema\Types\StringSchema;
+
+covers(StringSchema::class);
 
 it('can create a string schema with length constraints', function (): void {
     $schema = Schema::string('username')

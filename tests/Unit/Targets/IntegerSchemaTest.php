@@ -6,6 +6,9 @@ namespace Cortex\JsonSchema\Tests\Unit;
 
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
+use Cortex\JsonSchema\Types\IntegerSchema;
+
+covers(IntegerSchema::class);
 
 it('can create a basic integer schema', function (): void {
     $schema = Schema::integer('age')
