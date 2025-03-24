@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema;
 
 use Closure;
+use BackedEnum;
+use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\NullSchema;
 use Cortex\JsonSchema\Types\ArraySchema;
@@ -16,6 +18,7 @@ use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Converters\EnumConverter;
 use Cortex\JsonSchema\Converters\ClassConverter;
+use Cortex\JsonSchema\Exceptions\SchemaException;
 use Cortex\JsonSchema\Converters\ClosureConverter;
 
 class SchemaFactory
@@ -91,8 +94,21 @@ class SchemaFactory
      *
      * @param class-string<\BackedEnum> $enum
      */
-    public static function fromEnum(string $enum): ObjectSchema
+    public static function fromEnum(string $enum): StringSchema|IntegerSchema
     {
         return (new EnumConverter($enum))->convert();
+    }
+
+    /**
+     * Create a schema from a given value.
+     */
+    public static function from(mixed $value): Schema
+    {
+        return match (true) {
+            $value instanceof Closure => self::fromClosure($value),
+            is_string($value) && enum_exists($value) && is_subclass_of($value, BackedEnum::class) => self::fromEnum($value),
+            is_string($value) && class_exists($value) || is_object($value) => self::fromClass($value),
+            default => throw new SchemaException('Unsupported value type. Only closures, enums, and classes are supported.'),
+        };
     }
 }

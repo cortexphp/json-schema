@@ -973,15 +973,10 @@ $schema->toJson();
 ```json
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
+    "type": "integer",
+    "title": "PostType",
     "description": "This is the description of the enum",
-    "properties": {
-        "PostType": {
-            "type": "integer",
-            "enum": [1, 2, 3]
-        }
-    },
-    "required": ["PostType"]
+    "enum": [1, 2, 3]
 }
 ```
 
