@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Converters;
 
-use BackedEnum;
 use ReflectionEnum;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\StringSchema;
@@ -25,12 +24,11 @@ class EnumConverter implements Converter
     public function __construct(
         protected string $enum,
     ) {
-        // @phpstan-ignore function.alreadyNarrowedType
-        if (! is_subclass_of($this->enum, BackedEnum::class)) {
+        $this->reflection = new ReflectionEnum($this->enum);
+
+        if (! $this->reflection->isBacked()) {
             throw new SchemaException('Enum must be a backed enum');
         }
-
-        $this->reflection = new ReflectionEnum($this->enum);
     }
 
     public function convert(): StringSchema|IntegerSchema
