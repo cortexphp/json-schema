@@ -7,7 +7,7 @@ namespace Cortex\JsonSchema\Contracts;
 interface Converter
 {
     /**
-     * Convert the value to an object schema.
+     * Convert the value to a schema instance.
      */
     public function convert(): Schema;
 }
