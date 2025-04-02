@@ -114,10 +114,10 @@ class ClosureConverter implements Converter
 
     protected function getDocParser(): ?DocParser
     {
-        if ($docComment = $this->reflection->getDocComment()) {
-            return new DocParser($docComment);
-        }
+        $docComment = $this->reflection->getDocComment();
 
-        return null;
+        return is_string($docComment)
+            ? new DocParser($docComment)
+            : null;
     }
 }

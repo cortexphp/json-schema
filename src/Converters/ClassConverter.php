@@ -118,10 +118,10 @@ class ClassConverter implements Converter
      */
     protected function getDocParser(ReflectionProperty|ReflectionClass $reflection): ?DocParser
     {
-        if ($docComment = $reflection->getDocComment()) {
-            return new DocParser($docComment);
-        }
+        $docComment = $reflection->getDocComment();
 
-        return null;
+        return is_string($docComment)
+            ? new DocParser($docComment)
+            : null;
     }
 }

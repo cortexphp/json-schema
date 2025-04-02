@@ -26,7 +26,7 @@ trait HasValidation
         try {
             $result = $validator->validate(
                 Helper::toJSON($value),
-                Helper::toJSON($this->toArray()),
+                Helper::toJSON($this->toArray()), // @phpstan-ignore argument.type
             );
         } catch (OpisSchemaException|InvalidArgumentException $e) {
             throw new SchemaException($e->getMessage(), $e->getCode(), $e);

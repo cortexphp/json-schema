@@ -48,7 +48,7 @@ class DocParser
             static fn(ParamTagValueNode|TypelessParamTagValueNode $param): NodeData => new NodeData(
                 name: ltrim($param->parameterName, '$'),
                 types: self::mapValueNodeToTypes($param),
-                description: empty($param->description) ? null : $param->description,
+                description: $param->description === '' ? null : $param->description,
             ),
             array_merge(
                 $this->parse()->getParamTagValues(),
@@ -132,9 +132,9 @@ class DocParser
     }
 
     /**
-     * @param \PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocChildNode[] $children
+     * @param array<array-key, \PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocChildNode> $children
      *
-     * @return \PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode[]
+     * @return array<array-key, \PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode>
      */
     protected function getTextNodes(array $children): array
     {
