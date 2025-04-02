@@ -14,7 +14,7 @@ use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-test('can create a schema from scalar type', function (string $input, SchemaType $expected): void {
+it('can create a schema from scalar type', function (string $input, SchemaType $expected): void {
     expect(SchemaType::fromScalar($input))->toBe($expected);
 })->with([
     'integer' => ['int', SchemaType::Integer],
@@ -31,7 +31,7 @@ it('throws exception for unknown scalar type', function (): void {
         ->toThrow(SchemaException::class, 'Unknown type: unknown');
 });
 
-test('can create schema instance', function (SchemaType $type, string $expectedClass): void {
+it('can create schema instance', function (SchemaType $type, string $expectedClass): void {
     expect($type->instance())->toBeInstanceOf($expectedClass);
 })->with([
     'string schema' => [SchemaType::String, StringSchema::class],
