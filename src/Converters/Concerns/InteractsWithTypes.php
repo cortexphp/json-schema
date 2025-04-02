@@ -34,7 +34,7 @@ trait InteractsWithTypes
 
         return count($schemaTypes) === 1
             ? $schemaTypes[0]->instance()
-            : new UnionSchema($schemaTypes);
+            : new UnionSchema(array_values($schemaTypes));
     }
 
     /**
