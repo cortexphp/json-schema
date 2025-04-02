@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Converters;
 
-use BackedEnum;
 use ReflectionEnum;
 use Cortex\JsonSchema\Support\DocParser;
-use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Contracts\Converter;
 use Cortex\JsonSchema\Types\IntegerSchema;
@@ -26,17 +24,29 @@ class EnumConverter implements Converter
     public function __construct(
         protected string $enum,
     ) {
-        // @phpstan-ignore function.alreadyNarrowedType
-        if (! is_subclass_of($this->enum, BackedEnum::class)) {
+        $this->reflection = new ReflectionEnum($this->enum);
+
+        if (! $this->reflection->isBacked()) {
             throw new SchemaException('Enum must be a backed enum');
         }
-
-        $this->reflection = new ReflectionEnum($this->enum);
     }
 
-    public function convert(): ObjectSchema
+    public function convert(): StringSchema|IntegerSchema
     {
-        $schema = new ObjectSchema();
+        // Get the basename of the enum namespace
+        $enumName = basename(str_replace('\\', '/', $this->enum));
+
+        // Determine the backing type
+        $schema = match ($this->reflection->getBackingType()?->getName()) {
+            'string' => new StringSchema($enumName),
+            'int' => new IntegerSchema($enumName),
+            default => throw new SchemaException('Unsupported enum backing type. Only "int" or "string" are supported.'),
+        };
+
+        /** @var non-empty-array<int, string|int> $values */
+        $values = array_column($this->enum::cases(), 'value');
+
+        $schema->enum($values);
 
         // Get the description from the doc parser
         $description = $this->getDocParser($this->reflection)?->description() ?? null;
@@ -46,19 +56,7 @@ class EnumConverter implements Converter
             $schema->description($description);
         }
 
-        // Get the basename of the enum namespace
-        $parts = explode('\\', $this->enum);
-        $enumName = end($parts);
-
-        /** @var non-empty-array<int, string|int> $values */
-        $values = array_column($this->enum::cases(), 'value');
-
-        // Determine the backing type
-        return match ($this->reflection->getBackingType()?->getName()) {
-            'string' => $schema->properties((new StringSchema($enumName))->enum($values)->required()),
-            'int' => $schema->properties((new IntegerSchema($enumName))->enum($values)->required()),
-            default => throw new SchemaException('Unsupported enum backing type. Only "int" or "string" are supported.'),
-        };
+        return $schema;
     }
 
     /**

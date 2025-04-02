@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Converters;
 
-use Cortex\JsonSchema\Types\ObjectSchema;
+use Cortex\JsonSchema\Types\StringSchema;
+use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Converters\EnumConverter;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -21,20 +22,13 @@ it('can create a schema from an string backed enum', function (): void {
 
     $schema = (new EnumConverter(PostStatus::class))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
+    expect($schema)->toBeInstanceOf(StringSchema::class);
     expect($schema->toArray())->toBe([
-        'type' => 'object',
+        'type' => 'string',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
+        'title' => 'PostStatus',
         'description' => 'This is the description of the string backed enum',
-        'properties' => [
-            'PostStatus' => [
-                'type' => 'string',
-                'enum' => ['draft', 'published', 'archived'],
-            ],
-        ],
-        'required' => [
-            'PostStatus',
-        ],
+        'enum' => ['draft', 'published', 'archived'],
     ]);
 });
 
@@ -49,20 +43,13 @@ it('can create a schema from an integer backed enum', function (): void {
 
     $schema = (new EnumConverter(PostType::class))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
+    expect($schema)->toBeInstanceOf(IntegerSchema::class);
     expect($schema->toArray())->toBe([
-        'type' => 'object',
+        'type' => 'integer',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
+        'title' => 'PostType',
         'description' => 'This is the description of the integer backed enum',
-        'properties' => [
-            'PostType' => [
-                'type' => 'integer',
-                'enum' => [1, 2, 3],
-            ],
-        ],
-        'required' => [
-            'PostType',
-        ],
+        'enum' => [1, 2, 3],
     ]);
 });
 

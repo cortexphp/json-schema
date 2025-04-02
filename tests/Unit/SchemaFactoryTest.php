@@ -91,6 +91,9 @@ it('can create a schema from a closure', function (): void {
     ]);
 
     expect($schema->toJson())->toBe(json_encode($schema->toArray()));
+
+    // Assert that the from method behaves in the same way as the fromClosure method
+    expect(Schema::from($closure))->toEqual($schema);
 });
 
 it('can create a schema from a class', function (): void {
@@ -123,4 +126,32 @@ it('can create a schema from a class', function (): void {
             'age',
         ],
     ]);
+
+    // Assert that the from method behaves in the same way as the fromClass method
+    expect(Schema::from($class))->toEqual($schema);
+});
+
+it('can create a schema from an enum', function (): void {
+    /** This is a custom enum for testing */
+    enum UserRole: string
+    {
+        case Admin = 'admin';
+        case Editor = 'editor';
+        case Viewer = 'viewer';
+        case Guest = 'guest';
+    }
+
+    $schema = Schema::fromEnum(UserRole::class);
+
+    expect($schema)->toBeInstanceOf(StringSchema::class);
+    expect($schema->toArray())->toBe([
+        'type' => 'string',
+        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        'title' => 'UserRole',
+        'description' => 'This is a custom enum for testing',
+        'enum' => ['admin', 'editor', 'viewer', 'guest'],
+    ]);
+
+    // Assert that the from method behaves in the same way as the fromEnum method
+    expect(Schema::from(UserRole::class))->toEqual($schema);
 });
