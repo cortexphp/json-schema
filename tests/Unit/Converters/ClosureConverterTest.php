@@ -122,7 +122,10 @@ it('throws an exception if the enum is not a backed enum', function (): void {
 
     $closure = function (StatusNoBackingType $status): void {};
     (new ClosureConverter($closure))->convert();
-})->throws(SchemaException::class, 'Enum type has no backing type: Cortex\JsonSchema\Tests\Unit\Converters\StatusNoBackingType');
+})->throws(
+    SchemaException::class,
+    'Enum type has no backing type: Cortex\JsonSchema\Tests\Unit\Converters\StatusNoBackingType',
+);
 
 it('can create a schema from a closure with a union type', function (): void {
     $closure = function (int|string $foo): void {};

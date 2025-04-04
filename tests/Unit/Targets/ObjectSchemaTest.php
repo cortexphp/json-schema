@@ -95,16 +95,16 @@ it('can get the underlying errors', function (): void {
             'name' => 'John Doe',
             'email' => 'foo',
         ]);
-    } catch (SchemaException $e) {
-        expect($e->getMessage())->toBe('The properties must match schema: email');
-        expect($e->getErrors())->toBe([
+    } catch (SchemaException $schemaException) {
+        expect($schemaException->getMessage())->toBe('The properties must match schema: email');
+        expect($schemaException->getErrors())->toBe([
             '/email' => [
                 "The data must match the 'email' format",
             ],
         ]);
-        expect($e->getError())->toBeInstanceOf(ValidationError::class);
+        expect($schemaException->getError())->toBeInstanceOf(ValidationError::class);
 
-        throw $e;
+        throw $schemaException;
     }
 })->throws(SchemaException::class);
 

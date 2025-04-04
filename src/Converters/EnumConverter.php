@@ -40,7 +40,9 @@ class EnumConverter implements Converter
         $schema = match ($this->reflection->getBackingType()?->getName()) {
             'string' => new StringSchema($enumName),
             'int' => new IntegerSchema($enumName),
-            default => throw new SchemaException('Unsupported enum backing type. Only "int" or "string" are supported.'),
+            default => throw new SchemaException(
+                'Unsupported enum backing type. Only "int" or "string" are supported.',
+            ),
         };
 
         /** @var non-empty-array<int, string|int> $values */
@@ -49,7 +51,7 @@ class EnumConverter implements Converter
         $schema->enum($values);
 
         // Get the description from the doc parser
-        $description = $this->getDocParser($this->reflection)?->description() ?? null;
+        $description = $this->getDocParser()?->description() ?? null;
 
         // Add the description to the schema if it exists
         if ($description !== null) {
@@ -59,12 +61,9 @@ class EnumConverter implements Converter
         return $schema;
     }
 
-    /**
-     * @param ReflectionEnum<\BackedEnum> $reflection
-     */
-    protected function getDocParser(ReflectionEnum $reflection): ?DocParser
+    protected function getDocParser(): ?DocParser
     {
-        $docComment = $reflection->getDocComment();
+        $docComment = $this->reflection->getDocComment();
 
         return is_string($docComment)
             ? new DocParser($docComment)

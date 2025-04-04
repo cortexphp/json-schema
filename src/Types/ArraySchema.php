@@ -87,7 +87,7 @@ class ArraySchema extends AbstractSchema
 
         $schema = $this->addItemsToSchema($schema);
 
-        if ($this->contains !== null) {
+        if ($this->contains instanceof Schema) {
             $schema['contains'] = $this->contains->toArray();
         }
 

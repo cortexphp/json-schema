@@ -205,7 +205,10 @@ it('can create a schema with anyOf condition', function (): void {
         'credit_card' => 'invalid',
     ]))->toThrow(SchemaException::class, 'The data should match at least one schema');
 
-    expect(fn() => $schema->validate(new ArrayObject()))->toThrow(SchemaException::class, 'The data should match at least one schema');
+    expect(fn() => $schema->validate(new ArrayObject()))->toThrow(
+        SchemaException::class,
+        'The data should match at least one schema',
+    );
 });
 
 it('can create a schema with oneOf condition', function (): void {

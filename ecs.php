@@ -10,6 +10,7 @@ use PhpCsFixer\Fixer\Basic\SingleLineEmptyBodyFixer;
 use PhpCsFixer\Fixer\ClassNotation\ClassDefinitionFixer;
 use PhpCsFixer\Fixer\Comment\SingleLineCommentSpacingFixer;
 use PhpCsFixer\Fixer\ClassNotation\OrderedClassElementsFixer;
+use Symplify\CodingStandard\Fixer\LineLength\LineLengthFixer;
 use PhpCsFixer\Fixer\Whitespace\BlankLineBeforeStatementFixer;
 use PhpCsFixer\Fixer\FunctionNotation\FunctionDeclarationFixer;
 use PhpCsFixer\Fixer\Comment\NoTrailingWhitespaceInCommentFixer;
@@ -87,6 +88,10 @@ return ECSConfig::configure()
     ])
     ->withConfiguredRule(BlankLineBeforeStatementFixer::class, [
         'statements' => ['return', 'throw', 'if', 'switch', 'do', 'yield', 'try'],
+    ])
+    ->withConfiguredRule(LineLengthFixer::class, [
+        LineLengthFixer::LINE_LENGTH => 120,
+        LineLengthFixer::INLINE_SHORT_LINES => false,
     ])
     ->withSkip([
         OrderedClassElementsFixer::class,

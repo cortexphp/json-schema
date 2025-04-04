@@ -106,9 +106,13 @@ class SchemaFactory
     {
         return match (true) {
             $value instanceof Closure => self::fromClosure($value),
-            is_string($value) && enum_exists($value) && is_subclass_of($value, BackedEnum::class) => self::fromEnum($value),
+            is_string($value) && enum_exists($value) && is_subclass_of($value, BackedEnum::class) => self::fromEnum(
+                $value,
+            ),
             is_string($value) && class_exists($value) || is_object($value) => self::fromClass($value),
-            default => throw new SchemaException('Unsupported value type. Only closures, enums, and classes are supported.'),
+            default => throw new SchemaException(
+                'Unsupported value type. Only closures, enums, and classes are supported.',
+            ),
         };
     }
 }

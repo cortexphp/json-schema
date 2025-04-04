@@ -7,6 +7,7 @@ namespace Cortex\JsonSchema\Types\Concerns;
 use Opis\JsonSchema\Helper;
 use InvalidArgumentException;
 use Opis\JsonSchema\Validator;
+use Opis\JsonSchema\Errors\ValidationError;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 use Opis\JsonSchema\Exceptions\SchemaException as OpisSchemaException;
 
@@ -34,7 +35,7 @@ trait HasValidation
 
         $error = $result->error();
 
-        if ($error !== null) {
+        if ($error instanceof ValidationError) {
             throw SchemaException::failedValidation($error);
         }
     }

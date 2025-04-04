@@ -103,9 +103,9 @@ class ClassConverter implements Converter
                 $reflection = new ReflectionEnum($typeName);
 
                 if ($reflection->isBacked()) {
-                    /** @var non-empty-array<array-key, \BackedEnum> */
-                    $cases = $typeName::cases();
-                    $schema->enum(array_map(fn(BackedEnum $case): int|string => $case->value, $cases));
+                    /** @var non-empty-array<int, string|int> $values */
+                    $values = array_column($typeName::cases(), 'value');
+                    $schema->enum($values);
                 }
             }
         }
