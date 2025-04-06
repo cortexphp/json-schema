@@ -9,7 +9,6 @@ use Symplify\EasyCodingStandard\ValueObject\Option;
 use PhpCsFixer\Fixer\Basic\SingleLineEmptyBodyFixer;
 use PhpCsFixer\Fixer\ClassNotation\ClassDefinitionFixer;
 use PhpCsFixer\Fixer\Comment\SingleLineCommentSpacingFixer;
-use PhpCsFixer\Fixer\ClassNotation\OrderedClassElementsFixer;
 use Symplify\CodingStandard\Fixer\LineLength\LineLengthFixer;
 use PhpCsFixer\Fixer\Whitespace\BlankLineBeforeStatementFixer;
 use PhpCsFixer\Fixer\FunctionNotation\FunctionDeclarationFixer;
@@ -19,7 +18,6 @@ use PhpCsFixer\Fixer\ClassNotation\ClassAttributesSeparationFixer;
 use PhpCsFixer\Fixer\Whitespace\BlankLineBetweenImportGroupsFixer;
 use PhpCsFixer\Fixer\ControlStructure\TrailingCommaInMultilineFixer;
 use Symplify\CodingStandard\Fixer\Annotation\RemovePHPStormAnnotationFixer;
-use PHP_CodeSniffer\Standards\Generic\Sniffs\CodeAnalysis\AssignmentInConditionSniff;
 
 return ECSConfig::configure()
     ->withPaths([
@@ -35,7 +33,7 @@ return ECSConfig::configure()
         strict: true,
     )
     ->withPhpCsFixerSets(
-        php83Migration: true,
+        php84Migration: true,
     )
     ->withRules([
         NotOperatorWithSuccessorSpaceFixer::class,
@@ -92,8 +90,4 @@ return ECSConfig::configure()
     ->withConfiguredRule(LineLengthFixer::class, [
         LineLengthFixer::LINE_LENGTH => 120,
         LineLengthFixer::INLINE_SHORT_LINES => false,
-    ])
-    ->withSkip([
-        OrderedClassElementsFixer::class,
-        AssignmentInConditionSniff::class,
     ]);

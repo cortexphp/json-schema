@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Cortex\JsonSchema\Tests\Unit;
+namespace Cortex\JsonSchema\Tests\Unit\Types;
 
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\SchemaFactory as Schema;

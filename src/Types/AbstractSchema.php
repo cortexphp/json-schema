@@ -68,14 +68,6 @@ abstract class AbstractSchema implements Schema
     }
 
     /**
-     * Check if the schema allows null values.
-     */
-    protected function isNullable(): bool
-    {
-        return is_array($this->type) && in_array(SchemaType::Null, $this->type, true);
-    }
-
-    /**
      * Convert to array.
      *
      * @return array<string, mixed>
@@ -111,5 +103,13 @@ abstract class AbstractSchema implements Schema
     public function toJson(int $flags = 0): string
     {
         return (string) json_encode($this->toArray(), $flags);
+    }
+
+    /**
+     * Check if the schema allows null values.
+     */
+    protected function isNullable(): bool
+    {
+        return is_array($this->type) && in_array(SchemaType::Null, $this->type, true);
     }
 }

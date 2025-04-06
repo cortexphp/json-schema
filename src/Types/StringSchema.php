@@ -66,6 +66,19 @@ class StringSchema extends AbstractSchema
     }
 
     /**
+     * Convert to array.
+     *
+     * @return array<string, mixed>
+     */
+    #[Override]
+    public function toArray(bool $includeSchemaRef = true, bool $includeTitle = true): array
+    {
+        $schema = parent::toArray($includeSchemaRef, $includeTitle);
+
+        return $this->addLengthToSchema($schema);
+    }
+
+    /**
      * Add length constraints to schema array.
      *
      * @param array<string, mixed> $schema
@@ -87,18 +100,5 @@ class StringSchema extends AbstractSchema
         }
 
         return $schema;
-    }
-
-    /**
-     * Convert to array.
-     *
-     * @return array<string, mixed>
-     */
-    #[Override]
-    public function toArray(bool $includeSchemaRef = true, bool $includeTitle = true): array
-    {
-        $schema = parent::toArray($includeSchemaRef, $includeTitle);
-
-        return $this->addLengthToSchema($schema);
     }
 }
