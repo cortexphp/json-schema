@@ -8,24 +8,14 @@
 
 [What is JSON Schema?](https://json-schema.org/overview/what-is-jsonschema)
 
-Support is limited to [draft-07](https://json-schema.org/draft-07) at the moment.
-
 ## Features
 
 - 🏗️ **Fluent Builder API** - Build JSON Schemas using an intuitive fluent interface
-- 📝 **Draft-07 Support** - Full support for JSON Schema Draft-07 specification
+- 📝 **Draft-07 Support** - Full support for JSON Schema [Draft-07](https://json-schema.org/draft-07) specification
 - ✅ **Validation** - Validate data against schemas with detailed error messages
 - 🤝 **Conditional Schemas** - Support for if/then/else, allOf, anyOf, and not conditions
-- 🔄 **Reflection** - Generate schemas from PHP classes and closures
+- 🔄 **Reflection** - Generate schemas from PHP Classes, Enums and Closures
 - 💪 **Type Safety** - Built with PHP 8.3+ features and strict typing
-
-## Why?
-
-I found myself looking for a nice, fluent way to build JSON Schemas, but couldn't find anything that fit my needs.
-
-There are many use cases, but the most prevalent right now is usage around LLMs, in particular structured outputs and tool calling.
-
-In fact I'm building an AI framework currently that uses this package to generate JSON Schemas in lots of scenarios. More to come on that soon!
 
 ## Requirements
 
@@ -68,29 +58,28 @@ $schema = SchemaFactory::object('user')
     );
 ```
 
-You can also use the objects directly instead of the factory methods.
+You can also use the objects directly instead of the factory methods. (Example shows PHP 8.4 syntax)
 
 ```php
-$schema = (new ObjectSchema('user'))
+$schema = new ObjectSchema('user')
     ->description('User schema')
     ->properties(
-        (new StringSchema('name'))
+        new StringSchema('name')
             ->minLength(2)
             ->maxLength(100)
             ->required(),
-        (new StringSchema('email'))
+        new StringSchema('email')
             ->format(SchemaFormat::Email)
             ->required(),
-        (new IntegerSchema('age'))
+        new IntegerSchema('age')
             ->minimum(18)
             ->maximum(150),
-        (new BooleanSchema('active'))
+        new BooleanSchema('active')
             ->default(true),
-        (new ObjectSchema('settings'))
+        new ObjectSchema('settings')
             ->additionalProperties(false)
             ->properties(
-                (new StringSchema('theme'))
-                    ->enum(['light', 'dark']),
+                new StringSchema('theme')->enum(['light', 'dark']),
             ),
     );
 ```
