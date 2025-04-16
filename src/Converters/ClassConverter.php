@@ -36,14 +36,14 @@ class ClassConverter implements Converter
 
     public function convert(): ObjectSchema
     {
-        $schema = new ObjectSchema();
+        $objectSchema = new ObjectSchema();
 
         // Get the description from the doc parser
         $description = $this->getDocParser($this->reflection)?->description() ?? null;
 
         // Add the description to the schema if it exists
         if ($description !== null) {
-            $schema->description($description);
+            $objectSchema->description($description);
         }
 
         $properties = $this->reflection->getProperties(
@@ -52,26 +52,26 @@ class ClassConverter implements Converter
 
         // Add the properties to the object schema
         foreach ($properties as $property) {
-            $schema->properties(self::getSchemaFromReflectionProperty($property));
+            $objectSchema->properties(self::getSchemaFromReflectionProperty($property));
         }
 
-        return $schema;
+        return $objectSchema;
     }
 
     /**
      * Create a schema from a given type.
      */
     protected function getSchemaFromReflectionProperty(
-        ReflectionProperty $property,
+        ReflectionProperty $reflectionProperty,
     ): Schema {
-        $type = $property->getType();
+        $type = $reflectionProperty->getType();
 
         // @phpstan-ignore argument.type
         $schema = self::getSchemaFromReflectionType($type);
 
-        $schema->title($property->getName());
+        $schema->title($reflectionProperty->getName());
 
-        $variable = $this->getDocParser($property)?->variable();
+        $variable = $this->getDocParser($reflectionProperty)?->variable();
 
         // Add the description to the schema if it exists
         if ($variable?->description !== null) {
@@ -82,8 +82,8 @@ class ClassConverter implements Converter
             $schema->nullable();
         }
 
-        if ($property->hasDefaultValue()) {
-            $defaultValue = $property->getDefaultValue();
+        if ($reflectionProperty->hasDefaultValue()) {
+            $defaultValue = $reflectionProperty->getDefaultValue();
 
             // If the default value is a backed enum, use its value
             if ($defaultValue instanceof BackedEnum) {
@@ -100,9 +100,9 @@ class ClassConverter implements Converter
             $typeName = $type->getName();
 
             if (enum_exists($typeName)) {
-                $reflection = new ReflectionEnum($typeName);
+                $reflectionEnum = new ReflectionEnum($typeName);
 
-                if ($reflection->isBacked()) {
+                if ($reflectionEnum->isBacked()) {
                     /** @var non-empty-array<int, string|int> $values */
                     $values = array_column($typeName::cases(), 'value');
                     $schema->enum($values);

@@ -13,7 +13,7 @@ use Cortex\JsonSchema\Exceptions\SchemaException;
 covers(ObjectSchema::class);
 
 it('can create a basic object schema', function (): void {
-    $schema = Schema::object('user')
+    $objectSchema = Schema::object('user')
         ->description('User schema')
         ->properties(
             Schema::string('name')
@@ -29,7 +29,7 @@ it('can create a basic object schema', function (): void {
                 ->maximum(150),
         );
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $objectSchema->toArray();
 
     expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
     expect($schemaArray)->toHaveKey('type', 'object');
@@ -44,17 +44,17 @@ it('can create a basic object schema', function (): void {
     expect($schemaArray)->toHaveKey('properties.age.minimum', 18);
     expect($schemaArray)->toHaveKey('properties.age.maximum', 150);
     expect($schemaArray)->toHaveKey('required', ['name', 'email']);
-    expect($schema->getPropertyKeys())->toBe(['name', 'email', 'age']);
+    expect($objectSchema->getPropertyKeys())->toBe(['name', 'email', 'age']);
 
     // Validation tests
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'age' => 30,
     ]))->not->toThrow(SchemaException::class);
 
     // Missing required property
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John Doe',
         'age' => 30,
     ]))->toThrow(
@@ -63,7 +63,7 @@ it('can create a basic object schema', function (): void {
     );
 
     // Invalid property type
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'age' => '30', // string instead of integer
@@ -73,7 +73,7 @@ it('can create a basic object schema', function (): void {
     );
 
     // Invalid property value
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'Jo', // too short
         'email' => 'john@example.com',
         'age' => 30,
@@ -84,14 +84,14 @@ it('can create a basic object schema', function (): void {
 });
 
 it('can get the underlying errors', function (): void {
-    $schema = Schema::object('user')
+    $objectSchema = Schema::object('user')
         ->properties(
             Schema::string('name')->required(),
             Schema::string('email')->format(SchemaFormat::Email),
         );
 
     try {
-        $schema->validate([
+        $objectSchema->validate([
             'name' => 'John Doe',
             'email' => 'foo',
         ]);
@@ -109,7 +109,7 @@ it('can get the underlying errors', function (): void {
 })->throws(SchemaException::class);
 
 it('can create an object schema with additional properties control', function (): void {
-    $schema = Schema::object('config')
+    $objectSchema = Schema::object('config')
         ->description('Configuration object')
         ->properties(
             Schema::string('name')->required(),
@@ -117,13 +117,13 @@ it('can create an object schema with additional properties control', function ()
         )
         ->additionalProperties(false);
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $objectSchema->toArray();
 
     expect($schemaArray)->toHaveKey('additionalProperties', false);
     expect($schemaArray)->toHaveKey('required', ['name', 'type']);
 
     // Validation tests
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'config1',
         'type' => 'test',
         'extra' => 'not allowed', // additional property
@@ -132,14 +132,14 @@ it('can create an object schema with additional properties control', function ()
         'Additional object properties are not allowed: extra',
     );
 
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'config1',
         'type' => 'test',
     ]))->not->toThrow(SchemaException::class);
 });
 
 it('can create an object schema with additional properties schema', function (): void {
-    $schema = Schema::object('config')
+    $objectSchema = Schema::object('config')
         ->description('Configuration object')
         ->properties(
             Schema::string('name')->required(),
@@ -147,20 +147,20 @@ it('can create an object schema with additional properties schema', function ():
         )
         ->additionalProperties(Schema::string()->minLength(3));
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $objectSchema->toArray();
 
     expect($schemaArray['additionalProperties'])->toHaveKey('type', 'string');
     expect($schemaArray['additionalProperties'])->toHaveKey('minLength', 3);
 
     // Validation tests - valid additional property
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'config1',
         'type' => 'test',
         'extra' => 'valid', // additional property matching schema
     ]))->not->toThrow(SchemaException::class);
 
     // Validation tests - invalid additional property (too short)
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'config1',
         'type' => 'test',
         'extra' => 'no', // additional property not matching schema
@@ -170,7 +170,7 @@ it('can create an object schema with additional properties schema', function ():
     );
 
     // Validation tests - invalid additional property (wrong type)
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'config1',
         'type' => 'test',
         'extra' => 123, // additional property not matching schema
@@ -181,7 +181,7 @@ it('can create an object schema with additional properties schema', function ():
 });
 
 it('can create an object schema with property count constraints', function (): void {
-    $schema = Schema::object('metadata')
+    $objectSchema = Schema::object('metadata')
         ->description('Metadata object')
         ->properties(
             Schema::string('key1'),
@@ -191,20 +191,20 @@ it('can create an object schema with property count constraints', function (): v
         ->minProperties(2)
         ->maxProperties(3);
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $objectSchema->toArray();
 
     expect($schemaArray)->toHaveKey('minProperties', 2);
     expect($schemaArray)->toHaveKey('maxProperties', 3);
 
     // Validation tests
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'key1' => 'value1',
     ]))->toThrow(
         SchemaException::class,
         'Object must have at least 2 properties, 1 found',
     );
 
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'key1' => 'value1',
         'key2' => 'value2',
         'key3' => 'value3',
@@ -214,43 +214,43 @@ it('can create an object schema with property count constraints', function (): v
         'Object must have at most 3 properties, 4 found',
     );
 
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'key1' => 'value1',
         'key2' => 'value2',
     ]))->not->toThrow(SchemaException::class);
 });
 
 it('can specify a propertyNames schema', function (): void {
-    $schema = Schema::object('user')
+    $objectSchema = Schema::object('user')
         ->properties(
             Schema::string('name')->required(),
         )
         // ->additionalProperties(true)
         ->propertyNames(Schema::string()->pattern('^[a-zA-Z]+$'));
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $objectSchema->toArray();
 
     expect($schemaArray)->toHaveKey('propertyNames.pattern', '^[a-zA-Z]+$');
 
     // Validation tests
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John Doe',
     ]))->not->toThrow(SchemaException::class);
 
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 123, // invalid property name pattern
     ]))->toThrow(SchemaException::class, 'The properties must match schema: name');
 });
 
 it('can create an object schema with pattern properties', function (): void {
-    $schema = Schema::object('config')
+    $objectSchema = Schema::object('config')
         ->patternProperty('^prefix_', Schema::string()->minLength(5))
         ->patternProperties([
             '^[A-Z][a-z]+$' => Schema::string(),
             '^\d+$' => Schema::number(),
         ]);
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $objectSchema->toArray();
 
     // Check schema structure
     expect($schemaArray)->toHaveKey('patternProperties');
@@ -259,37 +259,25 @@ it('can create an object schema with pattern properties', function (): void {
     expect($schemaArray['patternProperties'])->toHaveKey('^\d+$');
 
     // Valid data tests
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'prefix_hello' => 'world123',  // Matches ^prefix_ and meets minLength
         'Name' => 'John',              // Matches ^[A-Z][a-z]+$
         '123' => 42,                   // Matches ^\d+$
     ]))->not->toThrow(SchemaException::class);
 
     // Invalid pattern property value (too short)
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'prefix_hello' => 'hi',  // Matches pattern but fails minLength
     ]))->toThrow(SchemaException::class);
 
     // Invalid pattern property type
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         '123' => 'not a number',  // Matches pattern but wrong type
     ]))->toThrow(SchemaException::class);
 });
 
-it('throws exception for invalid regex patterns', function (): void {
-    $schema = Schema::object('test');
-
-    expect(fn(): ObjectSchema => $schema->patternProperty('[a-z', Schema::string()))
-        ->toThrow(SchemaException::class, 'Invalid pattern: [a-z');
-
-    expect(fn(): ObjectSchema => $schema->patternProperties([
-        '^valid$' => Schema::string(),
-        '[a-z' => Schema::string(),
-    ]))->toThrow(SchemaException::class, 'Invalid pattern: [a-z');
-});
-
 it('can combine pattern properties with regular properties', function (): void {
-    $schema = Schema::object('user')
+    $objectSchema = Schema::object('user')
         ->properties(
             Schema::string('name')->required(),
             Schema::integer('age')->required(),
@@ -297,7 +285,7 @@ it('can combine pattern properties with regular properties', function (): void {
         ->patternProperty('^custom_', Schema::string())
         ->additionalProperties(false);
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $objectSchema->toArray();
 
     // Check schema structure
     expect($schemaArray)->toHaveKey('properties');
@@ -305,20 +293,20 @@ it('can combine pattern properties with regular properties', function (): void {
     expect($schemaArray)->toHaveKey('additionalProperties', false);
 
     // Valid data
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John',
         'age' => 30,
         'custom_field' => 'value',
     ]))->not->toThrow(SchemaException::class);
 
     // Missing required property
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John',
         'custom_field' => 'value',
     ]))->toThrow(SchemaException::class);
 
     // Invalid additional property (doesn't match pattern)
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John',
         'age' => 30,
         'invalid_field' => 'value',

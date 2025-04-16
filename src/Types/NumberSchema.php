@@ -8,7 +8,7 @@ use Override;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\Concerns\HasNumericConstraints;
 
-class NumberSchema extends AbstractSchema
+final class NumberSchema extends AbstractSchema
 {
     use HasNumericConstraints;
 

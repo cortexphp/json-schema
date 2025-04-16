@@ -6,7 +6,7 @@ namespace Cortex\JsonSchema\Types;
 
 use Cortex\JsonSchema\Enums\SchemaType;
 
-class NullSchema extends AbstractSchema
+final class NullSchema extends AbstractSchema
 {
     public function __construct(?string $title = null)
     {

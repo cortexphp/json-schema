@@ -31,14 +31,14 @@ class ClosureConverter implements Converter
 
     public function convert(): ObjectSchema
     {
-        $schema = new ObjectSchema();
+        $objectSchema = new ObjectSchema();
 
         // Get the description from the doc parser
         $description = $this->getDocParser()?->description() ?? null;
 
         // Add the description to the schema if it exists
         if ($description !== null) {
-            $schema->description($description);
+            $objectSchema->description($description);
         }
 
         // Get the parameters from the doc parser
@@ -46,29 +46,29 @@ class ClosureConverter implements Converter
 
         // Add the parameters to the objectschema
         foreach ($this->reflection->getParameters() as $parameter) {
-            $schema->properties(self::getSchemaFromReflectionParameter($parameter, $params));
+            $objectSchema->properties(self::getSchemaFromReflectionParameter($parameter, $params));
         }
 
-        return $schema;
+        return $objectSchema;
     }
 
     /**
      * Create a schema from a given type.
      *
-     * @param \Cortex\JsonSchema\Support\NodeCollection<array-key, \Cortex\JsonSchema\Support\NodeData> $docParams
+     * @param \Cortex\JsonSchema\Support\NodeCollection<array-key, \Cortex\JsonSchema\Support\NodeData> $nodeCollection
      */
     protected function getSchemaFromReflectionParameter(
-        ReflectionParameter $parameter,
-        ?NodeCollection $docParams = null,
+        ReflectionParameter $reflectionParameter,
+        ?NodeCollection $nodeCollection = null,
     ): Schema {
-        $type = $parameter->getType();
+        $type = $reflectionParameter->getType();
 
         // @phpstan-ignore argument.type
         $schema = self::getSchemaFromReflectionType($type);
 
-        $schema->title($parameter->getName());
+        $schema->title($reflectionParameter->getName());
 
-        $docParam = $docParams?->get($parameter->getName());
+        $docParam = $nodeCollection?->get($reflectionParameter->getName());
 
         // Add the description to the schema if it exists
         if ($docParam?->description !== null) {
@@ -79,8 +79,8 @@ class ClosureConverter implements Converter
             $schema->nullable();
         }
 
-        if ($parameter->isDefaultValueAvailable() && ! $parameter->isDefaultValueConstant()) {
-            $defaultValue = $parameter->getDefaultValue();
+        if ($reflectionParameter->isDefaultValueAvailable() && ! $reflectionParameter->isDefaultValueConstant()) {
+            $defaultValue = $reflectionParameter->getDefaultValue();
 
             // If the default value is a backed enum, use its value
             if ($defaultValue instanceof BackedEnum) {
@@ -90,7 +90,7 @@ class ClosureConverter implements Converter
             $schema->default($defaultValue);
         }
 
-        if (! $parameter->isOptional()) {
+        if (! $reflectionParameter->isOptional()) {
             $schema->required();
         }
 
@@ -99,9 +99,9 @@ class ClosureConverter implements Converter
             $typeName = $type->getName();
 
             if (enum_exists($typeName)) {
-                $reflection = new ReflectionEnum($typeName);
+                $reflectionEnum = new ReflectionEnum($typeName);
 
-                if ($reflection->isBacked()) {
+                if ($reflectionEnum->isBacked()) {
                     /** @var non-empty-array<int, string|int> $values */
                     $values = array_column($typeName::cases(), 'value');
                     $schema->enum($values);

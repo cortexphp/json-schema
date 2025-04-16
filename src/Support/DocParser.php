@@ -65,10 +65,10 @@ class DocParser
     public function variable(): ?NodeData
     {
         $vars = array_map(
-            static fn(VarTagValueNode $var): NodeData => new NodeData(
-                name: ltrim($var->variableName, '$'),
-                types: self::mapValueNodeToTypes($var),
-                description: $var->description === '' ? null : $var->description,
+            static fn(VarTagValueNode $varTagValueNode): NodeData => new NodeData(
+                name: ltrim($varTagValueNode->variableName, '$'),
+                types: self::mapValueNodeToTypes($varTagValueNode),
+                description: $varTagValueNode->description === '' ? null : $varTagValueNode->description,
             ),
             $this->parse()->getVarTagValues(),
         );
@@ -91,7 +91,7 @@ class DocParser
 
         return match (true) {
             $param->type instanceof UnionTypeNode => array_map(
-                fn(TypeNode $type): string => (string) $type,
+                fn(TypeNode $typeNode): string => (string) $typeNode,
                 $param->type->types,
             ),
             $param->type instanceof NullableTypeNode => [
@@ -114,11 +114,11 @@ class DocParser
 
     protected function getParser(): PhpDocParser
     {
-        $config = $this->getConfig();
-        $constExprParser = new ConstExprParser($config);
-        $typeParser = new TypeParser($config, $constExprParser);
+        $parserConfig = $this->getConfig();
+        $constExprParser = new ConstExprParser($parserConfig);
+        $typeParser = new TypeParser($parserConfig, $constExprParser);
 
-        return new PhpDocParser($config, $typeParser, $constExprParser);
+        return new PhpDocParser($parserConfig, $typeParser, $constExprParser);
     }
 
     protected function getConfig(): ParserConfig
@@ -140,7 +140,7 @@ class DocParser
     {
         return array_filter(
             $children,
-            static fn(PhpDocChildNode $child): bool => $child instanceof PhpDocTextNode,
+            static fn(PhpDocChildNode $phpDocChildNode): bool => $phpDocChildNode instanceof PhpDocTextNode,
         );
     }
 }

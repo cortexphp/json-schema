@@ -12,20 +12,20 @@ class SchemaException extends Exception
 {
     protected ValidationError $error;
 
-    public static function failedValidation(ValidationError $error): self
+    public static function failedValidation(ValidationError $validationError): self
     {
         $exception = new self(
-            (new ErrorFormatter())->formatErrorMessage($error),
+            (new ErrorFormatter())->formatErrorMessage($validationError),
         );
 
-        $exception->setError($error);
+        $exception->setError($validationError);
 
         return $exception;
     }
 
-    public function setError(ValidationError $error): void
+    public function setError(ValidationError $validationError): void
     {
-        $this->error = $error;
+        $this->error = $validationError;
     }
 
     public function getError(): ValidationError

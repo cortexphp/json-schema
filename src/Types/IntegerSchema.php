@@ -8,7 +8,7 @@ use Override;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-class IntegerSchema extends AbstractSchema
+final class IntegerSchema extends AbstractSchema
 {
     protected ?int $minimum = null;
 

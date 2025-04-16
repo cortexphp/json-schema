@@ -24,7 +24,9 @@ trait InteractsWithTypes
         $schemaTypes = match (true) {
             $type instanceof ReflectionUnionType, $type instanceof ReflectionIntersectionType => array_map(
                 // @phpstan-ignore argument.type
-                fn(ReflectionNamedType $t): SchemaType => self::resolveSchemaType($t),
+                fn(ReflectionNamedType $reflectionNamedType): SchemaType => self::resolveSchemaType(
+                    $reflectionNamedType,
+                ),
                 $type->getTypes(),
             ),
             // If the parameter is not typed or explicitly typed as mixed, we use all schema types
@@ -40,16 +42,16 @@ trait InteractsWithTypes
     /**
      * Resolve the schema type from the given reflection type.
      */
-    protected static function resolveSchemaType(ReflectionNamedType $type): SchemaType
+    protected static function resolveSchemaType(ReflectionNamedType $reflectionNamedType): SchemaType
     {
-        $typeName = $type->getName();
+        $typeName = $reflectionNamedType->getName();
 
         if (enum_exists($typeName)) {
-            $reflection = new ReflectionEnum($typeName);
-            $typeName = $reflection->getBackingType()?->getName();
+            $reflectionEnum = new ReflectionEnum($typeName);
+            $typeName = $reflectionEnum->getBackingType()?->getName();
 
             if ($typeName === null) {
-                throw new SchemaException('Enum type has no backing type: ' . $reflection->getName());
+                throw new SchemaException('Enum type has no backing type: ' . $reflectionEnum->getName());
             }
         }
 

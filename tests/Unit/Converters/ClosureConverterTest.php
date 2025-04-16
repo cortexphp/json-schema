@@ -12,10 +12,10 @@ covers(ClosureConverter::class);
 
 it('can create a schema from a closure', function (): void {
     $closure = function (string $name, array $fooArray, ?int $age = null): void {};
-    $schema = (new ClosureConverter($closure))->convert();
+    $objectSchema = (new ClosureConverter($closure))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -48,10 +48,10 @@ it('can create a schema from a closure with a string backed enum', function (): 
     }
 
     $closure = function (MyEnum $myEnum, bool $foo = true): void {};
-    $schema = (new ClosureConverter($closure))->convert();
+    $objectSchema = (new ClosureConverter($closure))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -88,10 +88,10 @@ it('can create a schema from a closure with an integer backed enum', function ()
      */
     $closure = function (Status $status): void {};
 
-    $schema = (new ClosureConverter($closure))->convert();
+    $objectSchema = (new ClosureConverter($closure))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'description' => 'Do something with the status',
@@ -120,7 +120,7 @@ it('throws an exception if the enum is not a backed enum', function (): void {
         case Archived;
     }
 
-    $closure = function (StatusNoBackingType $status): void {};
+    $closure = function (StatusNoBackingType $statusNoBackingType): void {};
     (new ClosureConverter($closure))->convert();
 })->throws(
     SchemaException::class,
@@ -129,10 +129,10 @@ it('throws an exception if the enum is not a backed enum', function (): void {
 
 it('can create a schema from a closure with a union type', function (): void {
     $closure = function (int|string $foo): void {};
-    $schema = (new ClosureConverter($closure))->convert();
+    $objectSchema = (new ClosureConverter($closure))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -151,10 +151,10 @@ it('can create a schema from a closure with a union type', function (): void {
 
 it('can create a schema from a closure with a nullable union type', function (): void {
     $closure = function (int|string|null $foo): void {};
-    $schema = (new ClosureConverter($closure))->convert();
+    $objectSchema = (new ClosureConverter($closure))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -174,10 +174,10 @@ it('can create a schema from a closure with a nullable union type', function ():
 
 it('can create a schema from a closure with array type hints', function (): void {
     $closure = function (array $items, array $tags = ['default']): void {};
-    $schema = (new ClosureConverter($closure))->convert();
+    $objectSchema = (new ClosureConverter($closure))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -197,10 +197,10 @@ it('can create a schema from a closure with array type hints', function (): void
 
 it('can create a schema from a closure with mixed type', function (): void {
     $closure = function (mixed $data): void {};
-    $schema = (new ClosureConverter($closure))->convert();
+    $objectSchema = (new ClosureConverter($closure))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -224,10 +224,10 @@ it('can create a schema from a closure with mixed type', function (): void {
 
 it('can create a schema from a closure with object type', function (): void {
     $closure = function (object $data): void {};
-    $schema = (new ClosureConverter($closure))->convert();
+    $objectSchema = (new ClosureConverter($closure))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -243,10 +243,10 @@ it('can create a schema from a closure with object type', function (): void {
 
 it('can create a schema from a closure with float type', function (): void {
     $closure = function (float $amount = 0.0): void {};
-    $schema = (new ClosureConverter($closure))->convert();
+    $objectSchema = (new ClosureConverter($closure))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -267,10 +267,10 @@ it('can create a schema from a closure with default values', function (): void {
         bool $active = true,
     ): void {};
 
-    $schema = (new ClosureConverter($closure))->convert();
+    $objectSchema = (new ClosureConverter($closure))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -305,10 +305,10 @@ it('can create a schema from a closure with default values', function (): void {
 
 it('can create a schema from a closure with array type', function (): void {
     $closure = function (array $items = ['default']): void {};
-    $schema = (new ClosureConverter($closure))->convert();
+    $objectSchema = (new ClosureConverter($closure))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [

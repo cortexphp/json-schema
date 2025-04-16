@@ -11,7 +11,7 @@ use Cortex\JsonSchema\Exceptions\SchemaException;
 use Cortex\JsonSchema\Types\Concerns\HasProperties;
 use Cortex\JsonSchema\Types\Concerns\HasNumericConstraints;
 
-class UnionSchema extends AbstractSchema
+final class UnionSchema extends AbstractSchema
 {
     use HasItems;
     use HasProperties;
@@ -31,7 +31,7 @@ class UnionSchema extends AbstractSchema
         }
 
         $uniqueTypes = array_unique(
-            array_map(static fn(SchemaType $type) => $type->value, $types),
+            array_map(static fn(SchemaType $schemaType) => $schemaType->value, $types),
         );
 
         if (count($uniqueTypes) !== count($types)) {

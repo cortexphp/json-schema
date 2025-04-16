@@ -47,12 +47,12 @@ it('can create different schema types', function (): void {
 });
 
 it('can create schemas with default metadata', function (): void {
-    $schema = SchemaFactory::string('title')
+    $stringSchema = SchemaFactory::string('title')
         ->description('Description')
         ->readOnly()
         ->writeOnly();
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $stringSchema->toArray();
 
     expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
     expect($schemaArray)->toHaveKey('title', 'title');
@@ -63,10 +63,10 @@ it('can create schemas with default metadata', function (): void {
 
 it('can create a schema from a closure', function (): void {
     $closure = function (string $name, array $fooArray, ?int $age = null): void {};
-    $schema = SchemaFactory::fromClosure($closure);
+    $objectSchema = SchemaFactory::fromClosure($closure);
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -90,10 +90,10 @@ it('can create a schema from a closure', function (): void {
         ],
     ]);
 
-    expect($schema->toJson())->toBe(json_encode($schema->toArray()));
+    expect($objectSchema->toJson())->toBe(json_encode($objectSchema->toArray()));
 
     // Assert that the from method behaves in the same way as the fromClosure method
-    expect(SchemaFactory::from($closure))->toEqual($schema);
+    expect(SchemaFactory::from($closure))->toEqual($objectSchema);
 });
 
 it('can create a schema from a class', function (): void {
@@ -106,10 +106,10 @@ it('can create a schema from a class', function (): void {
         ) {}
     };
 
-    $schema = SchemaFactory::fromClass($class, publicOnly: true);
+    $objectSchema = SchemaFactory::fromClass($class, publicOnly: true);
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'description' => 'This is the description of the class',
@@ -128,7 +128,7 @@ it('can create a schema from a class', function (): void {
     ]);
 
     // Assert that the from method behaves in the same way as the fromClass method
-    expect(SchemaFactory::from($class))->toEqual($schema);
+    expect(SchemaFactory::from($class))->toEqual($objectSchema);
 });
 
 it('can create a schema from an enum', function (): void {

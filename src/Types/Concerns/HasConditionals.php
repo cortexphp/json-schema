@@ -134,21 +134,21 @@ trait HasConditionals
 
         if ($this->allOf !== []) {
             $schema['allOf'] = array_map(
-                static fn(Schema $s): array => $s->toArray(includeSchemaRef: false),
+                static fn(Schema $schema): array => $schema->toArray(includeSchemaRef: false),
                 $this->allOf,
             );
         }
 
         if ($this->anyOf !== []) {
             $schema['anyOf'] = array_map(
-                static fn(Schema $s): array => $s->toArray(includeSchemaRef: false),
+                static fn(Schema $schema): array => $schema->toArray(includeSchemaRef: false),
                 $this->anyOf,
             );
         }
 
         if ($this->oneOf !== []) {
             $schema['oneOf'] = array_map(
-                static fn(Schema $s): array => $s->toArray(includeSchemaRef: false),
+                static fn(Schema $schema): array => $schema->toArray(includeSchemaRef: false),
                 $this->oneOf,
             );
         }

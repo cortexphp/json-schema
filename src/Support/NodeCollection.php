@@ -19,7 +19,12 @@ class NodeCollection
 
     public function get(string $name): ?NodeData
     {
-        $nodes = array_values(array_filter($this->nodes, fn(NodeData $node): bool => $node->name === $name));
+        $nodes = array_values(
+            array_filter(
+                $this->nodes,
+                fn(NodeData $nodeData): bool => $nodeData->name === $name,
+            ),
+        );
 
         return $nodes[0] ?? null;
     }

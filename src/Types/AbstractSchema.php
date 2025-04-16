@@ -76,7 +76,7 @@ abstract class AbstractSchema implements Schema
     {
         $schema = [
             'type' => is_array($this->type)
-                ? array_map(static fn(SchemaType $type) => $type->value, $this->type)
+                ? array_map(static fn(SchemaType $schemaType) => $schemaType->value, $this->type)
                 : $this->type->value,
         ];
 
