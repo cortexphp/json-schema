@@ -37,7 +37,7 @@ abstract class AbstractSchema implements Schema
     protected string $schemaVersion = 'http://json-schema.org/draft-07/schema#';
 
     /**
-     * @param \Cortex\JsonSchema\Enums\SchemaType|array<int, \Cortex\JsonSchema\Enums\SchemaType> $type
+     * @param \Cortex\JsonSchema\Enums\SchemaType|array<array-key, \Cortex\JsonSchema\Enums\SchemaType> $type
      */
     public function __construct(
         protected SchemaType|array $type,
@@ -56,7 +56,7 @@ abstract class AbstractSchema implements Schema
         }
 
         if (is_array($this->type)) {
-            $this->type[] = SchemaType::Null;
+            $this->type[] = SchemaType::Null; // @phpstan-ignore assign.propertyType
         } else {
             $this->type = [
                 $this->type,
