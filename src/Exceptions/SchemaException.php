@@ -38,10 +38,10 @@ class SchemaException extends Exception
      */
     public function getErrors(): array
     {
-        $formatter = new ErrorFormatter();
+        $errorFormatter = new ErrorFormatter();
 
         /** @var array<string, string|array<string, string>> $errors */
-        $errors = $formatter->format($this->error);
+        $errors = $errorFormatter->format($this->error);
 
         return $errors;
     }

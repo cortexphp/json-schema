@@ -6,3 +6,4 @@ parameters:
   paths:
     - src
   tmpDir: .phpstan-cache
+  checkBenevolentUnionTypes: true
