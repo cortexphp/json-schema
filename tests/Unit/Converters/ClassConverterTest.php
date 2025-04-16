@@ -10,7 +10,7 @@ use Cortex\JsonSchema\Converters\ClassConverter;
 covers(ClassConverter::class);
 
 it('can create a schema from a class', function (): void {
-    $schema = (new ClassConverter(new class () {
+    $objectSchema = (new ClassConverter(new class () {
         public string $name;
 
         public ?int $age = null;
@@ -18,8 +18,8 @@ it('can create a schema from a class', function (): void {
         public float $height = 1.7;
     }))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -45,7 +45,7 @@ it('can create a schema from a class', function (): void {
 });
 
 it('can create a schema from a class with docblocks', function (): void {
-    $schema = (new ClassConverter(new class () {
+    $objectSchema = (new ClassConverter(new class () {
         /**
          * @var string The name of the user
          */
@@ -62,8 +62,8 @@ it('can create a schema from a class with docblocks', function (): void {
         public float $height = 1.7;
     }))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [
@@ -103,10 +103,10 @@ it('can create a schema from a class with constructor property promotion', funct
         ) {}
     };
 
-    $schema = (new ClassConverter($class))->convert();
+    $objectSchema = (new ClassConverter($class))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'description' => 'This is the description of the class',
@@ -133,14 +133,14 @@ it('can create a schema from a class with an enum', function (): void {
         case Pending = 'pending';
     }
 
-    $schema = (new ClassConverter(new class () {
+    $objectSchema = (new ClassConverter(new class () {
         public string $name;
 
         public UserStatus $status = UserStatus::Pending;
     }))->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
-    expect($schema->toArray())->toBe([
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
         'type' => 'object',
         '$schema' => 'http://json-schema.org/draft-07/schema#',
         'properties' => [

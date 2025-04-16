@@ -7,6 +7,7 @@ namespace Cortex\JsonSchema\Tests;
 use Throwable;
 use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Contracts\Converter;
+use Cortex\JsonSchema\Types\AbstractSchema;
 
 arch()->preset()->php();
 arch()->preset()->security();
@@ -16,3 +17,4 @@ arch()->expect('Cortex\JsonSchema\Enums')->toBeEnums();
 arch()->expect('Cortex\JsonSchema\Exceptions')->toImplement(Throwable::class);
 arch()->expect('Cortex\JsonSchema\Converters')->classes()->toImplement(Converter::class);
 arch()->expect('Cortex\JsonSchema\Types')->classes()->toImplement(Schema::class);
+arch()->expect('Cortex\JsonSchema\Types')->classes()->toBeFinal()->ignoring(AbstractSchema::class);

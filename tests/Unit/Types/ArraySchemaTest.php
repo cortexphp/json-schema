@@ -11,7 +11,7 @@ use Cortex\JsonSchema\Exceptions\SchemaException;
 covers(ArraySchema::class);
 
 it('can create an array schema', function (): void {
-    $schema = Schema::array('tags')
+    $arraySchema = Schema::array('tags')
         ->description('List of tags')
         ->items(
             Schema::string()
@@ -22,7 +22,7 @@ it('can create an array schema', function (): void {
         ->maxItems(10)
         ->uniqueItems();
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $arraySchema->toArray();
 
     expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
     expect($schemaArray)->toHaveKey('type', 'array');
@@ -36,18 +36,18 @@ it('can create an array schema', function (): void {
     expect($schemaArray)->toHaveKey('items.maxLength', 50);
 
     // Validation tests
-    expect(fn() => $schema->validate([
+    expect(fn() => $arraySchema->validate([
         'php', 'javascript', 'python',
     ]))->not->toThrow(SchemaException::class);
 
     // Test minimum items
-    expect(fn() => $schema->validate([]))->toThrow(
+    expect(fn() => $arraySchema->validate([]))->toThrow(
         SchemaException::class,
         'Array should have at least 1 items, 0 found',
     );
 
     // Test maximum items
-    expect(fn() => $schema->validate([
+    expect(fn() => $arraySchema->validate([
         'tag1', 'tag2', 'tag3', 'tag4', 'tag5',
         'tag6', 'tag7', 'tag8', 'tag9', 'tag10', 'tag11',
     ]))->toThrow(
@@ -56,24 +56,24 @@ it('can create an array schema', function (): void {
     );
 
     // Test item string length
-    expect(fn() => $schema->validate(['a']))->toThrow(
+    expect(fn() => $arraySchema->validate(['a']))->toThrow(
         SchemaException::class,
         'All array items must match schema',
     );
 
-    expect(fn() => $schema->validate([str_repeat('a', 51)]))->toThrow(
+    expect(fn() => $arraySchema->validate([str_repeat('a', 51)]))->toThrow(
         SchemaException::class,
         'All array items must match schema',
     );
 
     // Test unique items
-    expect(fn() => $schema->validate(['php', 'php']))->toThrow(
+    expect(fn() => $arraySchema->validate(['php', 'php']))->toThrow(
         SchemaException::class,
         'Array must have unique items',
     );
 
     // Test invalid item type
-    expect(fn() => $schema->validate(['php', 123, 'python']))->toThrow(
+    expect(fn() => $arraySchema->validate(['php', 123, 'python']))->toThrow(
         SchemaException::class,
         'All array items must match schema',
     );
@@ -81,14 +81,14 @@ it('can create an array schema', function (): void {
 
 it('can validate array contains', function (): void {
     // First test just contains without min/max
-    $basicSchema = Schema::array('numbers')
+    $arraySchema = Schema::array('numbers')
         ->description('List of numbers')
         // Must contain at least one number between 10 and 20
         ->contains(Schema::number()->minimum(10)->maximum(20));
 
     // Test basic contains validation
-    expect(fn() => $basicSchema->validate([15, 5, 6]))->not->toThrow(SchemaException::class);
-    expect(fn() => $basicSchema->validate([1, 2, 3]))->toThrow(
+    expect(fn() => $arraySchema->validate([15, 5, 6]))->not->toThrow(SchemaException::class);
+    expect(fn() => $arraySchema->validate([1, 2, 3]))->toThrow(
         SchemaException::class,
         'At least one array item must match schema',
     );

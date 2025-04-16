@@ -7,7 +7,7 @@ namespace Cortex\JsonSchema\Support;
 class NodeData
 {
     /**
-     * @param array<int, string> $types
+     * @param array<array-key, string> $types
      */
     public function __construct(
         public string $name,

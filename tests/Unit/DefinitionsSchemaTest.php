@@ -9,7 +9,7 @@ use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 it('can add a single definition to a schema', function (): void {
-    $schema = Schema::object('user')
+    $objectSchema = Schema::object('user')
         ->addDefinition(
             'address',
             Schema::object()
@@ -20,7 +20,7 @@ it('can add a single definition to a schema', function (): void {
                 ),
         );
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $objectSchema->toArray();
 
     expect($schemaArray)->toHaveKey('definitions.address');
     expect($schemaArray['definitions']['address'])->toHaveKey('type', 'object');
@@ -28,7 +28,7 @@ it('can add a single definition to a schema', function (): void {
 });
 
 it('can add multiple definitions to a schema', function (): void {
-    $schema = Schema::object('user')
+    $objectSchema = Schema::object('user')
         ->addDefinitions([
             'address' => Schema::object()
                 ->properties(
@@ -44,7 +44,7 @@ it('can add multiple definitions to a schema', function (): void {
                 ),
         ]);
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $objectSchema->toArray();
 
     expect($schemaArray)->toHaveKey('definitions.address');
     expect($schemaArray)->toHaveKey('definitions.contact');
@@ -53,7 +53,7 @@ it('can add multiple definitions to a schema', function (): void {
 });
 
 it('can reference a definition in a schema property', function (): void {
-    $schema = Schema::object('user')
+    $objectSchema = Schema::object('user')
         ->addDefinition(
             'address',
             Schema::object()
@@ -70,7 +70,7 @@ it('can reference a definition in a schema property', function (): void {
                 ->ref('#/definitions/address'),
         );
 
-    $schemaArray = $schema->toArray();
+    $schemaArray = $objectSchema->toArray();
 
     expect($schemaArray)->toHaveKey('definitions.address');
     expect($schemaArray)->toHaveKey('properties.billing_address.$ref', '#/definitions/address');
@@ -78,7 +78,7 @@ it('can reference a definition in a schema property', function (): void {
 });
 
 it('validates data against a schema with referenced definitions', function (): void {
-    $schema = Schema::object('user')
+    $objectSchema = Schema::object('user')
         ->addDefinition(
             'address',
             Schema::object()
@@ -98,7 +98,7 @@ it('validates data against a schema with referenced definitions', function (): v
         );
 
     // Test valid data
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John Doe',
         'billing_address' => [
             'street' => '123 Main St',
@@ -111,7 +111,7 @@ it('validates data against a schema with referenced definitions', function (): v
     ]))->not->toThrow(SchemaException::class);
 
     // Test missing required field in referenced schema
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John Doe',
         'billing_address' => [
             'street' => '123 Main St',
@@ -124,7 +124,7 @@ it('validates data against a schema with referenced definitions', function (): v
     ]))->toThrow(SchemaException::class);
 
     // Test invalid type in referenced schema
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John Doe',
         'billing_address' => [
             'street' => 123, // should be string
@@ -137,7 +137,7 @@ it('validates data against a schema with referenced definitions', function (): v
     ]))->toThrow(SchemaException::class);
 
     // Test missing required referenced object
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John Doe',
         'billing_address' => [
             'street' => '123 Main St',
@@ -148,7 +148,7 @@ it('validates data against a schema with referenced definitions', function (): v
 });
 
 it('validates data against a schema with multiple referenced definitions', function (): void {
-    $schema = Schema::object('user')
+    $objectSchema = Schema::object('user')
         ->addDefinitions([
             'contact' => Schema::object()
                 ->properties(
@@ -174,7 +174,7 @@ it('validates data against a schema with multiple referenced definitions', funct
         );
 
     // Test valid data
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John Doe',
         'primary_contact' => [
             'email' => 'john@example.com',
@@ -187,7 +187,7 @@ it('validates data against a schema with multiple referenced definitions', funct
     ]))->not->toThrow(SchemaException::class);
 
     // Test valid data with optional fields omitted
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John Doe',
         'primary_contact' => [
             'email' => 'john@example.com',
@@ -200,7 +200,7 @@ it('validates data against a schema with multiple referenced definitions', funct
     ]))->not->toThrow(SchemaException::class);
 
     // Test invalid email in contact definition
-    expect(fn() => $schema->validate([
+    expect(fn() => $objectSchema->validate([
         'name' => 'John Doe',
         'primary_contact' => [
             'email' => 'not-an-email',

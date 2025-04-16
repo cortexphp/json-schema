@@ -2,7 +2,8 @@ includes:
   - vendor/phpstan/phpstan-strict-rules/rules.neon
 
 parameters:
-  level: 9
+  level: 10
   paths:
     - src
   tmpDir: .phpstan-cache
+  checkBenevolentUnionTypes: true

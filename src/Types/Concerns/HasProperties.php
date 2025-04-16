@@ -124,16 +124,9 @@ trait HasProperties
 
     /**
      * Add a pattern property schema.
-     *
-     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
      */
     public function patternProperty(string $pattern, Schema $schema): static
     {
-        // Validate the pattern is a valid regex
-        if (@preg_match('/' . $pattern . '/', '') === false) {
-            throw new SchemaException('Invalid pattern: ' . $pattern);
-        }
-
         $this->patternProperties[$pattern] = $schema;
 
         return $this;

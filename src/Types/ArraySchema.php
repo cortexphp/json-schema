@@ -10,7 +10,7 @@ use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\Concerns\HasItems;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-class ArraySchema extends AbstractSchema
+final class ArraySchema extends AbstractSchema
 {
     use HasItems;
 

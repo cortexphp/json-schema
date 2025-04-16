@@ -8,7 +8,7 @@ use Override;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\Concerns\HasProperties;
 
-class ObjectSchema extends AbstractSchema
+final class ObjectSchema extends AbstractSchema
 {
     use HasProperties;
 
