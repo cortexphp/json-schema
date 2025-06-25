@@ -27,16 +27,16 @@ enum SchemaType: string
     /**
      * Create a new schema instance from the current type.
      */
-    public function instance(?string $title = null): Schema
+    public function instance(?string $title = null, ?SchemaVersion $schemaVersion = null): Schema
     {
         return match ($this) {
-            self::String => new StringSchema($title),
-            self::Number => new NumberSchema($title),
-            self::Integer => new IntegerSchema($title),
-            self::Boolean => new BooleanSchema($title),
-            self::Object => new ObjectSchema($title),
-            self::Array => new ArraySchema($title),
-            self::Null => new NullSchema($title),
+            self::String => new StringSchema($title, $schemaVersion),
+            self::Number => new NumberSchema($title, $schemaVersion),
+            self::Integer => new IntegerSchema($title, $schemaVersion),
+            self::Boolean => new BooleanSchema($title, $schemaVersion),
+            self::Object => new ObjectSchema($title, $schemaVersion),
+            self::Array => new ArraySchema($title, $schemaVersion),
+            self::Null => new NullSchema($title, $schemaVersion),
         };
     }
 

@@ -6,15 +6,16 @@ namespace Cortex\JsonSchema\Types;
 
 use Override;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\Concerns\HasNumericConstraints;
 
 final class NumberSchema extends AbstractSchema
 {
     use HasNumericConstraints;
 
-    public function __construct(?string $title = null)
+    public function __construct(?string $title = null, ?SchemaVersion $schemaVersion = null)
     {
-        parent::__construct(SchemaType::Number, $title);
+        parent::__construct(SchemaType::Number, $title, $schemaVersion);
     }
 
     /**

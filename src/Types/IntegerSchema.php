@@ -6,6 +6,7 @@ namespace Cortex\JsonSchema\Types;
 
 use Override;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 final class IntegerSchema extends AbstractSchema
@@ -20,9 +21,9 @@ final class IntegerSchema extends AbstractSchema
 
     protected ?int $multipleOf = null;
 
-    public function __construct(?string $title = null)
+    public function __construct(?string $title = null, ?SchemaVersion $schemaVersion = null)
     {
-        parent::__construct(SchemaType::Integer, $title);
+        parent::__construct(SchemaType::Integer, $title, $schemaVersion);
     }
 
     /**

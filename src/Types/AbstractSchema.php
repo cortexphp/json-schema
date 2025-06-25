@@ -6,6 +6,7 @@ namespace Cortex\JsonSchema\Types;
 
 use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\Concerns\HasRef;
 use Cortex\JsonSchema\Types\Concerns\HasEnum;
 use Cortex\JsonSchema\Types\Concerns\HasConst;
@@ -34,7 +35,7 @@ abstract class AbstractSchema implements Schema
     use HasConditionals;
     use HasDefinitions;
 
-    protected string $schemaVersion = 'http://json-schema.org/draft-07/schema#';
+    protected SchemaVersion $schemaVersion = SchemaVersion::Draft07;
 
     /**
      * @param \Cortex\JsonSchema\Enums\SchemaType|array<array-key, \Cortex\JsonSchema\Enums\SchemaType> $type
@@ -42,8 +43,28 @@ abstract class AbstractSchema implements Schema
     public function __construct(
         protected SchemaType|array $type,
         ?string $title = null,
+        ?SchemaVersion $schemaVersion = null,
     ) {
         $this->title = $title;
+        $this->schemaVersion = $schemaVersion ?? SchemaVersion::default();
+    }
+
+    /**
+     * Set the JSON Schema version for this schema.
+     */
+    public function version(SchemaVersion $schemaVersion): static
+    {
+        $this->schemaVersion = $schemaVersion;
+
+        return $this;
+    }
+
+    /**
+     * Get the JSON Schema version for this schema.
+     */
+    public function getVersion(): SchemaVersion
+    {
+        return $this->schemaVersion;
     }
 
     /**
@@ -81,7 +102,7 @@ abstract class AbstractSchema implements Schema
         ];
 
         if ($includeSchemaRef) {
-            $schema['$schema'] = $this->schemaVersion;
+            $schema['$schema'] = $this->schemaVersion->value;
         }
 
         $schema = $this->addTitleToSchema($schema, $includeTitle);

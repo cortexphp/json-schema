@@ -7,6 +7,7 @@ namespace Cortex\JsonSchema\Types;
 use Override;
 use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\Concerns\HasItems;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -20,9 +21,9 @@ final class ArraySchema extends AbstractSchema
 
     protected ?int $maxContains = null;
 
-    public function __construct(?string $title = null)
+    public function __construct(?string $title = null, ?SchemaVersion $schemaVersion = null)
     {
-        parent::__construct(SchemaType::Array, $title);
+        parent::__construct(SchemaType::Array, $title, $schemaVersion);
     }
 
     /**

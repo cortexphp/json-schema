@@ -14,6 +14,7 @@ use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Support\NodeCollection;
 use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
 
@@ -25,13 +26,15 @@ class ClosureConverter implements Converter
 
     public function __construct(
         protected Closure $closure,
+        protected ?SchemaVersion $version = null,
     ) {
         $this->reflection = new ReflectionFunction($this->closure);
+        $this->version = $version ?? SchemaVersion::default();
     }
 
     public function convert(): ObjectSchema
     {
-        $objectSchema = new ObjectSchema();
+        $objectSchema = new ObjectSchema(null, $this->version);
 
         // Get the description from the doc parser
         $description = $this->getDocParser()?->description() ?? null;
