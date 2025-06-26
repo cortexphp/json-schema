@@ -41,7 +41,7 @@ enum SchemaType: string
     }
 
     /**
-     * Create a new schema instance from a given scalar type.
+     * Create a new schema type instance from a given scalar type.
      */
     public static function fromScalar(string $type): self
     {
