@@ -18,6 +18,7 @@ use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Converters\EnumConverter;
+use Cortex\JsonSchema\Converters\JsonConverter;
 use Cortex\JsonSchema\Converters\ClassConverter;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 use Cortex\JsonSchema\Converters\ClosureConverter;
@@ -147,9 +148,21 @@ class SchemaFactory
                 true,
                 $schemaVersion,
             ),
+            // @phpstan-ignore argument.type
+            is_array($value) || (is_string($value) && json_validate($value)) => self::fromJson($value, $schemaVersion),
             default => throw new SchemaException(
                 'Unsupported value type. Only closures, enums, and classes are supported.',
             ),
         };
+    }
+
+    /**
+     * Create a schema from a JSON Schema definition.
+     *
+     * @param string|array<string, mixed> $json
+     */
+    public static function fromJson(string|array $json, ?SchemaVersion $schemaVersion = null): Schema
+    {
+        return (new JsonConverter($json, $schemaVersion ?? self::getDefaultVersion()))->convert();
     }
 }
