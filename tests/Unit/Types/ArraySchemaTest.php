@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
 use Cortex\JsonSchema\Types\ArraySchema;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -93,8 +94,8 @@ it('can validate array contains', function (): void {
         'At least one array item must match schema',
     );
 
-    // Now test with minContains and maxContains
-    $schema = Schema::array('numbers')
+    // Now test with minContains and maxContains (requires Draft 2019-09+)
+    $schema = Schema::array('numbers', SchemaVersion::Draft201909)
         ->description('List of numbers')
         ->contains(
             Schema::number()
@@ -106,7 +107,7 @@ it('can validate array contains', function (): void {
 
     $schemaArray = $schema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2019-09/schema');
     expect($schemaArray)->toHaveKey('type', 'array');
     expect($schemaArray)->toHaveKey('title', 'numbers');
     expect($schemaArray)->toHaveKey('description', 'List of numbers');
@@ -123,18 +124,18 @@ it('can validate array contains', function (): void {
     // Test no matching items
     expect(fn() => $schema->validate([1, 2, 3]))->toThrow(
         SchemaException::class,
-        'At least one array item must match schema',
+        'At least 2 array items must match schema',
     );
 });
 
 it('throws an exception if the minContains is less than 0', function (): void {
-    Schema::array('numbers')
+    Schema::array('numbers', SchemaVersion::Draft201909)
         ->description('List of numbers')
         ->minContains(-1);
 })->throws(SchemaException::class, 'minContains must be greater than or equal to 0');
 
 it('throws an exception if the maxContains is less than 0', function (): void {
-    Schema::array('numbers')
+    Schema::array('numbers', SchemaVersion::Draft201909)
         ->description('List of numbers')
         ->maxContains(-1);
 })->throws(SchemaException::class, 'maxContains must be greater than or equal to 0');

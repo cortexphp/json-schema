@@ -6,6 +6,7 @@ namespace Cortex\JsonSchema\Tests\Unit\Types;
 
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\StringSchema;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -213,7 +214,7 @@ it('can create a nullable string schema with enum values', function (): void {
 });
 
 it('can mark a string schema as deprecated', function (): void {
-    $stringSchema = Schema::string('foo')
+    $stringSchema = Schema::string('foo', SchemaVersion::Draft201909)
         ->comment("Don't use this")
         ->deprecated();
 

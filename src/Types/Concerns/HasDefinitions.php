@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Types\Concerns;
 
 use Cortex\JsonSchema\Contracts\Schema;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 
 trait HasDefinitions
 {
@@ -55,13 +56,30 @@ trait HasDefinitions
     protected function addDefinitionsToSchema(array $schema): array
     {
         if ($this->definitions !== []) {
-            $schema['definitions'] = [];
+            // Use version-appropriate keyword: $defs for 2019-09+, definitions for Draft 07
+            $keyword = $this->getVersionAppropriateKeyword('$defs', 'definitions');
+            $schema[$keyword] = [];
 
             foreach ($this->definitions as $name => $definition) {
-                $schema['definitions'][$name] = $definition->toArray(includeSchemaRef: false);
+                $schema[$keyword][$name] = $definition->toArray(includeSchemaRef: false);
             }
         }
 
         return $schema;
+    }
+
+    /**
+     * Get definition features used by this schema.
+     *
+     * @return SchemaFeature[]
+     */
+    protected function getDefinitionFeatures(): array
+    {
+        if ($this->definitions === []) {
+            return [];
+        }
+
+        // If using $defs keyword, report the Defs feature
+        return $this->isFeatureSupported(SchemaFeature::Defs) ? [SchemaFeature::Defs] : [];
     }
 }

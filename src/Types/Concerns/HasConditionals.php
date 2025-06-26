@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Types\Concerns;
 
 use Cortex\JsonSchema\Contracts\Schema;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 /** @mixin \Cortex\JsonSchema\Contracts\Schema */
@@ -38,6 +39,9 @@ trait HasConditionals
      */
     public function if(Schema $schema): static
     {
+        // Validate that if-then-else is supported in the current version
+        $this->validateFeatureSupport(SchemaFeature::If);
+
         $this->if = $schema;
 
         return $this;
@@ -52,6 +56,8 @@ trait HasConditionals
             throw new SchemaException('Cannot set then condition without if condition');
         }
 
+        $this->validateFeatureSupport(SchemaFeature::Then);
+        $this->validateFeatureSupport(SchemaFeature::IfThenElse);
         $this->then = $schema;
 
         return $this;
@@ -66,6 +72,8 @@ trait HasConditionals
             throw new SchemaException('Cannot set else condition without if condition');
         }
 
+        $this->validateFeatureSupport(SchemaFeature::Else);
+        $this->validateFeatureSupport(SchemaFeature::IfThenElse);
         $this->else = $schema;
 
         return $this;
@@ -158,5 +166,34 @@ trait HasConditionals
         }
 
         return $schema;
+    }
+
+    /**
+     * Get conditional features used by this schema.
+     *
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
+     */
+    protected function getConditionalFeatures(): array
+    {
+        $features = [];
+
+        if ($this->if !== null) {
+            $features[] = SchemaFeature::If;
+        }
+
+        if ($this->then !== null) {
+            $features[] = SchemaFeature::Then;
+        }
+
+        if ($this->else !== null) {
+            $features[] = SchemaFeature::Else;
+        }
+
+        // If we have a complete if-then-else construct, include the composite feature
+        if ($this->if !== null && ($this->then !== null || $this->else !== null)) {
+            $features[] = SchemaFeature::IfThenElse;
+        }
+
+        return $features;
     }
 }

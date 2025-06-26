@@ -7,6 +7,7 @@ namespace Cortex\JsonSchema\Types;
 use Override;
 use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\Concerns\HasItems;
 use Cortex\JsonSchema\Exceptions\SchemaException;
@@ -51,6 +52,7 @@ final class ArraySchema extends AbstractSchema
             throw new SchemaException('minContains cannot be greater than maxContains');
         }
 
+        $this->validateFeatureSupport(SchemaFeature::MinContains);
         $this->minContains = $min;
 
         return $this;
@@ -71,6 +73,7 @@ final class ArraySchema extends AbstractSchema
             throw new SchemaException('maxContains cannot be less than minContains');
         }
 
+        $this->validateFeatureSupport(SchemaFeature::MaxContains);
         $this->maxContains = $max;
 
         return $this;
@@ -101,5 +104,39 @@ final class ArraySchema extends AbstractSchema
         }
 
         return $schema;
+    }
+
+    /**
+     * Get array-specific features used by this schema.
+     *
+     * @return SchemaFeature[]
+     */
+    protected function getArrayFeatures(): array
+    {
+        $features = [];
+
+        if ($this->minContains !== null) {
+            $features[] = SchemaFeature::MinContains;
+        }
+
+        if ($this->maxContains !== null) {
+            $features[] = SchemaFeature::MaxContains;
+        }
+
+        return $features;
+    }
+
+    /**
+     * Override to include array-specific features.
+     *
+     * @return SchemaFeature[]
+     */
+    #[Override]
+    protected function getUsedFeatures(): array
+    {
+        return array_merge(
+            parent::getUsedFeatures(),
+            $this->getArrayFeatures(),
+        );
     }
 }
