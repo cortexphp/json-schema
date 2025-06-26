@@ -20,30 +20,31 @@ use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-/**
- * @phpstan-type JsonSchemaValue array{type?: string|array<string>, title?: string, properties?: array<string, JsonSchemaValue>, required?: array<string>, additionalProperties?: JsonSchemaValue|bool, minProperties?: int, maxProperties?: int, description?: string, minLength?: int, maxLength?: int, pattern?: string, format?: string, enum?: array<string|int|float|bool>, const?: string|int|float|bool, default?: string|int|float|bool, deprecated?: bool, readOnly?: bool, writeOnly?: bool, minItems?: int, maxItems?: int, uniqueItems?: bool, contains?: JsonSchemaValue, minContains?: int, maxContains?: int}
- */
 class JsonConverter implements Converter
 {
     /**
-     * @var JsonSchemaValue
+     * @var array<int|string, mixed>
      */
     private array $data;
 
     private SchemaVersion $schemaVersion;
 
     /**
-     * @param string|JsonSchemaValue $json
+     * @param string|array<int|string, mixed> $json
      */
     public function __construct(string|array $json, SchemaVersion $schemaVersion)
     {
         // Parse JSON string if provided
         if (is_string($json)) {
             try {
-                /** @var JsonSchemaValue $decoded */
-                $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+                /** @var array<int|string, mixed>|string $decoded */
+                $decoded = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
             } catch (JsonException $e) {
-                throw new SchemaException('Invalid JSON Schema: ' . $e->getMessage());
+                throw new SchemaException('Invalid JSON Schema', previous: $e);
+            }
+
+            if (! is_array($decoded)) {
+                throw new SchemaException('Invalid JSON Schema: root must be an object');
             }
 
             $this->data = $decoded;
@@ -52,7 +53,7 @@ class JsonConverter implements Converter
         }
 
         // Extract schema version from JSON if provided
-        if (isset($this->data['$schema'])) {
+        if (isset($this->data['$schema']) && is_string($this->data['$schema'])) {
             $this->schemaVersion = $this->detectSchemaVersion($this->data['$schema']);
         } else {
             $this->schemaVersion = $schemaVersion;
@@ -62,7 +63,7 @@ class JsonConverter implements Converter
     public function convert(): Schema
     {
         $type = $this->data['type'] ?? null;
-        $title = $this->data['title'] ?? null;
+        $title = isset($this->data['title']) && is_string($this->data['title']) ? $this->data['title'] : null;
 
         // Handle union types when type is an array
         if (is_array($type)) {
@@ -78,8 +79,74 @@ class JsonConverter implements Converter
             'object' => $this->createObjectSchema($title),
             'null' => $this->createNullSchema($title),
             null => $this->createUnionSchema($title), // Handle union types or no type
-            default => throw new SchemaException('Unsupported schema type: ' . $type),
+            default => throw new SchemaException('Unsupported schema type: ' . (is_string($type) ? $type : gettype(
+                $type,
+            ))),
         };
+    }
+
+    /**
+     * Safely get a string value from the data array.
+     */
+    private function getString(string $key): ?string
+    {
+        return isset($this->data[$key]) && is_string($this->data[$key]) ? $this->data[$key] : null;
+    }
+
+    /**
+     * Safely get an integer value from the data array.
+     */
+    private function getInt(string $key): ?int
+    {
+        return isset($this->data[$key]) && is_numeric($this->data[$key]) ? (int) $this->data[$key] : null;
+    }
+
+    /**
+     * Safely get a float value from the data array.
+     */
+    private function getFloat(string $key): ?float
+    {
+        return isset($this->data[$key]) && is_numeric($this->data[$key]) ? (float) $this->data[$key] : null;
+    }
+
+    /**
+     * Safely get a boolean value from the data array.
+     */
+    private function getBool(string $key): bool
+    {
+        return isset($this->data[$key]) && (bool) $this->data[$key];
+    }
+
+    /**
+     * Safely get an array value from the data array.
+     *
+     * @return array<int|string, mixed>|null
+     */
+    private function getArray(string $key): ?array
+    {
+        return isset($this->data[$key]) && is_array($this->data[$key]) ? $this->data[$key] : null;
+    }
+
+    /**
+     * Get a mixed value from the data array.
+     */
+    private function getValue(string $key): mixed
+    {
+        return $this->data[$key] ?? null;
+    }
+
+    /**
+     * Get a const value that's properly typed for schema.
+     */
+    private function getConstValue(string $key): bool|float|int|string|null
+    {
+        $value = $this->getValue($key);
+
+        if (is_bool($value) || is_float($value) || is_int($value) || is_string($value) || $value === null) {
+            return $value;
+        }
+
+        return null;
     }
 
     /**
@@ -99,47 +166,48 @@ class JsonConverter implements Converter
     {
         $stringSchema = new StringSchema($title, $this->schemaVersion);
 
-        if (isset($this->data['minLength'])) {
-            $stringSchema->minLength((int) $this->data['minLength']);
+        if (($minLength = $this->getInt('minLength')) !== null) {
+            $stringSchema->minLength($minLength);
         }
 
-        if (isset($this->data['maxLength'])) {
-            $stringSchema->maxLength((int) $this->data['maxLength']);
+        if (($maxLength = $this->getInt('maxLength')) !== null) {
+            $stringSchema->maxLength($maxLength);
         }
 
-        if (isset($this->data['pattern'])) {
-            $stringSchema->pattern((string) $this->data['pattern']);
+        if (($pattern = $this->getString('pattern')) !== null) {
+            $stringSchema->pattern($pattern);
         }
 
-        if (isset($this->data['format'])) {
-            $stringSchema->format((string) $this->data['format']);
+        if (($format = $this->getString('format')) !== null) {
+            $stringSchema->format($format);
         }
 
-        if (isset($this->data['enum'])) {
-            $stringSchema->enum((array) $this->data['enum']);
+        if (($enum = $this->getArray('enum')) !== null && $enum !== []) {
+            /** @var non-empty-array<bool|float|int|string|null> $enum */
+            $stringSchema->enum($enum);
         }
 
-        if (isset($this->data['const'])) {
-            $stringSchema->const($this->data['const']);
+        if (($const = $this->getConstValue('const')) !== null) {
+            $stringSchema->const($const);
         }
 
-        if (isset($this->data['default'])) {
-            $stringSchema->default($this->data['default']);
+        if (($default = $this->getValue('default')) !== null) {
+            $stringSchema->default($default);
         }
 
-        if (isset($this->data['description'])) {
-            $stringSchema->description((string) $this->data['description']);
+        if (($description = $this->getString('description')) !== null) {
+            $stringSchema->description($description);
         }
 
-        if (isset($this->data['deprecated']) && $this->data['deprecated']) {
+        if ($this->getBool('deprecated')) {
             $stringSchema->deprecated();
         }
 
-        if (isset($this->data['readOnly']) && $this->data['readOnly']) {
+        if ($this->getBool('readOnly')) {
             $stringSchema->readOnly();
         }
 
-        if (isset($this->data['writeOnly']) && $this->data['writeOnly']) {
+        if ($this->getBool('writeOnly')) {
             $stringSchema->writeOnly();
         }
 
@@ -150,40 +218,41 @@ class JsonConverter implements Converter
     {
         $numberSchema = new NumberSchema($title, $this->schemaVersion);
 
-        if (isset($this->data['minimum'])) {
-            $numberSchema->minimum((float) $this->data['minimum']);
+        if (($minimum = $this->getFloat('minimum')) !== null) {
+            $numberSchema->minimum($minimum);
         }
 
-        if (isset($this->data['maximum'])) {
-            $numberSchema->maximum((float) $this->data['maximum']);
+        if (($maximum = $this->getFloat('maximum')) !== null) {
+            $numberSchema->maximum($maximum);
         }
 
-        if (isset($this->data['exclusiveMinimum'])) {
-            $numberSchema->exclusiveMinimum((float) $this->data['exclusiveMinimum']);
+        if (($exclusiveMinimum = $this->getFloat('exclusiveMinimum')) !== null) {
+            $numberSchema->exclusiveMinimum($exclusiveMinimum);
         }
 
-        if (isset($this->data['exclusiveMaximum'])) {
-            $numberSchema->exclusiveMaximum((float) $this->data['exclusiveMaximum']);
+        if (($exclusiveMaximum = $this->getFloat('exclusiveMaximum')) !== null) {
+            $numberSchema->exclusiveMaximum($exclusiveMaximum);
         }
 
-        if (isset($this->data['multipleOf'])) {
-            $numberSchema->multipleOf((float) $this->data['multipleOf']);
+        if (($multipleOf = $this->getFloat('multipleOf')) !== null) {
+            $numberSchema->multipleOf($multipleOf);
         }
 
-        if (isset($this->data['enum'])) {
-            $numberSchema->enum((array) $this->data['enum']);
+        if (($enum = $this->getArray('enum')) !== null && $enum !== []) {
+            /** @var non-empty-array<bool|float|int|string|null> $enum */
+            $numberSchema->enum($enum);
         }
 
-        if (isset($this->data['const'])) {
-            $numberSchema->const($this->data['const']);
+        if (($const = $this->getConstValue('const')) !== null) {
+            $numberSchema->const($const);
         }
 
-        if (isset($this->data['default'])) {
-            $numberSchema->default($this->data['default']);
+        if (($default = $this->getValue('default')) !== null) {
+            $numberSchema->default($default);
         }
 
-        if (isset($this->data['description'])) {
-            $numberSchema->description((string) $this->data['description']);
+        if (($description = $this->getString('description')) !== null) {
+            $numberSchema->description($description);
         }
 
         return $numberSchema;
@@ -193,40 +262,41 @@ class JsonConverter implements Converter
     {
         $integerSchema = new IntegerSchema($title, $this->schemaVersion);
 
-        if (isset($this->data['minimum'])) {
-            $integerSchema->minimum((int) $this->data['minimum']);
+        if (($minimum = $this->getInt('minimum')) !== null) {
+            $integerSchema->minimum($minimum);
         }
 
-        if (isset($this->data['maximum'])) {
-            $integerSchema->maximum((int) $this->data['maximum']);
+        if (($maximum = $this->getInt('maximum')) !== null) {
+            $integerSchema->maximum($maximum);
         }
 
-        if (isset($this->data['exclusiveMinimum'])) {
-            $integerSchema->exclusiveMinimum((int) $this->data['exclusiveMinimum']);
+        if (($exclusiveMinimum = $this->getInt('exclusiveMinimum')) !== null) {
+            $integerSchema->exclusiveMinimum($exclusiveMinimum);
         }
 
-        if (isset($this->data['exclusiveMaximum'])) {
-            $integerSchema->exclusiveMaximum((int) $this->data['exclusiveMaximum']);
+        if (($exclusiveMaximum = $this->getInt('exclusiveMaximum')) !== null) {
+            $integerSchema->exclusiveMaximum($exclusiveMaximum);
         }
 
-        if (isset($this->data['multipleOf'])) {
-            $integerSchema->multipleOf((int) $this->data['multipleOf']);
+        if (($multipleOf = $this->getInt('multipleOf')) !== null) {
+            $integerSchema->multipleOf($multipleOf);
         }
 
-        if (isset($this->data['enum'])) {
-            $integerSchema->enum((array) $this->data['enum']);
+        if (($enum = $this->getArray('enum')) !== null && $enum !== []) {
+            /** @var non-empty-array<bool|float|int|string|null> $enum */
+            $integerSchema->enum($enum);
         }
 
-        if (isset($this->data['const'])) {
-            $integerSchema->const($this->data['const']);
+        if (($const = $this->getConstValue('const')) !== null) {
+            $integerSchema->const($const);
         }
 
-        if (isset($this->data['default'])) {
-            $integerSchema->default($this->data['default']);
+        if (($default = $this->getValue('default')) !== null) {
+            $integerSchema->default($default);
         }
 
-        if (isset($this->data['description'])) {
-            $integerSchema->description((string) $this->data['description']);
+        if (($description = $this->getString('description')) !== null) {
+            $integerSchema->description($description);
         }
 
         return $integerSchema;
@@ -236,19 +306,19 @@ class JsonConverter implements Converter
     {
         $booleanSchema = new BooleanSchema($title, $this->schemaVersion);
 
-        if (isset($this->data['const'])) {
-            $booleanSchema->const((bool) $this->data['const']);
+        if (($const = $this->getConstValue('const')) !== null) {
+            $booleanSchema->const($const);
         }
 
-        if (isset($this->data['default'])) {
-            $booleanSchema->default((bool) $this->data['default']);
+        if (($default = $this->getValue('default')) !== null) {
+            $booleanSchema->default($default);
         }
 
-        if (isset($this->data['description'])) {
-            $booleanSchema->description((string) $this->data['description']);
+        if (($description = $this->getString('description')) !== null) {
+            $booleanSchema->description($description);
         }
 
-        if (isset($this->data['readOnly']) && $this->data['readOnly']) {
+        if ($this->getBool('readOnly')) {
             $booleanSchema->readOnly();
         }
 
@@ -259,40 +329,40 @@ class JsonConverter implements Converter
     {
         $arraySchema = new ArraySchema($title, $this->schemaVersion);
 
-        if (isset($this->data['items'])) {
-            $converter = new self($this->data['items'], $this->schemaVersion);
+        if (($items = $this->getArray('items')) !== null) {
+            $converter = new self($items, $this->schemaVersion);
             $itemSchema = $converter->convert();
             $arraySchema->items($itemSchema);
         }
 
-        if (isset($this->data['minItems'])) {
-            $arraySchema->minItems((int) $this->data['minItems']);
+        if (($minItems = $this->getInt('minItems')) !== null) {
+            $arraySchema->minItems($minItems);
         }
 
-        if (isset($this->data['maxItems'])) {
-            $arraySchema->maxItems((int) $this->data['maxItems']);
+        if (($maxItems = $this->getInt('maxItems')) !== null) {
+            $arraySchema->maxItems($maxItems);
         }
 
-        if (isset($this->data['uniqueItems']) && $this->data['uniqueItems']) {
+        if ($this->getBool('uniqueItems')) {
             $arraySchema->uniqueItems();
         }
 
-        if (isset($this->data['contains'])) {
-            $converter = new self($this->data['contains'], $this->schemaVersion);
+        if (($contains = $this->getArray('contains')) !== null) {
+            $converter = new self($contains, $this->schemaVersion);
             $containsSchema = $converter->convert();
             $arraySchema->contains($containsSchema);
         }
 
-        if (isset($this->data['minContains'])) {
-            $arraySchema->minContains((int) $this->data['minContains']);
+        if (($minContains = $this->getInt('minContains')) !== null) {
+            $arraySchema->minContains($minContains);
         }
 
-        if (isset($this->data['maxContains'])) {
-            $arraySchema->maxContains((int) $this->data['maxContains']);
+        if (($maxContains = $this->getInt('maxContains')) !== null) {
+            $arraySchema->maxContains($maxContains);
         }
 
-        if (isset($this->data['description'])) {
-            $arraySchema->description((string) $this->data['description']);
+        if (($description = $this->getString('description')) !== null) {
+            $arraySchema->description($description);
         }
 
         return $arraySchema;
@@ -301,17 +371,22 @@ class JsonConverter implements Converter
     private function createObjectSchema(?string $title): ObjectSchema
     {
         $objectSchema = new ObjectSchema($title, $this->schemaVersion);
-        $required = $this->data['required'] ?? [];
+        $required = $this->getArray('required') ?? [];
 
-        if (isset($this->data['properties'])) {
-            $properties = [];
+        if (($properties = $this->getArray('properties')) !== null) {
+            $propertySchemas = [];
             $requiredProps = [];
 
-            foreach ($this->data['properties'] as $name => $propertyData) {
+            foreach ($properties as $name => $propertyData) {
+                // Runtime validation needed for type safety
+                if (! is_array($propertyData)) {
+                    continue;
+                }
+
                 $converter = new self($propertyData, $this->schemaVersion);
                 $propertySchema = $converter->convert();
 
-                $properties[$name] = $propertySchema;
+                $propertySchemas[$name] = $propertySchema;
 
                 // Track required properties
                 if (in_array($name, $required, true)) {
@@ -323,33 +398,35 @@ class JsonConverter implements Converter
             $reflectionClass = new ReflectionClass($objectSchema);
             $propertiesProperty = $reflectionClass->getProperty('properties');
             $propertiesProperty->setAccessible(true);
-            $propertiesProperty->setValue($objectSchema, $properties);
+            $propertiesProperty->setValue($objectSchema, $propertySchemas);
 
             $requiredProperty = $reflectionClass->getProperty('requiredProperties');
             $requiredProperty->setAccessible(true);
             $requiredProperty->setValue($objectSchema, $requiredProps);
         }
 
-        if (isset($this->data['additionalProperties'])) {
-            if (is_bool($this->data['additionalProperties'])) {
-                $objectSchema->additionalProperties($this->data['additionalProperties']);
-            } else {
-                $converter = new self($this->data['additionalProperties'], $this->schemaVersion);
+        $additionalProperties = $this->getValue('additionalProperties');
+
+        if ($additionalProperties !== null) {
+            if (is_bool($additionalProperties)) {
+                $objectSchema->additionalProperties($additionalProperties);
+            } elseif (is_array($additionalProperties)) {
+                $converter = new self($additionalProperties, $this->schemaVersion);
                 $additionalSchema = $converter->convert();
                 $objectSchema->additionalProperties($additionalSchema);
             }
         }
 
-        if (isset($this->data['minProperties'])) {
-            $objectSchema->minProperties((int) $this->data['minProperties']);
+        if (($minProperties = $this->getInt('minProperties')) !== null) {
+            $objectSchema->minProperties($minProperties);
         }
 
-        if (isset($this->data['maxProperties'])) {
-            $objectSchema->maxProperties((int) $this->data['maxProperties']);
+        if (($maxProperties = $this->getInt('maxProperties')) !== null) {
+            $objectSchema->maxProperties($maxProperties);
         }
 
-        if (isset($this->data['description'])) {
-            $objectSchema->description((string) $this->data['description']);
+        if (($description = $this->getString('description')) !== null) {
+            $objectSchema->description($description);
         }
 
         return $objectSchema;
@@ -359,8 +436,8 @@ class JsonConverter implements Converter
     {
         $nullSchema = new NullSchema($title, $this->schemaVersion);
 
-        if (isset($this->data['description'])) {
-            $nullSchema->description((string) $this->data['description']);
+        if (($description = $this->getString('description')) !== null) {
+            $nullSchema->description($description);
         }
 
         return $nullSchema;
@@ -369,10 +446,14 @@ class JsonConverter implements Converter
     private function createUnionSchema(?string $title): UnionSchema
     {
         // Handle union types when type is an array
-        if (isset($this->data['type']) && is_array($this->data['type'])) {
+        $typeData = $this->getValue('type');
+
+        if (is_array($typeData)) {
             $types = [];
-            foreach ($this->data['type'] as $typeName) {
-                $types[] = SchemaType::from($typeName);
+            foreach ($typeData as $typeName) {
+                if (is_string($typeName)) {
+                    $types[] = SchemaType::from($typeName);
+                }
             }
 
             $schema = new UnionSchema($types, $title, $this->schemaVersion);
@@ -381,16 +462,17 @@ class JsonConverter implements Converter
             $schema = new UnionSchema(SchemaType::cases(), $title, $this->schemaVersion);
         }
 
-        if (isset($this->data['enum'])) {
-            $schema->enum((array) $this->data['enum']);
+        if (($enum = $this->getArray('enum')) !== null && $enum !== []) {
+            /** @var non-empty-array<bool|float|int|string|null> $enum */
+            $schema->enum($enum);
         }
 
-        if (isset($this->data['const'])) {
-            $schema->const($this->data['const']);
+        if (($const = $this->getConstValue('const')) !== null) {
+            $schema->const($const);
         }
 
-        if (isset($this->data['description'])) {
-            $schema->description((string) $this->data['description']);
+        if (($description = $this->getString('description')) !== null) {
+            $schema->description($description);
         }
 
         return $schema;

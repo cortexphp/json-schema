@@ -266,7 +266,7 @@ describe('JsonConverter', function (): void {
 
     it('throws exception for invalid JSON string', function (): void {
         expect(fn(): JsonConverter => new JsonConverter('invalid json', SchemaVersion::Draft_07))
-            ->toThrow(JsonException::class);
+            ->toThrow(SchemaException::class);
     });
 
     it('throws exception for non-object JSON', function (): void {
