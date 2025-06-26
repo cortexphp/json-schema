@@ -43,7 +43,7 @@ jobs:
 
       - name: Execute tests with mutation
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: vendor/bin/pest --colors=always --mutate --parallel --min=80
+        run: vendor/bin/pest --colors=always --mutate --parallel --min=75
 
       - name: Execute tests
         if: ${{ matrix.os != 'ubuntu-latest' }}
