@@ -66,7 +66,7 @@ enum SchemaFeature: string
             self::ContentMediaType,
             self::ContentEncoding,
             self::WriteOnly,
-            self::ReadOnly => SchemaVersion::Draft07,
+            self::ReadOnly => SchemaVersion::Draft_07,
 
             // Draft 2019-09 features
             self::Anchor,
@@ -83,7 +83,7 @@ enum SchemaFeature: string
             self::ContentSchema,
             self::Deprecated,
             self::FormatDuration,
-            self::FormatUuid => SchemaVersion::Draft201909,
+            self::FormatUuid => SchemaVersion::Draft_2019_09,
 
             // Draft 2020-12 features
             self::DynamicAnchor,
@@ -95,11 +95,11 @@ enum SchemaFeature: string
             self::UnicodeRegex,
             self::CompoundSchemaDocuments,
             self::DynamicRefLegacy,
-            self::DynamicAnchorLegacy => SchemaVersion::Draft202012,
+            self::DynamicAnchorLegacy => SchemaVersion::Draft_2020_12,
 
             // Legacy features (2019-09 only)
             self::RecursiveRefLegacy,
-            self::RecursiveAnchorLegacy => SchemaVersion::Draft201909,
+            self::RecursiveAnchorLegacy => SchemaVersion::Draft_2019_09,
         };
     }
 
@@ -114,7 +114,7 @@ enum SchemaFeature: string
             self::RecursiveAnchor,
             self::RecursiveRef,
             self::RecursiveRefLegacy,
-            self::RecursiveAnchorLegacy => SchemaVersion::Draft201909,
+            self::RecursiveAnchorLegacy => SchemaVersion::Draft_2019_09,
 
             // All other features continue to be supported
             default => null,

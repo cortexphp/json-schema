@@ -214,7 +214,7 @@ it('can create a nullable string schema with enum values', function (): void {
 });
 
 it('can mark a string schema as deprecated', function (): void {
-    $stringSchema = Schema::string('foo', SchemaVersion::Draft201909)
+    $stringSchema = Schema::string('foo', SchemaVersion::Draft_2019_09)
         ->comment("Don't use this")
         ->deprecated();
 

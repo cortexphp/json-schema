@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Types\Concerns;
 
 use Cortex\JsonSchema\Contracts\Schema;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 /** @mixin \Cortex\JsonSchema\Contracts\Schema */
@@ -35,6 +36,16 @@ trait HasProperties
      * @var array<string, \Cortex\JsonSchema\Contracts\Schema>
      */
     protected array $patternProperties = [];
+
+    /**
+     * @var bool|\Cortex\JsonSchema\Contracts\Schema|null
+     */
+    protected mixed $unevaluatedProperties = null;
+
+    /**
+     * @var array<string, \Cortex\JsonSchema\Contracts\Schema>
+     */
+    protected array $dependentSchemas = [];
 
     /**
      * Set properties.
@@ -68,6 +79,55 @@ trait HasProperties
     public function additionalProperties(bool|Schema $allowed): static
     {
         $this->additionalProperties = $allowed;
+
+        return $this;
+    }
+
+    /**
+     * Set whether unevaluated properties are allowed and optionally their schema.
+     * This feature is only available in Draft 2019-09 and later.
+     *
+     * @param bool|\Cortex\JsonSchema\Contracts\Schema $allowed Whether unevaluated properties are allowed, or a schema they must match
+     *
+     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
+     */
+    public function unevaluatedProperties(bool|Schema $allowed): static
+    {
+        $this->validateFeatureSupport(SchemaFeature::UnevaluatedProperties);
+
+        $this->unevaluatedProperties = $allowed;
+
+        return $this;
+    }
+
+    /**
+     * Set a dependent schema that is applied when a specific property is present.
+     * This feature is only available in Draft 2019-09 and later.
+     *
+     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
+     */
+    public function dependentSchema(string $property, Schema $schema): static
+    {
+        $this->validateFeatureSupport(SchemaFeature::DependentSchemas);
+
+        $this->dependentSchemas[$property] = $schema;
+
+        return $this;
+    }
+
+    /**
+     * Set multiple dependent schemas at once.
+     * This feature is only available in Draft 2019-09 and later.
+     *
+     * @param array<string, \Cortex\JsonSchema\Contracts\Schema> $schemas
+     *
+     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
+     */
+    public function dependentSchemas(array $schemas): static
+    {
+        foreach ($schemas as $property => $schema) {
+            $this->dependentSchema($property, $schema);
+        }
 
         return $this;
     }
@@ -203,6 +263,51 @@ trait HasProperties
             $schema['maxProperties'] = $this->maxProperties;
         }
 
+        if ($this->unevaluatedProperties !== null) {
+            $schema['unevaluatedProperties'] = $this->unevaluatedProperties instanceof Schema
+                ? $this->unevaluatedProperties->toArray(includeSchemaRef: false, includeTitle: false)
+                : $this->unevaluatedProperties;
+        }
+
+        if ($this->dependentSchemas !== []) {
+            $schema['dependentSchemas'] = [];
+
+            foreach ($this->dependentSchemas as $property => $dependentSchema) {
+                $schema['dependentSchemas'][$property] = $dependentSchema->toArray(
+                    includeSchemaRef: false,
+                    includeTitle: false,
+                );
+            }
+        }
+
         return $schema;
+    }
+
+    /**
+     * Get unevaluated properties features used by this schema.
+     *
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
+     */
+    protected function getUnevaluatedPropertiesFeatures(): array
+    {
+        if ($this->unevaluatedProperties === null) {
+            return [];
+        }
+
+        return [SchemaFeature::UnevaluatedProperties];
+    }
+
+    /**
+     * Get dependent schemas features used by this schema.
+     *
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
+     */
+    protected function getDependentSchemasFeatures(): array
+    {
+        if ($this->dependentSchemas === []) {
+            return [];
+        }
+
+        return [SchemaFeature::DependentSchemas];
     }
 }

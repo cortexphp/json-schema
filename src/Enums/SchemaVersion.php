@@ -6,16 +6,16 @@ namespace Cortex\JsonSchema\Enums;
 
 enum SchemaVersion: string
 {
-    case Draft07 = 'http://json-schema.org/draft-07/schema#';
-    case Draft201909 = 'https://json-schema.org/draft/2019-09/schema';
-    case Draft202012 = 'https://json-schema.org/draft/2020-12/schema';
+    case Draft_07 = 'http://json-schema.org/draft-07/schema#';
+    case Draft_2019_09 = 'https://json-schema.org/draft/2019-09/schema';
+    case Draft_2020_12 = 'https://json-schema.org/draft/2020-12/schema';
 
     /**
      * Get the latest version.
      */
     public static function latest(): self
     {
-        return self::Draft202012;
+        return self::Draft_2020_12;
     }
 
     /**
@@ -23,7 +23,7 @@ enum SchemaVersion: string
      */
     public static function default(): self
     {
-        return self::Draft07;
+        return self::Draft_07;
     }
 
     /**
@@ -34,9 +34,9 @@ enum SchemaVersion: string
     public static function supported(): array
     {
         return [
-            self::Draft07,
-            self::Draft201909,
-            self::Draft202012,
+            self::Draft_07,
+            self::Draft_2019_09,
+            self::Draft_2020_12,
         ];
     }
 
@@ -63,9 +63,9 @@ enum SchemaVersion: string
     public function getName(): string
     {
         return match ($this) {
-            self::Draft07 => 'Draft 7',
-            self::Draft201909 => 'Draft 2019-09',
-            self::Draft202012 => 'Draft 2020-12',
+            self::Draft_07 => 'Draft 7',
+            self::Draft_2019_09 => 'Draft 2019-09',
+            self::Draft_2020_12 => 'Draft 2020-12',
         };
     }
 
@@ -75,9 +75,9 @@ enum SchemaVersion: string
     public function getYear(): int
     {
         return match ($this) {
-            self::Draft07 => 2018,
-            self::Draft201909 => 2019,
-            self::Draft202012 => 2020,
+            self::Draft_07 => 2018,
+            self::Draft_2019_09 => 2019,
+            self::Draft_2020_12 => 2020,
         };
     }
 }

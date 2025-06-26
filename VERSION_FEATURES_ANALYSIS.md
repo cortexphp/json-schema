@@ -75,6 +75,13 @@ This document tracks all JSON Schema features across different concerns and sche
   - Format vocabularies - Draft 2020-12+ (not implemented - no current usage)
 - **Implementation**: Added validation for version-specific formats in `format()` method and feature detection
 
+### ✅ IMPLEMENTED: HasProperties (dependentSchemas)
+**Status**: ✅ Complete with version validation
+- **Features**:
+  - `unevaluatedProperties` - Draft 2019-09+ ✅ PREVIOUSLY IMPLEMENTED
+  - `dependentSchemas` - Draft 2019-09+ ✅ VALIDATION ADDED
+- **Implementation**: Added `dependentSchema()` and `dependentSchemas()` methods with version validation and feature detection
+
 ### ✅ NO ACTION NEEDED: Basic Concerns
 These concerns use features available in all supported versions:
 - **HasTitle**: `title` - Available in all versions
@@ -84,7 +91,7 @@ These concerns use features available in all supported versions:
 - **HasValidation**: Basic validation keywords - Available in all versions
 - **HasRef**: `$ref` - Available in all versions
 - **HasRequired**: `required` - Available in all versions
-- **HasProperties**: Object properties - Available in all versions
+- **HasProperties**: Basic object properties - Available in all versions
 - **HasItems**: Basic array items - Available in all versions
 - **HasNumericConstraints**: Numeric validation - Available in all versions
 
@@ -112,10 +119,28 @@ These concerns use features available in all supported versions:
    - ✅ Integrated with feature validation system
    - Note: Format vocabularies not implemented (no current usage in codebase)
 
-### Phase 3: Advanced Features (Future)
-4. **Unevaluated properties/items** (if implemented)
-5. **Dependent schemas/required** (if implemented)
+### ✅ Phase 3: Advanced Features (COMPLETED)
+4. **✅ Unevaluated properties/items** - IMPLEMENTED
+   - ✅ Added `unevaluatedProperties()` method to HasProperties trait
+   - ✅ Added `unevaluatedItems()` method to ArraySchema
+   - ✅ Version validation (Draft 2019-09+ required)
+   - ✅ Feature detection and integration with AbstractSchema
+   - ✅ Comprehensive test coverage for both features
+   - ✅ Support for boolean and schema values
+   - ✅ Integration with existing object/array properties
+
+5. **✅ Dependent schemas** - IMPLEMENTED
+   - ✅ Added `dependentSchema()` method to HasProperties trait
+   - ✅ Added `dependentSchemas()` method for setting multiple at once
+   - ✅ Version validation (Draft 2019-09+ required)
+   - ✅ Feature detection and integration with ObjectSchema
+   - ✅ Comprehensive test coverage (11 tests, 43 assertions)
+   - ✅ Support for complex conditional schemas
+   - ✅ Integration with existing object properties
+
+### Phase 4: Future Advanced Features
 6. **PrefixItems** (if array/tuple redesign implemented)
+7. **DependentRequired** (if needed - split from dependencies keyword)
 
 ## Testing Strategy
 
@@ -126,7 +151,7 @@ These concerns use features available in all supported versions:
 4. **✅ Error message tests**: Helpful error messages for unsupported features
 5. **✅ Feature detection tests**: Features are properly detected and reported
 
-**Current Test Results**: 145 tests passing with 931 assertions
+**Current Test Results**: 184 tests passing with 1103 assertions
 
 ## Notes
 

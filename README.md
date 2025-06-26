@@ -164,6 +164,17 @@ $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft201909)
 // ✅ Format validation for newer formats
 $schema = SchemaFactory::string('duration', SchemaVersion::Draft201909)
     ->format(SchemaFormat::Duration); // ISO 8601 duration format
+
+// ✅ Unevaluated properties/items for advanced validation
+$objectSchema = SchemaFactory::object('user', SchemaVersion::Draft201909)
+    ->properties(
+        SchemaFactory::string('name')->required()
+    )
+    ->unevaluatedProperties(false); // Strict validation
+
+$arraySchema = SchemaFactory::array('items', SchemaVersion::Draft201909)
+    ->items(SchemaFactory::string())
+    ->unevaluatedItems(false); // Strict array validation
 ```
 
 ### Version-Appropriate Output
@@ -193,6 +204,8 @@ $modernSchema = SchemaFactory::object('user', SchemaVersion::Draft201909)
 | `$defs` (replaces `definitions`) | ❌ | ✅ | ✅ |
 | `minContains`/`maxContains` | ❌ | ✅ | ✅ |
 | `duration`/`uuid` formats | ❌ | ✅ | ✅ |
+| `unevaluatedProperties`/`unevaluatedItems` | ❌ | ✅ | ✅ |
+| `dependentSchemas` | ❌ | ✅ | ✅ |
 | `prefixItems` (tuple validation) | ❌ | ❌ | ✅ |
 | Dynamic references (`$dynamicRef`) | ❌ | ❌ | ✅ |
 
@@ -686,6 +699,169 @@ $schema->isValid([
     },
     "required": ["name", "age"],
     "additionalProperties": false
+}
+```
+
+</details>
+
+---
+
+### Unevaluated Properties & Items (Draft 2019-09+)
+
+For advanced validation, you can use `unevaluatedProperties` and `unevaluatedItems` to control properties and items that weren't explicitly defined:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Strict object validation - no unevaluated properties allowed
+$schema = SchemaFactory::object('user', SchemaVersion::Draft201909)
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required(),
+    )
+    ->unevaluatedProperties(false);
+
+// Allow unevaluated properties with schema validation
+$schema = SchemaFactory::object('metadata', SchemaVersion::Draft201909)
+    ->properties(
+        SchemaFactory::string('title')->required(),
+    )
+    ->unevaluatedProperties(
+        SchemaFactory::string()->minLength(1) // Any extra properties must be non-empty strings
+    );
+
+// Strict array validation - no unevaluated items allowed
+$arraySchema = SchemaFactory::array('tags', SchemaVersion::Draft201909)
+    ->items(SchemaFactory::string())
+    ->unevaluatedItems(false);
+
+// Allow unevaluated items with schema validation
+$arraySchema = SchemaFactory::array('mixed', SchemaVersion::Draft201909)
+    ->items(SchemaFactory::string())
+    ->unevaluatedItems(
+        SchemaFactory::integer()->minimum(0) // Extra items must be non-negative integers
+    );
+```
+
+```php
+// unevaluatedProperties validation
+$schema->isValid([
+    'name' => 'John',
+    'email' => 'john@example.com',
+]); // true
+
+$schema->isValid([
+    'name' => 'John',
+    'email' => 'john@example.com',
+    'extra' => 'not allowed', // unevaluatedProperties: false
+]); // false
+
+// unevaluatedItems validation
+$arraySchema->isValid(['hello', 'world']); // true (all items match string schema)
+$arraySchema->isValid(['hello', 'world', 'extra']); // false (unevaluatedItems: false)
+```
+
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "type": "object",
+    "title": "user",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "email": {
+            "type": "string"
+        }
+    },
+    "required": ["name", "email"],
+    "unevaluatedProperties": false
+}
+```
+
+</details>
+
+---
+
+### Dependent Schemas (Draft 2019-09+)
+
+Use `dependentSchemas` to define conditional schemas based on property presence:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Simple dependent schema - when credit_card is present, billing_address is required
+$schema = SchemaFactory::object('user', SchemaVersion::Draft201909)
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('credit_card'),
+    )
+    ->dependentSchema('credit_card',
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('billing_address')->required()
+        )
+    );
+
+// Multiple dependent schemas
+$schema = SchemaFactory::object('registration', SchemaVersion::Draft201909)
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required(),
+        SchemaFactory::string('payment_method')->enum(['credit_card', 'paypal']),
+        SchemaFactory::boolean('is_premium'),
+    )
+    ->dependentSchemas([
+        'payment_method' => SchemaFactory::object()
+            ->if(SchemaFactory::object()->properties(
+                SchemaFactory::string('payment_method')->const('credit_card')
+            ))
+            ->then(SchemaFactory::object()->properties(
+                SchemaFactory::string('card_number')->required(),
+                SchemaFactory::string('cvv')->required(),
+            )),
+        'is_premium' => SchemaFactory::object()
+            ->if(SchemaFactory::object()->properties(
+                SchemaFactory::boolean('is_premium')->const(true)
+            ))
+            ->then(SchemaFactory::object()->properties(
+                SchemaFactory::string('premium_tier')->enum(['gold', 'platinum'])->required()
+            )),
+    ]);
+```
+
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "type": "object",
+    "title": "user",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "credit_card": {
+            "type": "string"
+        }
+    },
+    "required": ["name"],
+    "dependentSchemas": {
+        "credit_card": {
+            "type": "object",
+            "properties": {
+                "billing_address": {
+                    "type": "string"
+                }
+            },
+            "required": ["billing_address"]
+        }
+    }
 }
 ```
 

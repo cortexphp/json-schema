@@ -16,27 +16,27 @@ afterEach(function (): void {
 });
 
 it('has correct schema version enum values', function (): void {
-    expect(SchemaVersion::Draft07->value)->toBe('http://json-schema.org/draft-07/schema#');
-    expect(SchemaVersion::Draft201909->value)->toBe('https://json-schema.org/draft/2019-09/schema');
-    expect(SchemaVersion::Draft202012->value)->toBe('https://json-schema.org/draft/2020-12/schema');
+    expect(SchemaVersion::Draft_07->value)->toBe('http://json-schema.org/draft-07/schema#');
+    expect(SchemaVersion::Draft_2019_09->value)->toBe('https://json-schema.org/draft/2019-09/schema');
+    expect(SchemaVersion::Draft_2020_12->value)->toBe('https://json-schema.org/draft/2020-12/schema');
 });
 
 it('has correct schema version names', function (): void {
-    expect(SchemaVersion::Draft07->getName())->toBe('Draft 7');
-    expect(SchemaVersion::Draft201909->getName())->toBe('Draft 2019-09');
-    expect(SchemaVersion::Draft202012->getName())->toBe('Draft 2020-12');
+    expect(SchemaVersion::Draft_07->getName())->toBe('Draft 7');
+    expect(SchemaVersion::Draft_2019_09->getName())->toBe('Draft 2019-09');
+    expect(SchemaVersion::Draft_2020_12->getName())->toBe('Draft 2020-12');
 });
 
 it('has correct schema version years', function (): void {
-    expect(SchemaVersion::Draft07->getYear())->toBe(2018);
-    expect(SchemaVersion::Draft201909->getYear())->toBe(2019);
-    expect(SchemaVersion::Draft202012->getYear())->toBe(2020);
+    expect(SchemaVersion::Draft_07->getYear())->toBe(2018);
+    expect(SchemaVersion::Draft_2019_09->getYear())->toBe(2019);
+    expect(SchemaVersion::Draft_2020_12->getYear())->toBe(2020);
 });
 
 it('has correct schema version feature support', function (): void {
-    $draft07 = SchemaVersion::Draft07;
-    $draft201909 = SchemaVersion::Draft201909;
-    $draft202012 = SchemaVersion::Draft202012;
+    $draft07 = SchemaVersion::Draft_07;
+    $draft201909 = SchemaVersion::Draft_2019_09;
+    $draft202012 = SchemaVersion::Draft_2020_12;
 
     // Draft 07 features (available in all versions)
     expect($draft07->supports(SchemaFeature::IfThenElse))->toBeTrue();
@@ -105,13 +105,13 @@ it('has correct schema version feature support', function (): void {
 });
 
 it('supports enum-based feature checks', function (): void {
-    $draft202012 = SchemaVersion::Draft202012;
+    $draft202012 = SchemaVersion::Draft_2020_12;
 
     // Test enum-based feature check
     expect($draft202012->supports(SchemaFeature::PrefixItems))->toBeTrue();
     expect($draft202012->supports(SchemaFeature::UnicodeRegex))->toBeTrue();
 
-    $draft07 = SchemaVersion::Draft07;
+    $draft07 = SchemaVersion::Draft_07;
     expect($draft07->supports(SchemaFeature::PrefixItems))->toBeFalse();
     expect($draft07->supports(SchemaFeature::IfThenElse))->toBeTrue();
 });
@@ -119,50 +119,50 @@ it('supports enum-based feature checks', function (): void {
 it('provides feature metadata through enum', function (): void {
     $feature = SchemaFeature::PrefixItems;
 
-    expect($feature->getMinimumVersion())->toBe(SchemaVersion::Draft202012);
+    expect($feature->getMinimumVersion())->toBe(SchemaVersion::Draft_2020_12);
     expect($feature->getMaximumVersion())->toBeNull();
     expect($feature->getDescription())->toContain('tuple');
-    expect($feature->wasIntroducedIn(SchemaVersion::Draft202012))->toBeTrue();
-    expect($feature->wasIntroducedIn(SchemaVersion::Draft201909))->toBeFalse();
-    expect($feature->wasRemovedIn(SchemaVersion::Draft202012))->toBeFalse();
+    expect($feature->wasIntroducedIn(SchemaVersion::Draft_2020_12))->toBeTrue();
+    expect($feature->wasIntroducedIn(SchemaVersion::Draft_2019_09))->toBeFalse();
+    expect($feature->wasRemovedIn(SchemaVersion::Draft_2020_12))->toBeFalse();
 
     // Test a feature that was removed
     $recursiveFeature = SchemaFeature::RecursiveRef;
-    expect($recursiveFeature->getMaximumVersion())->toBe(SchemaVersion::Draft201909);
-    expect($recursiveFeature->wasRemovedIn(SchemaVersion::Draft202012))->toBeTrue();
+    expect($recursiveFeature->getMaximumVersion())->toBe(SchemaVersion::Draft_2019_09);
+    expect($recursiveFeature->wasRemovedIn(SchemaVersion::Draft_2020_12))->toBeTrue();
 });
 
 it('has correct default and latest versions', function (): void {
-    expect(SchemaVersion::default())->toBe(SchemaVersion::Draft07);
-    expect(SchemaVersion::latest())->toBe(SchemaVersion::Draft202012);
+    expect(SchemaVersion::default())->toBe(SchemaVersion::Draft_07);
+    expect(SchemaVersion::latest())->toBe(SchemaVersion::Draft_2020_12);
 });
 
 it('can create schema factory with version parameter', function (): void {
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft202012);
+    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_2020_12);
 
     expect($stringSchema)->toBeInstanceOf(StringSchema::class);
-    expect($stringSchema->getVersion())->toBe(SchemaVersion::Draft202012);
+    expect($stringSchema->getVersion())->toBe(SchemaVersion::Draft_2020_12);
 });
 
 it('can manage schema factory default version', function (): void {
     // Test default version
     $schema = SchemaFactory::string('test');
-    expect($schema->getVersion())->toBe(SchemaVersion::Draft07);
+    expect($schema->getVersion())->toBe(SchemaVersion::Draft_07);
 
     // Test setting global default
-    SchemaFactory::setDefaultVersion(SchemaVersion::Draft202012);
+    SchemaFactory::setDefaultVersion(SchemaVersion::Draft_2020_12);
     $schema = SchemaFactory::string('test');
-    expect($schema->getVersion())->toBe(SchemaVersion::Draft202012);
+    expect($schema->getVersion())->toBe(SchemaVersion::Draft_2020_12);
 
     // Test reset to default
     SchemaFactory::resetDefaultVersion();
     $schema = SchemaFactory::string('test');
-    expect($schema->getVersion())->toBe(SchemaVersion::Draft07);
+    expect($schema->getVersion())->toBe(SchemaVersion::Draft_07);
 });
 
 it('includes correct schema version in output', function (): void {
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft07);
-    $draft202012Schema = SchemaFactory::string('test', SchemaVersion::Draft202012);
+    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
+    $draft202012Schema = SchemaFactory::string('test', SchemaVersion::Draft_2020_12);
 
     $draft07Array = $stringSchema->toArray();
     $draft202012Array = $draft202012Schema->toArray();
@@ -172,18 +172,18 @@ it('includes correct schema version in output', function (): void {
 });
 
 it('can change schema version on existing schema', function (): void {
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft07);
-    expect($stringSchema->getVersion())->toBe(SchemaVersion::Draft07);
+    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
+    expect($stringSchema->getVersion())->toBe(SchemaVersion::Draft_07);
 
-    $stringSchema->version(SchemaVersion::Draft202012);
-    expect($stringSchema->getVersion())->toBe(SchemaVersion::Draft202012);
+    $stringSchema->version(SchemaVersion::Draft_2020_12);
+    expect($stringSchema->getVersion())->toBe(SchemaVersion::Draft_2020_12);
 
     $array = $stringSchema->toArray();
     expect($array['$schema'])->toBe('https://json-schema.org/draft/2020-12/schema');
 });
 
 it('supports versions for all schema types', function (): void {
-    $version = SchemaVersion::Draft202012;
+    $version = SchemaVersion::Draft_2020_12;
 
     $stringSchema = SchemaFactory::string('test', $version);
     $numberSchema = SchemaFactory::number('test', $version);
@@ -208,7 +208,7 @@ it('supports versions for all schema types', function (): void {
 });
 
 it('supports versions for from methods', function (): void {
-    $version = SchemaVersion::Draft202012;
+    $version = SchemaVersion::Draft_2020_12;
 
     // Test fromClass
     $objectSchema = SchemaFactory::fromClass(new class () {
@@ -231,5 +231,5 @@ it('can exclude schema version from output', function (): void {
     $arrayWithRef = $stringSchema->toArray(true);
 
     expect($arrayWithoutRef)->not->toHaveKey('$schema');
-    expect($arrayWithRef)->toHaveKey('$schema', SchemaVersion::Draft07->value);
+    expect($arrayWithRef)->toHaveKey('$schema', SchemaVersion::Draft_07->value);
 });

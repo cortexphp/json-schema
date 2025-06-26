@@ -30,4 +30,28 @@ final class ObjectSchema extends AbstractSchema
 
         return $this->addPropertiesToSchema($schema);
     }
+
+    /**
+     * Get features used by this schema including properties features.
+     *
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
+     */
+    #[Override]
+    protected function getUsedFeatures(): array
+    {
+        $features = [
+            ...parent::getUsedFeatures(),
+            ...$this->getUnevaluatedPropertiesFeatures(),
+            ...$this->getDependentSchemasFeatures(),
+        ];
+
+        // Remove duplicates by using feature values as keys
+        $uniqueFeatures = [];
+
+        foreach ($features as $feature) {
+            $uniqueFeatures[$feature->value] = $feature;
+        }
+
+        return array_values($uniqueFeatures);
+    }
 }

@@ -95,7 +95,7 @@ it('can validate array contains', function (): void {
     );
 
     // Now test with minContains and maxContains (requires Draft 2019-09+)
-    $schema = Schema::array('numbers', SchemaVersion::Draft201909)
+    $schema = Schema::array('numbers', SchemaVersion::Draft_2019_09)
         ->description('List of numbers')
         ->contains(
             Schema::number()
@@ -129,13 +129,13 @@ it('can validate array contains', function (): void {
 });
 
 it('throws an exception if the minContains is less than 0', function (): void {
-    Schema::array('numbers', SchemaVersion::Draft201909)
+    Schema::array('numbers', SchemaVersion::Draft_2019_09)
         ->description('List of numbers')
         ->minContains(-1);
 })->throws(SchemaException::class, 'minContains must be greater than or equal to 0');
 
 it('throws an exception if the maxContains is less than 0', function (): void {
-    Schema::array('numbers', SchemaVersion::Draft201909)
+    Schema::array('numbers', SchemaVersion::Draft_2019_09)
         ->description('List of numbers')
         ->maxContains(-1);
 })->throws(SchemaException::class, 'maxContains must be greater than or equal to 0');

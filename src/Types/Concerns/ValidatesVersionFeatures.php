@@ -60,7 +60,7 @@ trait ValidatesVersionFeatures
     {
         // For features that were renamed, use the appropriate keyword for the version
         return match ($modernKeyword) {
-            '$defs' => $this->getVersion() === SchemaVersion::Draft07 ? 'definitions' : '$defs',
+            '$defs' => $this->getVersion() === SchemaVersion::Draft_07 ? 'definitions' : '$defs',
             default => $modernKeyword,
         };
     }

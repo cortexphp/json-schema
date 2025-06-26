@@ -22,6 +22,11 @@ final class ArraySchema extends AbstractSchema
 
     protected ?int $maxContains = null;
 
+    /**
+     * @var bool|\Cortex\JsonSchema\Contracts\Schema|null
+     */
+    protected mixed $unevaluatedItems = null;
+
     public function __construct(?string $title = null, ?SchemaVersion $schemaVersion = null)
     {
         parent::__construct(SchemaType::Array, $title, $schemaVersion);
@@ -80,6 +85,23 @@ final class ArraySchema extends AbstractSchema
     }
 
     /**
+     * Set whether unevaluated items are allowed and optionally their schema.
+     * This feature is only available in Draft 2019-09 and later.
+     *
+     * @param bool|\Cortex\JsonSchema\Contracts\Schema $allowed Whether unevaluated items are allowed, or a schema they must match
+     *
+     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
+     */
+    public function unevaluatedItems(bool|Schema $allowed): static
+    {
+        $this->validateFeatureSupport(SchemaFeature::UnevaluatedItems);
+
+        $this->unevaluatedItems = $allowed;
+
+        return $this;
+    }
+
+    /**
      * Convert the schema to an array.
      *
      * @return array<string, mixed>
@@ -103,6 +125,12 @@ final class ArraySchema extends AbstractSchema
             $schema['maxContains'] = $this->maxContains;
         }
 
+        if ($this->unevaluatedItems !== null) {
+            $schema['unevaluatedItems'] = $this->unevaluatedItems instanceof Schema
+                ? $this->unevaluatedItems->toArray(includeSchemaRef: false, includeTitle: false)
+                : $this->unevaluatedItems;
+        }
+
         return $schema;
     }
 
@@ -121,6 +149,10 @@ final class ArraySchema extends AbstractSchema
 
         if ($this->maxContains !== null) {
             $features[] = SchemaFeature::MaxContains;
+        }
+
+        if ($this->unevaluatedItems !== null) {
+            $features[] = SchemaFeature::UnevaluatedItems;
         }
 
         return $features;
