@@ -61,7 +61,10 @@ trait HasDefinitions
             $schema[$keyword] = [];
 
             foreach ($this->definitions as $name => $definition) {
-                $schema[$keyword][$name] = $definition->toArray(includeSchemaRef: false);
+                /** @var array<string, mixed> $definitions */
+                $definitions = $schema[$keyword];
+                $definitions[$name] = $definition->toArray(includeSchemaRef: false);
+                $schema[$keyword] = $definitions;
             }
         }
 
@@ -71,7 +74,7 @@ trait HasDefinitions
     /**
      * Get definition features used by this schema.
      *
-     * @return SchemaFeature[]
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
      */
     protected function getDefinitionFeatures(): array
     {

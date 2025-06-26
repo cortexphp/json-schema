@@ -109,7 +109,7 @@ final class ArraySchema extends AbstractSchema
     /**
      * Get array-specific features used by this schema.
      *
-     * @return SchemaFeature[]
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
      */
     protected function getArrayFeatures(): array
     {
@@ -129,7 +129,7 @@ final class ArraySchema extends AbstractSchema
     /**
      * Override to include array-specific features.
      *
-     * @return SchemaFeature[]
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
      */
     #[Override]
     protected function getUsedFeatures(): array

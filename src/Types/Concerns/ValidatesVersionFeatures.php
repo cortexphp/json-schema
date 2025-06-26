@@ -14,7 +14,7 @@ trait ValidatesVersionFeatures
     /**
      * Validate that a feature is supported by the current schema version.
      *
-     * @throws SchemaException
+     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
      */
     protected function validateFeatureSupport(SchemaFeature $schemaFeature): void
     {
@@ -33,9 +33,9 @@ trait ValidatesVersionFeatures
     /**
      * Validate that multiple features are supported by the current schema version.
      *
-     * @param SchemaFeature[] $features
+     * @param array<\Cortex\JsonSchema\Enums\SchemaFeature> $features
      *
-     * @throws SchemaException
+     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
      */
     protected function validateFeaturesSupport(array $features): void
     {
@@ -89,7 +89,7 @@ trait ValidatesVersionFeatures
      * Get features that should be validated when building the schema output.
      * Override in specific schema types to define which features they use.
      *
-     * @return SchemaFeature[]
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
      */
     protected function getUsedFeatures(): array
     {
@@ -99,7 +99,7 @@ trait ValidatesVersionFeatures
     /**
      * Validate all features used by this schema type.
      *
-     * @throws SchemaException
+     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
      */
     protected function validateAllUsedFeatures(): void
     {

@@ -56,7 +56,7 @@ trait HasReadWrite
     /**
      * Get read/write features used by this schema.
      *
-     * @return SchemaFeature[]
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
      */
     protected function getReadWriteFeatures(): array
     {

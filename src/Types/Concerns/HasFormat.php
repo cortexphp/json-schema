@@ -65,7 +65,7 @@ trait HasFormat
     /**
      * Get format features used by this schema.
      *
-     * @return SchemaFeature[]
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
      */
     protected function getFormatFeatures(): array
     {

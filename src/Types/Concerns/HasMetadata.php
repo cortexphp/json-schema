@@ -100,7 +100,7 @@ trait HasMetadata
     /**
      * Get metadata features used by this schema.
      *
-     * @return SchemaFeature[]
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
      */
     protected function getMetadataFeatures(): array
     {
