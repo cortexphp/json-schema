@@ -26,6 +26,7 @@ return ECSConfig::configure()
     ])
     ->withRootFiles()
     ->withSpacing(indentation: Option::INDENTATION_SPACES)
+    ->withEditorConfig()
     ->withPreparedSets(
         psr12: true,
         common: true,
