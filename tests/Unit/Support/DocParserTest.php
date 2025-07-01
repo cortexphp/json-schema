@@ -228,7 +228,7 @@ it('handles docblocks with mixed content correctly', function (): void {
     $parser = new DocParser($docblock);
 
     // Test description parsing
-    expect($parser->description())->toBe("A complex description\nwith multiple lines");
+    expect($parser->description())->toBe('A complex description' . PHP_EOL . 'with multiple lines');
 
     // Test parameter parsing
     $params = $parser->params();
