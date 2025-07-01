@@ -8,6 +8,7 @@ use ReflectionEnum;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Contracts\Converter;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -23,8 +24,10 @@ class EnumConverter implements Converter
      */
     public function __construct(
         protected string $enum,
+        protected ?SchemaVersion $version = null,
     ) {
         $this->reflection = new ReflectionEnum($this->enum);
+        $this->version = $version ?? SchemaVersion::default();
 
         if (! $this->reflection->isBacked()) {
             throw new SchemaException('Enum must be a backed enum');
@@ -38,8 +41,8 @@ class EnumConverter implements Converter
 
         // Determine the backing type
         $schema = match ($this->reflection->getBackingType()?->getName()) {
-            'string' => new StringSchema($enumName),
-            'int' => new IntegerSchema($enumName),
+            'string' => new StringSchema($enumName, $this->version),
+            'int' => new IntegerSchema($enumName, $this->version),
             default => throw new SchemaException(
                 'Unsupported enum backing type. Only "int" or "string" are supported.',
             ),

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Types\Concerns;
 
+use Cortex\JsonSchema\Enums\SchemaFeature;
+
 /** @mixin \Cortex\JsonSchema\Contracts\Schema */
 trait HasReadWrite
 {
@@ -49,5 +51,25 @@ trait HasReadWrite
         }
 
         return $schema;
+    }
+
+    /**
+     * Get read/write features used by this schema.
+     *
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
+     */
+    protected function getReadWriteFeatures(): array
+    {
+        $features = [];
+
+        if ($this->readOnly !== null && $this->readOnly) {
+            $features[] = SchemaFeature::ReadOnly;
+        }
+
+        if ($this->writeOnly !== null && $this->writeOnly) {
+            $features[] = SchemaFeature::WriteOnly;
+        }
+
+        return $features;
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Types\Concerns;
 
+use Cortex\JsonSchema\Enums\SchemaFeature;
+
 /** @mixin \Cortex\JsonSchema\Contracts\Schema */
 trait HasMetadata
 {
@@ -36,6 +38,10 @@ trait HasMetadata
      */
     public function deprecated(bool $deprecated = true): static
     {
+        if ($deprecated) {
+            $this->validateFeatureSupport(SchemaFeature::Deprecated);
+        }
+
         $this->deprecated = $deprecated;
 
         return $this;
@@ -89,5 +95,21 @@ trait HasMetadata
         }
 
         return $schema;
+    }
+
+    /**
+     * Get metadata features used by this schema.
+     *
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
+     */
+    protected function getMetadataFeatures(): array
+    {
+        $features = [];
+
+        if ($this->deprecated) {
+            $features[] = SchemaFeature::Deprecated;
+        }
+
+        return $features;
     }
 }

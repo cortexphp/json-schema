@@ -6,6 +6,7 @@ namespace Cortex\JsonSchema\Types;
 
 use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\Concerns\HasRef;
 use Cortex\JsonSchema\Types\Concerns\HasEnum;
 use Cortex\JsonSchema\Types\Concerns\HasConst;
@@ -18,6 +19,7 @@ use Cortex\JsonSchema\Types\Concerns\HasValidation;
 use Cortex\JsonSchema\Types\Concerns\HasDefinitions;
 use Cortex\JsonSchema\Types\Concerns\HasDescription;
 use Cortex\JsonSchema\Types\Concerns\HasConditionals;
+use Cortex\JsonSchema\Types\Concerns\ValidatesVersionFeatures;
 
 abstract class AbstractSchema implements Schema
 {
@@ -33,8 +35,9 @@ abstract class AbstractSchema implements Schema
     use HasDescription;
     use HasConditionals;
     use HasDefinitions;
+    use ValidatesVersionFeatures;
 
-    protected string $schemaVersion = 'http://json-schema.org/draft-07/schema#';
+    protected SchemaVersion $schemaVersion = SchemaVersion::Draft_07;
 
     /**
      * @param \Cortex\JsonSchema\Enums\SchemaType|array<array-key, \Cortex\JsonSchema\Enums\SchemaType> $type
@@ -42,8 +45,28 @@ abstract class AbstractSchema implements Schema
     public function __construct(
         protected SchemaType|array $type,
         ?string $title = null,
+        ?SchemaVersion $schemaVersion = null,
     ) {
         $this->title = $title;
+        $this->schemaVersion = $schemaVersion ?? SchemaVersion::default();
+    }
+
+    /**
+     * Set the JSON Schema version for this schema.
+     */
+    public function version(SchemaVersion $schemaVersion): static
+    {
+        $this->schemaVersion = $schemaVersion;
+
+        return $this;
+    }
+
+    /**
+     * Get the JSON Schema version for this schema.
+     */
+    public function getVersion(): SchemaVersion
+    {
+        return $this->schemaVersion;
     }
 
     /**
@@ -74,6 +97,9 @@ abstract class AbstractSchema implements Schema
      */
     public function toArray(bool $includeSchemaRef = true, bool $includeTitle = true): array
     {
+        // Validate that all features used by this schema are supported by the version
+        $this->validateAllUsedFeatures();
+
         $schema = [
             'type' => is_array($this->type)
                 ? array_map(static fn(SchemaType $schemaType) => $schemaType->value, $this->type)
@@ -81,7 +107,7 @@ abstract class AbstractSchema implements Schema
         ];
 
         if ($includeSchemaRef) {
-            $schema['$schema'] = $this->schemaVersion;
+            $schema['$schema'] = $this->schemaVersion->value;
         }
 
         $schema = $this->addTitleToSchema($schema, $includeTitle);
@@ -111,5 +137,30 @@ abstract class AbstractSchema implements Schema
     protected function isNullable(): bool
     {
         return is_array($this->type) && in_array(SchemaType::Null, $this->type, true);
+    }
+
+    /**
+     * Get features used by this schema from all traits.
+     *
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
+     */
+    protected function getUsedFeatures(): array
+    {
+        $features = [
+            ...$this->getConditionalFeatures(),
+            ...$this->getDefinitionFeatures(),
+            ...$this->getMetadataFeatures(),
+            ...$this->getReadWriteFeatures(),
+            ...$this->getFormatFeatures(),
+        ];
+
+        // Remove duplicates by using feature values as keys
+        $uniqueFeatures = [];
+
+        foreach ($features as $feature) {
+            $uniqueFeatures[$feature->value] = $feature;
+        }
+
+        return array_values($uniqueFeatures);
     }
 }

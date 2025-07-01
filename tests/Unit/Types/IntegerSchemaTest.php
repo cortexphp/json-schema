@@ -165,3 +165,52 @@ it('throws an exception if the multipleOf is less than 0', function (): void {
         ->description('User age')
         ->multipleOf(-1);
 })->throws(SchemaException::class, 'multipleOf must be greater than 0');
+
+it('throws an exception if the multipleOf is zero', function (): void {
+    // Test the edge case where multipleOf is 0 - should throw exception
+    // This kills the SmallerOrEqualToSmaller and DecrementInteger mutations
+    Schema::integer('value')
+        ->multipleOf(0);
+})->throws(SchemaException::class, 'multipleOf must be greater than 0');
+
+it('accepts valid multipleOf values including 1', function (): void {
+    // Test that multipleOf = 1 is valid (kills the IncrementInteger mutation)
+    expect(
+        fn(): IntegerSchema => Schema::integer('any')
+            ->multipleOf(1),
+    )->not->toThrow(SchemaException::class);
+
+    // Test other valid values
+    expect(
+        fn(): IntegerSchema => Schema::integer('even')
+            ->multipleOf(2),
+    )->not->toThrow(SchemaException::class);
+
+    expect(
+        fn(): IntegerSchema => Schema::integer('tens')
+            ->multipleOf(10),
+    )->not->toThrow(SchemaException::class);
+
+    // Verify multipleOf = 1 actually works in validation
+    $integerSchema = Schema::integer('test')->multipleOf(1);
+    expect($integerSchema->toArray())->toHaveKey('multipleOf', 1);
+
+    // Any integer should be valid with multipleOf = 1
+    expect(fn() => $integerSchema->validate(5))->not->toThrow(SchemaException::class);
+    expect(fn() => $integerSchema->validate(100))->not->toThrow(SchemaException::class);
+    expect(fn() => $integerSchema->validate(-5))->not->toThrow(SchemaException::class);
+});
+
+it('validates multipleOf boundary conditions', function (): void {
+    // Negative values should throw exception
+    expect(fn(): IntegerSchema => Schema::integer('test')->multipleOf(-1))
+        ->toThrow(SchemaException::class, 'multipleOf must be greater than 0');
+
+    // Zero should throw exception (this is the key test for the mutations)
+    expect(fn(): IntegerSchema => Schema::integer('test')->multipleOf(0))
+        ->toThrow(SchemaException::class, 'multipleOf must be greater than 0');
+
+    // Positive values should be accepted
+    expect(fn(): IntegerSchema => Schema::integer('test')->multipleOf(1))
+        ->not->toThrow(SchemaException::class);
+});

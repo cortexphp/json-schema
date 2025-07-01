@@ -6,6 +6,7 @@ namespace Cortex\JsonSchema\Types;
 
 use Override;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 final class StringSchema extends AbstractSchema
@@ -16,9 +17,9 @@ final class StringSchema extends AbstractSchema
 
     protected ?string $pattern = null;
 
-    public function __construct(?string $title = null)
+    public function __construct(?string $title = null, ?SchemaVersion $schemaVersion = null)
     {
-        parent::__construct(SchemaType::String, $title);
+        parent::__construct(SchemaType::String, $title, $schemaVersion);
     }
 
     /**

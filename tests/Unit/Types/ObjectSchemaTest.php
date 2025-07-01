@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
+use ReflectionClass;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\ObjectSchema;
+use Cortex\JsonSchema\Enums\SchemaFeature;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Opis\JsonSchema\Errors\ValidationError;
 use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
@@ -311,4 +314,169 @@ it('can combine pattern properties with regular properties', function (): void {
         'age' => 30,
         'invalid_field' => 'value',
     ]))->toThrow(SchemaException::class);
+});
+
+it('correctly collects used features from all sources', function (): void {
+    // Test that getUsedFeatures properly collects features from parent, unevaluated properties, and dependent schemas
+    // Use Draft 2019-09 to support these features
+    $objectSchema = Schema::object('complex', SchemaVersion::Draft_2019_09)
+        ->properties(Schema::string('name')->required())
+        ->unevaluatedProperties(false)
+        ->dependentSchema('name', Schema::string('dependent')->required());
+
+    // Use reflection to access the protected method
+    $reflection = new ReflectionClass($objectSchema);
+    $reflectionMethod = $reflection->getMethod('getUsedFeatures');
+    $reflectionMethod->setAccessible(true);
+
+    $features = $reflectionMethod->invoke($objectSchema);
+
+    // Should contain UnevaluatedProperties and DependentSchemas features
+    $featureValues = array_map(fn($feature) => $feature->value, $features);
+
+    expect($featureValues)->toContain('unevaluatedProperties');
+    expect($featureValues)->toContain('dependentSchemas');
+
+    // Verify features are properly deduplicated (no duplicates in array)
+    expect($featureValues)->toBe(array_unique($featureValues));
+});
+
+it('collects unevaluated properties features when set', function (): void {
+    // Use Draft 2019-09 to support unevaluated properties
+    $objectSchema = Schema::object('test', SchemaVersion::Draft_2019_09)
+        ->properties(Schema::string('name'))
+        ->unevaluatedProperties(Schema::string());
+
+    $objectWithoutUnevaluated = Schema::object('test', SchemaVersion::Draft_2019_09)
+        ->properties(Schema::string('name'));
+
+    // Use reflection to access protected methods
+    $reflection = new ReflectionClass($objectSchema);
+    $reflectionMethod = $reflection->getMethod('getUnevaluatedPropertiesFeatures');
+    $reflectionMethod->setAccessible(true);
+
+    $featuresWithUnevaluated = $reflectionMethod->invoke($objectSchema);
+    $featuresWithoutUnevaluated = $reflectionMethod->invoke($objectWithoutUnevaluated);
+
+    // Object with unevaluated properties should return the feature
+    expect($featuresWithUnevaluated)->toHaveCount(1);
+    expect($featuresWithUnevaluated[0]->value)->toBe('unevaluatedProperties');
+
+    // Object without unevaluated properties should return empty array
+    expect($featuresWithoutUnevaluated)->toBeEmpty();
+});
+
+it('collects dependent schemas features when set', function (): void {
+    // Use Draft 2019-09 to support dependent schemas
+    $objectSchema = Schema::object('test', SchemaVersion::Draft_2019_09)
+        ->properties(Schema::string('name'))
+        ->dependentSchema('name', Schema::string('dependent'));
+
+    $objectWithoutDependent = Schema::object('test', SchemaVersion::Draft_2019_09)
+        ->properties(Schema::string('name'));
+
+    // Use reflection to access protected methods
+    $reflection = new ReflectionClass($objectSchema);
+    $reflectionMethod = $reflection->getMethod('getDependentSchemasFeatures');
+    $reflectionMethod->setAccessible(true);
+
+    $featuresWithDependent = $reflectionMethod->invoke($objectSchema);
+    $featuresWithoutDependent = $reflectionMethod->invoke($objectWithoutDependent);
+
+    // Object with dependent schemas should return the feature
+    expect($featuresWithDependent)->toHaveCount(1);
+    expect($featuresWithDependent[0]->value)->toBe('dependentSchemas');
+
+    // Object without dependent schemas should return empty array
+    expect($featuresWithoutDependent)->toBeEmpty();
+});
+
+it('properly deduplicates features in getUsedFeatures', function (): void {
+    // Create a schema that might have duplicate features from different sources
+    // Use Draft 2019-09 to support these features
+    $objectSchema = Schema::object('test', SchemaVersion::Draft_2019_09)
+        ->properties(Schema::string('name'))
+        ->unevaluatedProperties(true)
+        ->dependentSchema('name', Schema::string('dependent'));
+
+    // Use reflection to access the protected method
+    $reflection = new ReflectionClass($objectSchema);
+    $reflectionMethod = $reflection->getMethod('getUsedFeatures');
+    $reflectionMethod->setAccessible(true);
+
+    $features = $reflectionMethod->invoke($objectSchema);
+
+    // Get feature values for comparison
+    $featureValues = array_map(fn($feature) => $feature->value, $features);
+
+    // Should not contain duplicates
+    expect($featureValues)->toBe(array_unique($featureValues));
+
+    // Should return indexed array (not associative)
+    expect(array_keys($featureValues))->toBe(range(0, count($featureValues) - 1));
+});
+
+it('returns correct array structure from getUsedFeatures', function (): void {
+    // Use Draft 2019-09 to support unevaluated properties
+    $objectSchema = Schema::object('test', SchemaVersion::Draft_2019_09)
+        ->properties(Schema::string('name'))
+        ->unevaluatedProperties(false);
+
+    // Use reflection to access the protected method
+    $reflection = new ReflectionClass($objectSchema);
+    $reflectionMethod = $reflection->getMethod('getUsedFeatures');
+    $reflectionMethod->setAccessible(true);
+
+    $features = $reflectionMethod->invoke($objectSchema);
+
+    // Should return an array
+    expect($features)->toBeArray();
+
+    // Should not be empty (has at least unevaluated properties feature)
+    expect($features)->not->toBeEmpty();
+
+    // Each item should be a SchemaFeature enum
+    foreach ($features as $feature) {
+        expect($feature)->toBeInstanceOf(SchemaFeature::class);
+    }
+
+    // Should be a regular indexed array, not associative
+    expect(array_keys($features))->toBe(range(0, count($features) - 1));
+});
+
+it('includes parent class features in getUsedFeatures', function (): void {
+    // Create an ObjectSchema that uses parent features directly on the object itself
+    // Use if-then-else conditional which should trigger parent features
+    $objectSchema = Schema::object('test')
+        ->properties(Schema::string('name')->required())
+        ->if(Schema::object()->properties(Schema::string('name')))
+        ->then(Schema::object()->properties(Schema::string('type')->required()))
+        ->else(Schema::object()->properties(Schema::string('other')));
+
+    // Use reflection to access the protected method
+    $reflection = new ReflectionClass($objectSchema);
+    $reflectionMethod = $reflection->getMethod('getUsedFeatures');
+    $reflectionMethod->setAccessible(true);
+
+    $features = $reflectionMethod->invoke($objectSchema);
+    $featureValues = array_map(fn($feature) => $feature->value, $features);
+
+    // Should contain parent conditional features
+    expect($featureValues)->toContain('if');
+    expect($featureValues)->toContain('then');
+    expect($featureValues)->toContain('else');
+
+    // Test that an ObjectSchema without parent features has fewer features
+    $simpleObjectSchema = Schema::object('simple')
+        ->properties(Schema::string('name'));
+
+    $simpleFeaturesResult = $reflectionMethod->invoke($simpleObjectSchema);
+    $simpleFeatureValues = array_map(fn($feature) => $feature->value, $simpleFeaturesResult);
+
+    // Simple object should not have conditional features
+    expect($simpleFeatureValues)->not->toContain('if');
+    expect($simpleFeatureValues)->not->toContain('then');
+    expect($simpleFeatureValues)->not->toContain('else');
+
+    // This proves that parent::getUsedFeatures() is necessary to collect these parent features
 });

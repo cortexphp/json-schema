@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Contracts;
 
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
 interface Schema
 {
     /**
@@ -76,4 +78,14 @@ interface Schema
      * Determine if the given value is valid against the schema.
      */
     public function isValid(mixed $value): bool;
+
+    /**
+     * Set the JSON Schema version for this schema.
+     */
+    public function version(SchemaVersion $schemaVersion): static;
+
+    /**
+     * Get the JSON Schema version for this schema.
+     */
+    public function getVersion(): SchemaVersion;
 }

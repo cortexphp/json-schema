@@ -6,6 +6,7 @@ namespace Cortex\JsonSchema\Types;
 
 use Override;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\Concerns\HasItems;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 use Cortex\JsonSchema\Types\Concerns\HasProperties;
@@ -25,6 +26,7 @@ final class UnionSchema extends AbstractSchema
     public function __construct(
         array $types,
         ?string $title = null,
+        ?SchemaVersion $schemaVersion = null,
     ) {
         if ($types === []) {
             throw new SchemaException('Union schema must have at least one type');
@@ -38,7 +40,7 @@ final class UnionSchema extends AbstractSchema
             throw new SchemaException('Union schema types must be unique');
         }
 
-        parent::__construct($types, $title);
+        parent::__construct($types, $title, $schemaVersion);
     }
 
     /**

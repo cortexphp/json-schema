@@ -14,69 +14,97 @@ use Cortex\JsonSchema\Types\UnionSchema;
 use Cortex\JsonSchema\Types\NumberSchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Converters\EnumConverter;
+use Cortex\JsonSchema\Converters\JsonConverter;
 use Cortex\JsonSchema\Converters\ClassConverter;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 use Cortex\JsonSchema\Converters\ClosureConverter;
 
 class SchemaFactory
 {
-    public static function string(?string $title = null): StringSchema
+    private static ?SchemaVersion $schemaVersion = null;
+
+    /**
+     * Set the default schema version for all new schemas.
+     */
+    public static function setDefaultVersion(SchemaVersion $schemaVersion): void
     {
-        return new StringSchema($title);
+        self::$schemaVersion = $schemaVersion;
     }
 
-    public static function object(?string $title = null): ObjectSchema
+    /**
+     * Get the current default schema version.
+     */
+    public static function getDefaultVersion(): SchemaVersion
     {
-        return new ObjectSchema($title);
+        return self::$schemaVersion ?? SchemaVersion::default();
     }
 
-    public static function array(?string $title = null): ArraySchema
+    /**
+     * Reset the default version to the package default.
+     */
+    public static function resetDefaultVersion(): void
     {
-        return new ArraySchema($title);
+        self::$schemaVersion = null;
     }
 
-    public static function number(?string $title = null): NumberSchema
+    public static function string(?string $title = null, ?SchemaVersion $schemaVersion = null): StringSchema
     {
-        return new NumberSchema($title);
+        return new StringSchema($title, $schemaVersion ?? self::getDefaultVersion());
     }
 
-    public static function integer(?string $title = null): IntegerSchema
+    public static function object(?string $title = null, ?SchemaVersion $schemaVersion = null): ObjectSchema
     {
-        return new IntegerSchema($title);
+        return new ObjectSchema($title, $schemaVersion ?? self::getDefaultVersion());
     }
 
-    public static function boolean(?string $title = null): BooleanSchema
+    public static function array(?string $title = null, ?SchemaVersion $schemaVersion = null): ArraySchema
     {
-        return new BooleanSchema($title);
+        return new ArraySchema($title, $schemaVersion ?? self::getDefaultVersion());
     }
 
-    public static function null(?string $title = null): NullSchema
+    public static function number(?string $title = null, ?SchemaVersion $schemaVersion = null): NumberSchema
     {
-        return new NullSchema($title);
+        return new NumberSchema($title, $schemaVersion ?? self::getDefaultVersion());
+    }
+
+    public static function integer(?string $title = null, ?SchemaVersion $schemaVersion = null): IntegerSchema
+    {
+        return new IntegerSchema($title, $schemaVersion ?? self::getDefaultVersion());
+    }
+
+    public static function boolean(?string $title = null, ?SchemaVersion $schemaVersion = null): BooleanSchema
+    {
+        return new BooleanSchema($title, $schemaVersion ?? self::getDefaultVersion());
+    }
+
+    public static function null(?string $title = null, ?SchemaVersion $schemaVersion = null): NullSchema
+    {
+        return new NullSchema($title, $schemaVersion ?? self::getDefaultVersion());
     }
 
     /**
      * @param array<int, \Cortex\JsonSchema\Enums\SchemaType> $types
      */
-    public static function union(array $types, ?string $title = null): UnionSchema
+    public static function union(array $types, ?string $title = null, ?SchemaVersion $schemaVersion = null): UnionSchema
     {
-        return new UnionSchema($types, $title);
+        return new UnionSchema($types, $title, $schemaVersion ?? self::getDefaultVersion());
     }
 
-    public static function mixed(?string $title = null): UnionSchema
+    public static function mixed(?string $title = null, ?SchemaVersion $schemaVersion = null): UnionSchema
     {
-        return new UnionSchema(SchemaType::cases(), $title);
+        return new UnionSchema(SchemaType::cases(), $title, $schemaVersion ?? self::getDefaultVersion());
     }
 
     /**
      * Create a schema from a given closure.
      */
-    public static function fromClosure(Closure $closure): ObjectSchema
+    public static function fromClosure(Closure $closure, ?SchemaVersion $schemaVersion = null): ObjectSchema
     {
-        return (new ClosureConverter($closure))->convert();
+        return (new ClosureConverter($closure, $schemaVersion ?? self::getDefaultVersion()))->convert();
     }
 
     /**
@@ -84,9 +112,12 @@ class SchemaFactory
      *
      * @param object|class-string $class
      */
-    public static function fromClass(object|string $class, bool $publicOnly = true): ObjectSchema
-    {
-        return (new ClassConverter($class, $publicOnly))->convert();
+    public static function fromClass(
+        object|string $class,
+        bool $publicOnly = true,
+        ?SchemaVersion $schemaVersion = null,
+    ): ObjectSchema {
+        return (new ClassConverter($class, $publicOnly, $schemaVersion ?? self::getDefaultVersion()))->convert();
     }
 
     /**
@@ -94,25 +125,44 @@ class SchemaFactory
      *
      * @param class-string<\BackedEnum> $enum
      */
-    public static function fromEnum(string $enum): StringSchema|IntegerSchema
+    public static function fromEnum(string $enum, ?SchemaVersion $schemaVersion = null): StringSchema|IntegerSchema
     {
-        return (new EnumConverter($enum))->convert();
+        return (new EnumConverter($enum, $schemaVersion ?? self::getDefaultVersion()))->convert();
     }
 
     /**
      * Create a schema from a given value.
      */
-    public static function from(mixed $value): Schema
+    public static function from(mixed $value, ?SchemaVersion $version = null): Schema
     {
+        $schemaVersion = $version ?? self::getDefaultVersion();
+
         return match (true) {
-            $value instanceof Closure => self::fromClosure($value),
+            $value instanceof Closure => self::fromClosure($value, $schemaVersion),
             is_string($value) && enum_exists($value) && is_subclass_of($value, BackedEnum::class) => self::fromEnum(
                 $value,
+                $schemaVersion,
             ),
-            is_string($value) && class_exists($value) || is_object($value) => self::fromClass($value),
+            is_string($value) && class_exists($value) || is_object($value) => self::fromClass(
+                $value,
+                true,
+                $schemaVersion,
+            ),
+            // @phpstan-ignore argument.type
+            is_array($value) || (is_string($value) && json_validate($value)) => self::fromJson($value, $schemaVersion),
             default => throw new SchemaException(
                 'Unsupported value type. Only closures, enums, and classes are supported.',
             ),
         };
+    }
+
+    /**
+     * Create a schema from a JSON Schema definition.
+     *
+     * @param string|array<string, mixed> $json
+     */
+    public static function fromJson(string|array $json, ?SchemaVersion $schemaVersion = null): Schema
+    {
+        return (new JsonConverter($json, $schemaVersion ?? self::getDefaultVersion()))->convert();
     }
 }

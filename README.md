@@ -11,11 +11,22 @@
 ## Features
 
 - 🏗️ **Fluent Builder API** - Build JSON Schemas using an intuitive fluent interface
-- 📝 **Draft-07 Support** - Full support for JSON Schema [Draft-07](https://json-schema.org/draft-07) specification
+- 📝 **Multi-Version Support** - Support for JSON Schema Draft-07, Draft 2019-09, and Draft 2020-12
 - ✅ **Validation** - Validate data against schemas with detailed error messages
 - 🤝 **Conditional Schemas** - Support for if/then/else, allOf, anyOf, and not conditions
 - 🔄 **Reflection** - Generate schemas from PHP Classes, Enums and Closures
 - 💪 **Type Safety** - Built with PHP 8.3+ features and strict typing
+- 🔍 **Version-Aware Features** - Automatic validation of version-specific features with helpful error messages
+
+## JSON Schema Version Support
+
+This package supports multiple JSON Schema specification versions with automatic feature validation:
+
+### Supported Versions
+
+- **Draft-07** (2018) - Default version for maximum compatibility
+- **Draft 2019-09** - Adds advanced features like `$defs`, `unevaluatedProperties`, `deprecated`
+- **Draft 2020-12** - Latest version with `prefixItems`, dynamic references, and format vocabularies
 
 ## Requirements
 
@@ -32,6 +43,7 @@ composer require cortexphp/json-schema
 ```php
 use Cortex\JsonSchema\SchemaFactory;
 use Cortex\JsonSchema\Enums\SchemaFormat;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // Create a basic user schema using the SchemaFactory
 $schema = SchemaFactory::object('user')
@@ -111,6 +123,154 @@ try {
 
 // Or just get a boolean
 $schema->isValid($data); // false
+```
+
+### Specifying Schema Versions
+
+You can specify the JSON Schema version when creating schemas:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Create schema with specific version
+$schema = SchemaFactory::string('name', SchemaVersion::Draft202012);
+
+// Set global default version for all new schemas
+SchemaFactory::setDefaultVersion(SchemaVersion::Draft201909);
+
+// Change version on existing schema
+$schema->version(SchemaVersion::Draft07);
+```
+
+### Version-Specific Features
+
+The package automatically validates that features are only used with compatible versions:
+
+```php
+// ✅ This works - deprecated is supported in Draft 2019-09+
+$schema = SchemaFactory::string('oldField', SchemaVersion::Draft201909)
+    ->deprecated();
+
+// ❌ This throws an exception - deprecated requires Draft 2019-09+
+$schema = SchemaFactory::string('oldField', SchemaVersion::Draft07)
+    ->deprecated(); // SchemaException: Feature not supported in Draft 7
+
+// ✅ Array contains count features work in Draft 2019-09+
+$arraySchema = SchemaFactory::array('items', SchemaVersion::Draft201909)
+    ->minContains(2)
+    ->maxContains(5);
+
+// ✅ Format validation for newer formats
+$schema = SchemaFactory::string('duration', SchemaVersion::Draft201909)
+    ->format(SchemaFormat::Duration); // ISO 8601 duration format
+
+// ✅ Unevaluated properties/items for advanced validation
+$objectSchema = SchemaFactory::object('user', SchemaVersion::Draft201909)
+    ->properties(
+        SchemaFactory::string('name')->required()
+    )
+    ->unevaluatedProperties(false); // Strict validation
+
+$arraySchema = SchemaFactory::array('items', SchemaVersion::Draft201909)
+    ->items(SchemaFactory::string())
+    ->unevaluatedItems(false); // Strict array validation
+```
+
+### Version-Appropriate Output
+
+Schemas automatically use the correct keywords for their version:
+
+```php
+// Draft-07 uses 'definitions'
+$draft07Schema = SchemaFactory::object('user', SchemaVersion::Draft07)
+    ->addDefinition('address', $addressSchema);
+// Output: { "definitions": { "address": {...} } }
+
+// Draft 2019-09+ uses '$defs'
+$modernSchema = SchemaFactory::object('user', SchemaVersion::Draft201909)
+    ->addDefinition('address', $addressSchema);
+// Output: { "$defs": { "address": {...} } }
+```
+
+### Feature Support by Version
+
+| Feature | Draft-07 | Draft 2019-09 | Draft 2020-12 |
+|---------|----------|---------------|---------------|
+| Basic validation (`minLength`, `pattern`, etc.) | ✅ | ✅ | ✅ |
+| Conditionals (`if`/`then`/`else`) | ✅ | ✅ | ✅ |
+| Basic formats (`email`, `date-time`, etc.) | ✅ | ✅ | ✅ |
+| `deprecated` annotation | ❌ | ✅ | ✅ |
+| `$defs` (replaces `definitions`) | ❌ | ✅ | ✅ |
+| `minContains`/`maxContains` | ❌ | ✅ | ✅ |
+| `duration`/`uuid` formats | ❌ | ✅ | ✅ |
+| `unevaluatedProperties`/`unevaluatedItems` | ❌ | ✅ | ✅ |
+| `dependentSchemas` | ❌ | ✅ | ✅ |
+| `prefixItems` (tuple validation) | ❌ | ❌ | ✅ |
+| Dynamic references (`$dynamicRef`) | ❌ | ❌ | ✅ |
+
+### Feature Detection
+
+You can check if a specific feature is supported in a schema version:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaFeature;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Check if a feature is supported
+if (SchemaVersion::Draft07->supports(SchemaFeature::Deprecated)) {
+    // This will be false - deprecated is not supported in Draft 07
+}
+
+if (SchemaVersion::Draft201909->supports(SchemaFeature::Deprecated)) {
+    // This will be true - deprecated is supported in Draft 2019-09
+}
+
+// Get feature information
+$feature = SchemaFeature::MinContains;
+echo $feature->getDescription(); // "Minimum number of contains matches"
+echo $feature->getMinimumVersion()->name; // "Draft201909"
+```
+
+### Backward Compatibility
+
+All existing code continues to work unchanged. The version parameter is optional in all methods, and the default version remains Draft-07 for maximum compatibility:
+
+```php
+// These all work exactly as before - no changes needed
+$schema = SchemaFactory::string('name');
+$schema = SchemaFactory::object('user')->properties(/* ... */);
+$schema = SchemaFactory::fromClass(User::class);
+
+// Version support is purely additive
+$modernSchema = SchemaFactory::string('name', SchemaVersion::Draft202012);
+```
+
+### Version-Specific Example
+
+```php
+// Create a schema using modern JSON Schema features
+$modernSchema = SchemaFactory::object('user', SchemaVersion::Draft201909)
+    ->description('Modern user schema with advanced features')
+    ->properties(
+        SchemaFactory::string('username')
+            ->minLength(3)
+            ->required(),
+        SchemaFactory::string('legacyEmail')
+            ->format(SchemaFormat::Email)
+            ->deprecated() // Only available in Draft 2019-09+
+            ->comment('Use contactInfo.email instead'),
+        SchemaFactory::array('tags')
+            ->items(SchemaFactory::string())
+            ->minContains(1) // Only available in Draft 2019-09+
+            ->maxContains(10),
+        SchemaFactory::string('uuid')
+            ->format(SchemaFormat::Uuid) // Only available in Draft 2019-09+
+    );
+
+// This outputs a schema with "$defs" instead of "definitions"
+// and includes "$schema": "https://json-schema.org/draft/2019-09/schema"
+$modernSchema->toJson();
 ```
 
 ## Available Schema Types
@@ -546,6 +706,169 @@ $schema->isValid([
 
 ---
 
+### Unevaluated Properties & Items (Draft 2019-09+)
+
+For advanced validation, you can use `unevaluatedProperties` and `unevaluatedItems` to control properties and items that weren't explicitly defined:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Strict object validation - no unevaluated properties allowed
+$schema = SchemaFactory::object('user', SchemaVersion::Draft201909)
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required(),
+    )
+    ->unevaluatedProperties(false);
+
+// Allow unevaluated properties with schema validation
+$schema = SchemaFactory::object('metadata', SchemaVersion::Draft201909)
+    ->properties(
+        SchemaFactory::string('title')->required(),
+    )
+    ->unevaluatedProperties(
+        SchemaFactory::string()->minLength(1) // Any extra properties must be non-empty strings
+    );
+
+// Strict array validation - no unevaluated items allowed
+$arraySchema = SchemaFactory::array('tags', SchemaVersion::Draft201909)
+    ->items(SchemaFactory::string())
+    ->unevaluatedItems(false);
+
+// Allow unevaluated items with schema validation
+$arraySchema = SchemaFactory::array('mixed', SchemaVersion::Draft201909)
+    ->items(SchemaFactory::string())
+    ->unevaluatedItems(
+        SchemaFactory::integer()->minimum(0) // Extra items must be non-negative integers
+    );
+```
+
+```php
+// unevaluatedProperties validation
+$schema->isValid([
+    'name' => 'John',
+    'email' => 'john@example.com',
+]); // true
+
+$schema->isValid([
+    'name' => 'John',
+    'email' => 'john@example.com',
+    'extra' => 'not allowed', // unevaluatedProperties: false
+]); // false
+
+// unevaluatedItems validation
+$arraySchema->isValid(['hello', 'world']); // true (all items match string schema)
+$arraySchema->isValid(['hello', 'world', 'extra']); // false (unevaluatedItems: false)
+```
+
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "type": "object",
+    "title": "user",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "email": {
+            "type": "string"
+        }
+    },
+    "required": ["name", "email"],
+    "unevaluatedProperties": false
+}
+```
+
+</details>
+
+---
+
+### Dependent Schemas (Draft 2019-09+)
+
+Use `dependentSchemas` to define conditional schemas based on property presence:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Simple dependent schema - when credit_card is present, billing_address is required
+$schema = SchemaFactory::object('user', SchemaVersion::Draft201909)
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('credit_card'),
+    )
+    ->dependentSchema('credit_card',
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('billing_address')->required()
+        )
+    );
+
+// Multiple dependent schemas
+$schema = SchemaFactory::object('registration', SchemaVersion::Draft201909)
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required(),
+        SchemaFactory::string('payment_method')->enum(['credit_card', 'paypal']),
+        SchemaFactory::boolean('is_premium'),
+    )
+    ->dependentSchemas([
+        'payment_method' => SchemaFactory::object()
+            ->if(SchemaFactory::object()->properties(
+                SchemaFactory::string('payment_method')->const('credit_card')
+            ))
+            ->then(SchemaFactory::object()->properties(
+                SchemaFactory::string('card_number')->required(),
+                SchemaFactory::string('cvv')->required(),
+            )),
+        'is_premium' => SchemaFactory::object()
+            ->if(SchemaFactory::object()->properties(
+                SchemaFactory::boolean('is_premium')->const(true)
+            ))
+            ->then(SchemaFactory::object()->properties(
+                SchemaFactory::string('premium_tier')->enum(['gold', 'platinum'])->required()
+            )),
+    ]);
+```
+
+<details>
+<summary>View JSON Schema</summary>
+
+```json
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "type": "object",
+    "title": "user",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "credit_card": {
+            "type": "string"
+        }
+    },
+    "required": ["name"],
+    "dependentSchemas": {
+        "credit_card": {
+            "type": "object",
+            "properties": {
+                "billing_address": {
+                    "type": "string"
+                }
+            },
+            "required": ["billing_address"]
+        }
+    }
+}
+```
+
+</details>
+
+---
+
 ### Union Schema
 
 ```php
@@ -812,6 +1135,32 @@ try {
 }
 ```
 
+### Version Feature Validation
+
+The package automatically validates that features are compatible with the specified schema version:
+
+```php
+try {
+    // This will throw an exception because 'deprecated' requires Draft 2019-09+
+    $schema = SchemaFactory::string('oldField', SchemaVersion::Draft07)
+        ->deprecated();
+} catch (SchemaException $e) {
+    echo $e->getMessage();
+    // "Feature 'Property deprecation annotation' is not supported in Draft 7.
+    //  Minimum version required: Draft 2019-09."
+}
+
+try {
+    // This will throw an exception because minContains requires Draft 2019-09+
+    $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft07)
+        ->minContains(2);
+} catch (SchemaException $e) {
+    echo $e->getMessage();
+    // "Feature 'Minimum number of contains matches' is not supported in Draft 7.
+    //  Minimum version required: Draft 2019-09."
+}
+```
+
 ## Common Schema Properties
 
 All schema types support these common properties:
@@ -901,8 +1250,8 @@ class User
     public float $height = 1.7;
 }
 
-// Build the schema from the class
-$schema = SchemaFactory::fromClass(User::class);
+// Build the schema from the class with specific version
+$schema = SchemaFactory::fromClass(User::class, version: SchemaVersion::Draft201909);
 
 // Convert to JSON Schema
 $schema->toJson();
@@ -910,7 +1259,7 @@ $schema->toJson();
 
 ```json
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
     "type": "object",
     "title": "User",
     "description": "This is the description of the class",

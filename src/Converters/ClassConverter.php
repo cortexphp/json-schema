@@ -13,6 +13,7 @@ use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
 
 class ClassConverter implements Converter
@@ -30,13 +31,15 @@ class ClassConverter implements Converter
     public function __construct(
         protected object|string $class,
         protected bool $publicOnly = true,
+        protected ?SchemaVersion $version = null,
     ) {
         $this->reflection = new ReflectionClass($this->class);
+        $this->version = $version ?? SchemaVersion::default();
     }
 
     public function convert(): ObjectSchema
     {
-        $objectSchema = new ObjectSchema();
+        $objectSchema = new ObjectSchema(schemaVersion: $this->version);
 
         // Get the description from the doc parser
         $description = $this->getDocParser($this->reflection)?->description() ?? null;

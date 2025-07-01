@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Types\Concerns;
 
 use Cortex\JsonSchema\Enums\SchemaFormat;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 
 /** @mixin \Cortex\JsonSchema\Contracts\Schema */
 trait HasFormat
@@ -16,6 +17,11 @@ trait HasFormat
      */
     public function format(SchemaFormat|string $format): static
     {
+        // Validate version-specific formats
+        if ($format instanceof SchemaFormat) {
+            $this->validateFormatSupport($format);
+        }
+
         $this->format = $format;
 
         return $this;
@@ -37,5 +43,48 @@ trait HasFormat
         }
 
         return $schema;
+    }
+
+    /**
+     * Validate that a format is supported in the current schema version.
+     */
+    protected function validateFormatSupport(SchemaFormat $schemaFormat): void
+    {
+        $feature = match ($schemaFormat) {
+            SchemaFormat::Duration => SchemaFeature::FormatDuration,
+            SchemaFormat::Uuid => SchemaFeature::FormatUuid,
+            // All other formats are available in all supported versions
+            default => null,
+        };
+
+        if ($feature !== null) {
+            $this->validateFeatureSupport($feature);
+        }
+    }
+
+    /**
+     * Get format features used by this schema.
+     *
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
+     */
+    protected function getFormatFeatures(): array
+    {
+        if ($this->format === null || ! ($this->format instanceof SchemaFormat)) {
+            return [];
+        }
+
+        $features = [];
+
+        switch ($this->format) {
+            case SchemaFormat::Duration:
+                $features[] = SchemaFeature::FormatDuration;
+                break;
+            case SchemaFormat::Uuid:
+                $features[] = SchemaFeature::FormatUuid;
+                break;
+                // All other formats are available in all supported versions
+        }
+
+        return $features;
     }
 }
