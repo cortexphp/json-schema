@@ -39,7 +39,7 @@ class ClassConverter implements Converter
 
     public function convert(): ObjectSchema
     {
-        $objectSchema = new ObjectSchema(null, $this->version);
+        $objectSchema = new ObjectSchema(schemaVersion: $this->version);
 
         // Get the description from the doc parser
         $description = $this->getDocParser($this->reflection)?->description() ?? null;

@@ -22,10 +22,7 @@ final class ArraySchema extends AbstractSchema
 
     protected ?int $maxContains = null;
 
-    /**
-     * @var bool|\Cortex\JsonSchema\Contracts\Schema|null
-     */
-    protected mixed $unevaluatedItems = null;
+    protected Schema|bool|null $unevaluatedItems = null;
 
     public function __construct(?string $title = null, ?SchemaVersion $schemaVersion = null)
     {

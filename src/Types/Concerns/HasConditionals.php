@@ -58,6 +58,7 @@ trait HasConditionals
 
         $this->validateFeatureSupport(SchemaFeature::Then);
         $this->validateFeatureSupport(SchemaFeature::IfThenElse);
+
         $this->then = $schema;
 
         return $this;
@@ -74,6 +75,7 @@ trait HasConditionals
 
         $this->validateFeatureSupport(SchemaFeature::Else);
         $this->validateFeatureSupport(SchemaFeature::IfThenElse);
+
         $this->else = $schema;
 
         return $this;
