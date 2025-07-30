@@ -47,8 +47,8 @@ class DocParser
         $nodes = array_map(
             static fn(ParamTagValueNode|TypelessParamTagValueNode $param): NodeData => new NodeData(
                 name: ltrim($param->parameterName, '$'),
-                types: self::mapValueNodeToTypes($param),
                 description: $param->description === '' ? null : $param->description,
+                types: self::mapValueNodeToTypes($param),
             ),
             array_merge(
                 $this->parse()->getParamTagValues(),
@@ -67,8 +67,8 @@ class DocParser
         $vars = array_map(
             static fn(VarTagValueNode $varTagValueNode): NodeData => new NodeData(
                 name: ltrim($varTagValueNode->variableName, '$'),
-                types: self::mapValueNodeToTypes($varTagValueNode),
                 description: $varTagValueNode->description === '' ? null : $varTagValueNode->description,
+                types: self::mapValueNodeToTypes($varTagValueNode),
             ),
             $this->parse()->getVarTagValues(),
         );
