@@ -1304,6 +1304,71 @@ $schema->toJson();
 }
 ```
 
+### From JSON Schema
+
+You can also create schema objects from existing JSON Schema definitions:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// From a JSON string
+$jsonString = '{
+    "type": "object",
+    "title": "User",
+    "properties": {
+        "name": {"type": "string", "minLength": 2},
+        "email": {"type": "string", "format": "email"},
+        "age": {"type": "integer", "minimum": 0}
+    },
+    "required": ["name", "email"]
+}';
+
+$schema = SchemaFactory::fromJson($jsonString);
+
+// From an array representation
+$jsonArray = [
+    'type' => 'string',
+    'title' => 'ProductCode',
+    'pattern' => '^[A-Z]{3}-\d{4}$',
+    'examples' => ['ABC-1234', 'XYZ-5678']
+];
+
+$schema = SchemaFactory::fromJson($jsonArray, SchemaVersion::Draft_2019_09);
+
+// The resulting schema objects work the same as any other schema
+$schema->isValid('ABC-1234'); // true
+$schema->isValid('invalid'); // false
+
+// You can also modify the schema after creation
+$schema->description('Product identification code')
+    ->maxLength(8);
+```
+
+This is particularly useful when:
+
+- Migrating from existing JSON Schema definitions
+- Loading schemas from configuration files or databases
+- Converting between different schema representations
+- Working with external APIs that provide JSON Schema specifications
+
+```php
+// Load from a file
+$jsonSchema = file_get_contents('user-schema.json');
+$schema = SchemaFactory::fromJson($jsonSchema);
+
+// Validate some data
+$userData = [
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'age' => 30
+];
+
+if ($schema->isValid($userData)) {
+    echo "User data is valid!";
+}
+```
+
 ## Credits
 
 - [Sean Tymon](https://github.com/tymondesigns)
