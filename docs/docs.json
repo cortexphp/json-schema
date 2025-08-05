@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "JSON Schema Builder",
   "colors": {
-    "primary": "#1F3CAA",
-    "light": "#1F3CAA",
-    "dark": "#1F3CAA"
+    "primary": "#22C55E",
+    "light": "#22C55E",
+    "dark": "#22C55E"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -17,10 +17,9 @@
             "group": "Get Started",
             "pages": [
               "introduction",
-              "features",
-              "versions",
               "installation",
-              "quickstart"
+              "quickstart",
+              "versions"
             ]
           },
           {

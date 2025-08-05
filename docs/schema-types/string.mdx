@@ -14,6 +14,7 @@ $schema = SchemaFactory::string('name')
     ->description('User full name')
     ->required();
 
+// Test validation
 $schema->isValid('John Doe'); // true
 $schema->isValid('');         // false (required field)
 $schema->isValid(123);        // false (not a string)
@@ -21,20 +22,35 @@ $schema->isValid(123);        // false (not a string)
 
 ## Length Constraints
 
-Control the minimum and maximum length of strings:
+Set minimum and maximum character limits for your strings:
 
-```php
-$usernameSchema = SchemaFactory::string('username')
-    ->minLength(3)
-    ->maxLength(20)
-    ->description('Username between 3-20 characters');
+<Tabs>
+<Tab title="Basic Length">
+  ```php
+  $usernameSchema = SchemaFactory::string('username')
+      ->minLength(3)
+      ->maxLength(20)
+      ->description('Username between 3-20 characters');
 
-$usernameSchema->isValid('john');          // true
-$usernameSchema->isValid('jo');            // false (too short)
-$usernameSchema->isValid('verylongusername123456'); // false (too long)
-```
+  // Test validation
+  $usernameSchema->isValid('john');                    // true
+  $usernameSchema->isValid('jo');                      // false (too short)
+  $usernameSchema->isValid('verylongusername123456');  // false (too long)
+  ```
+</Tab>
 
-<Accordion title="View JSON Schema Output">
+<Tab title="Advanced Length">
+  ```php
+  $passwordSchema = SchemaFactory::string('password')
+      ->minLength(8)     // Security requirement
+      ->maxLength(128)   // Database limit
+      ->writeOnly()      // Don't return in responses
+      ->description('Secure password with minimum 8 characters');
+  ```
+</Tab>
+</Tabs>
+
+<Expandable title="Generated JSON Schema">
 ```json
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -45,7 +61,11 @@ $usernameSchema->isValid('verylongusername123456'); // false (too long)
     "maxLength": 20
 }
 ```
-</Accordion>
+</Expandable>
+
+<Check>
+Length constraints help ensure data fits database fields and meets business requirements.
+</Check>
 
 ## Pattern Matching
 
