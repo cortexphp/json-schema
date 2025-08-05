@@ -1,0 +1,93 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "JSON Schema Builder",
+  "colors": {
+    "primary": "#1F3CAA",
+    "light": "#1F3CAA",
+    "dark": "#1F3CAA"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "features",
+              "versions",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Schema Types",
+            "pages": [
+              "schema-types/string",
+              "schema-types/number",
+              "schema-types/integer",
+              "schema-types/boolean",
+              "schema-types/null",
+              "schema-types/array",
+              "schema-types/object",
+              "schema-types/union"
+            ]
+          },
+          {
+            "group": "Advanced Features",
+            "pages": [
+              "advanced/conditional-validation",
+              "advanced/string-formats",
+              "advanced/definitions-refs",
+              "advanced/unevaluated-properties",
+              "advanced/dependent-schemas",
+              "advanced/pattern-properties"
+            ]
+          },
+          {
+            "group": "Code Generation",
+            "pages": [
+              "code-generation/from-classes",
+              "code-generation/from-closures",
+              "code-generation/from-enums",
+              "code-generation/from-json"
+            ]
+          },
+          {
+            "group": "Validation",
+            "pages": [
+              "validation/data-validation",
+              "validation/error-handling",
+              "validation/version-features"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:hi@cortexphp.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://dashboard.mintlify.com"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/cortexphp"
+    }
+  }
+}

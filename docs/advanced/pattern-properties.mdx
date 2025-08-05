@@ -1,0 +1,498 @@
+---
+title: Pattern Properties
+description: 'Regex-based property validation with pattern properties'
+---
+
+Pattern properties allow you to validate object properties based on their names using regular expressions. This provides flexible validation for objects with dynamic property names that follow specific patterns.
+
+## Basic Pattern Properties
+
+Validate properties that match a specific naming pattern:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+$configSchema = SchemaFactory::object('config')
+    // Regular properties
+    ->properties(
+        SchemaFactory::string('app_name')->required(),
+        SchemaFactory::string('version')->required()
+    )
+    // Pattern-based properties
+    ->patternProperty('^env_',  // Properties starting with 'env_'
+        SchemaFactory::string()
+            ->minLength(1)
+            ->description('Environment variable')
+    )
+    ->additionalProperties(false);  // Only allow defined and pattern properties
+
+// Valid configuration
+$configSchema->isValid([
+    'app_name' => 'MyApp',
+    'version' => '1.0.0',
+    'env_database_url' => 'mysql://localhost:3306/myapp',
+    'env_api_key' => 'secret-key-123',
+    'env_debug_mode' => 'true'
+]); // true
+
+// Invalid - property doesn't match pattern
+$configSchema->isValid([
+    'app_name' => 'MyApp',
+    'version' => '1.0.0',
+    'custom_setting' => 'value'  // Doesn't match ^env_ pattern
+]); // false
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "config",
+    "properties": {
+        "app_name": {
+            "type": "string"
+        },
+        "version": {
+            "type": "string"
+        }
+    },
+    "patternProperties": {
+        "^env_": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Environment variable"
+        }
+    },
+    "required": ["app_name", "version"],
+    "additionalProperties": false
+}
+```
+</Accordion>
+
+## Multiple Pattern Properties
+
+Define multiple patterns for different types of dynamic properties:
+
+```php
+$flexibleApiSchema = SchemaFactory::object('api_config')
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('version')->required()
+    )
+    ->patternProperties([
+        '^header_' => SchemaFactory::string()
+            ->description('HTTP headers'),
+
+        '^param_' => SchemaFactory::union([SchemaType::String, SchemaType::Number])
+            ->description('Query parameters'),
+
+        '^feature_' => SchemaFactory::boolean()
+            ->description('Feature flags'),
+
+        '^\d+$' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('endpoint')->required(),
+                SchemaFactory::string('method')->enum(['GET', 'POST', 'PUT', 'DELETE'])
+            )
+            ->description('Numeric endpoint definitions')
+    ])
+    ->additionalProperties(false);
+
+// Valid API configuration
+$flexibleApiSchema->isValid([
+    'name' => 'UserAPI',
+    'version' => '2.0',
+    'header_authorization' => 'Bearer token',
+    'header_content_type' => 'application/json',
+    'param_limit' => 50,
+    'param_offset' => 0,
+    'param_search' => 'query',
+    'feature_caching' => true,
+    'feature_rate_limiting' => false,
+    '1' => ['endpoint' => '/users', 'method' => 'GET'],
+    '2' => ['endpoint' => '/users', 'method' => 'POST']
+]); // true
+```
+
+## Pattern Properties with Complex Validation
+
+Create sophisticated validation rules for pattern-matched properties:
+
+```php
+$dynamicFormSchema = SchemaFactory::object('dynamic_form')
+    ->properties(
+        SchemaFactory::string('form_id')->required(),
+        SchemaFactory::string('title')->required()
+    )
+    ->patternProperties([
+        // Text input fields
+        '^field_text_' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('type')->const('text')->required(),
+                SchemaFactory::string('label')->required(),
+                SchemaFactory::string('placeholder'),
+                SchemaFactory::boolean('required')->default(false),
+                SchemaFactory::integer('max_length')->minimum(1)->maximum(1000)
+            )
+            ->additionalProperties(false),
+
+        // Number input fields
+        '^field_number_' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('type')->const('number')->required(),
+                SchemaFactory::string('label')->required(),
+                SchemaFactory::boolean('required')->default(false),
+                SchemaFactory::number('min_value'),
+                SchemaFactory::number('max_value'),
+                SchemaFactory::number('step')->exclusiveMinimum(0)
+            )
+            ->additionalProperties(false),
+
+        // Select/dropdown fields
+        '^field_select_' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('type')->const('select')->required(),
+                SchemaFactory::string('label')->required(),
+                SchemaFactory::boolean('required')->default(false),
+                SchemaFactory::boolean('multiple')->default(false),
+                SchemaFactory::array('options')
+                    ->items(
+                        SchemaFactory::object()
+                            ->properties(
+                                SchemaFactory::string('value')->required(),
+                                SchemaFactory::string('label')->required()
+                            )
+                    )
+                    ->minItems(1)
+                    ->required()
+            )
+            ->additionalProperties(false),
+
+        // Validation rules pattern
+        '^validation_' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('field_name')->required(),
+                SchemaFactory::string('rule_type')
+                    ->enum(['required', 'email', 'regex', 'min_length', 'max_length'])
+                    ->required(),
+                SchemaFactory::string('message')->required(),
+                SchemaFactory::union([SchemaType::String, SchemaType::Number], 'parameter')
+            )
+            ->additionalProperties(false)
+    ])
+    ->additionalProperties(false);
+
+// Valid dynamic form configuration
+$dynamicFormSchema->isValid([
+    'form_id' => 'contact_form',
+    'title' => 'Contact Us',
+    'field_text_name' => [
+        'type' => 'text',
+        'label' => 'Full Name',
+        'required' => true,
+        'max_length' => 100
+    ],
+    'field_text_email' => [
+        'type' => 'text',
+        'label' => 'Email Address',
+        'required' => true,
+        'placeholder' => 'user@example.com'
+    ],
+    'field_select_department' => [
+        'type' => 'select',
+        'label' => 'Department',
+        'required' => true,
+        'options' => [
+            ['value' => 'sales', 'label' => 'Sales'],
+            ['value' => 'support', 'label' => 'Support'],
+            ['value' => 'billing', 'label' => 'Billing']
+        ]
+    ],
+    'validation_email_format' => [
+        'field_name' => 'field_text_email',
+        'rule_type' => 'email',
+        'message' => 'Please enter a valid email address'
+    ]
+]); // true
+```
+
+## Combining with Regular Properties
+
+Pattern properties work alongside regular properties and additional properties:
+
+```php
+$userProfileSchema = SchemaFactory::object('user_profile')
+    // Fixed properties
+    ->properties(
+        SchemaFactory::string('username')->required(),
+        SchemaFactory::string('email')->required(),
+        SchemaFactory::integer('age')->minimum(13)
+    )
+    // Pattern properties for custom fields
+    ->patternProperties([
+        '^custom_' => SchemaFactory::string()
+            ->minLength(1)
+            ->maxLength(255)
+            ->description('Custom user fields'),
+
+        '^social_' => SchemaFactory::string()
+            ->format(SchemaFormat::Uri)
+            ->description('Social media profiles'),
+
+        '^pref_' => SchemaFactory::union([SchemaType::String, SchemaType::Boolean, SchemaType::Number])
+            ->description('User preferences')
+    ])
+    // Allow additional string properties not matching patterns
+    ->additionalProperties(SchemaFactory::string()->maxLength(100));
+
+// Valid user profile
+$userProfileSchema->isValid([
+    'username' => 'john_doe',
+    'email' => 'john@example.com',
+    'age' => 30,
+    'custom_bio' => 'Software developer passionate about JSON Schema',
+    'custom_location' => 'San Francisco, CA',
+    'social_twitter' => 'https://twitter.com/johndoe',
+    'social_linkedin' => 'https://linkedin.com/in/johndoe',
+    'pref_theme' => 'dark',
+    'pref_notifications' => true,
+    'pref_items_per_page' => 25,
+    'notes' => 'Additional notes'  // Matches additionalProperties
+]); // true
+```
+
+## Advanced Pattern Examples
+
+### Hierarchical Configuration
+
+```php
+$hierarchicalConfigSchema = SchemaFactory::object('hierarchical_config')
+    ->patternProperties([
+        // Environment-specific settings: dev_*, staging_*, prod_*
+        '^(dev|staging|prod)_' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('database_url')->required(),
+                SchemaFactory::boolean('debug_mode')->required(),
+                SchemaFactory::integer('max_connections')->minimum(1)
+            ),
+
+        // Service-specific settings: service_auth_*, service_cache_*, etc.
+        '^service_[a-z]+_' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::boolean('enabled')->required(),
+                SchemaFactory::object('config')->additionalProperties(true)
+            ),
+
+        // Region-specific settings: region_us_*, region_eu_*, etc.
+        '^region_[a-z]{2}_' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('datacenter')->required(),
+                SchemaFactory::array('availability_zones')
+                    ->items(SchemaFactory::string())
+                    ->minItems(1)
+            )
+    ])
+    ->additionalProperties(false);
+```
+
+### API Versioning
+
+```php
+$versionedApiSchema = SchemaFactory::object('versioned_api')
+    ->properties(
+        SchemaFactory::string('name')->required()
+    )
+    ->patternProperties([
+        // Version-specific endpoints: v1_*, v2_*, v3_*
+        '^v\d+_' => SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('path')->required(),
+                SchemaFactory::string('method')->enum(['GET', 'POST', 'PUT', 'DELETE'])->required(),
+                SchemaFactory::boolean('deprecated')->default(false),
+                SchemaFactory::string('successor_version')
+            )
+            ->if(SchemaFactory::object()->properties(
+                SchemaFactory::boolean('deprecated')->const(true)
+            ))
+            ->then(SchemaFactory::object()->properties(
+                SchemaFactory::string('successor_version')->required()
+            )),
+
+        // Feature flags per version: feature_v1_*, feature_v2_*
+        '^feature_v\d+_' => SchemaFactory::boolean()
+            ->description('Version-specific feature flags')
+    ])
+    ->additionalProperties(false);
+```
+
+### Localization Keys
+
+```php
+$localizationSchema = SchemaFactory::object('translations')
+    ->patternProperties([
+        // Language codes: en, es, fr, de, etc.
+        '^[a-z]{2}(-[A-Z]{2})?$' => SchemaFactory::object()
+            ->patternProperties([
+                // Translation keys: button.save, error.validation.required, etc.
+                '^[a-z]+(\.[a-z_]+)*$' => SchemaFactory::string()
+                    ->minLength(1)
+                    ->description('Translation text')
+            ])
+            ->additionalProperties(false)
+    ])
+    ->additionalProperties(false);
+
+// Valid translations
+$localizationSchema->isValid([
+    'en' => [
+        'button.save' => 'Save',
+        'button.cancel' => 'Cancel',
+        'error.validation.required' => 'This field is required',
+        'page.title.home' => 'Welcome to our site'
+    ],
+    'es' => [
+        'button.save' => 'Guardar',
+        'button.cancel' => 'Cancelar',
+        'error.validation.required' => 'Este campo es obligatorio'
+    ],
+    'en-US' => [
+        'currency.symbol' => '$'
+    ]
+]); // true
+```
+
+## Pattern Properties with Conditional Logic
+
+Combine pattern properties with conditional validation:
+
+```php
+$conditionalPatternSchema = SchemaFactory::object('conditional_config')
+    ->properties(
+        SchemaFactory::string('mode')->enum(['development', 'production'])->required()
+    )
+    ->patternProperties([
+        '^debug_' => SchemaFactory::boolean()
+            ->description('Debug settings')
+    ])
+    // Debug settings only allowed in development mode
+    ->if(SchemaFactory::object()->properties(
+        SchemaFactory::string('mode')->const('development')
+    ))
+    ->then(SchemaFactory::object()
+        ->patternProperty('^debug_', SchemaFactory::boolean())
+    )
+    ->else(SchemaFactory::object()
+        // In production, debug properties must be false or absent
+        ->patternProperty('^debug_', SchemaFactory::boolean()->const(false))
+    )
+    ->additionalProperties(false);
+```
+
+## Validation Priority
+
+Understanding property validation order:
+
+1. **Regular properties** (defined in `properties`)
+2. **Pattern properties** (matching `patternProperties`)
+3. **Additional properties** (controlled by `additionalProperties`)
+
+```php
+$prioritySchema = SchemaFactory::object('priority_example')
+    ->properties(
+        'exact_match' => SchemaFactory::string()->maxLength(10)  // 1. Exact match
+    )
+    ->patternProperty('^exact_',  // 2. Pattern match (won't match 'exact_match')
+        SchemaFactory::string()->maxLength(20)
+    )
+    ->additionalProperties(  // 3. Anything else
+        SchemaFactory::string()->maxLength(5)
+    );
+
+// 'exact_match' uses the exact property definition (maxLength: 10)
+// 'exact_other' uses the pattern property definition (maxLength: 20)
+// 'other_prop' uses the additional properties definition (maxLength: 5)
+```
+
+## Best Practices
+
+### 1. Use Descriptive Patterns
+
+```php
+// Good: Clear, specific patterns
+$schema->patternProperties([
+    '^api_key_' => $apiKeySchema,          // API keys
+    '^webhook_url_' => $urlSchema,         // Webhook URLs
+    '^feature_flag_' => $booleanSchema     // Feature flags
+]);
+
+// Avoid: Overly broad or unclear patterns
+$schema->patternProperty('^[a-z]+_', $someSchema);  // Too broad
+```
+
+### 2. Document Pattern Intent
+
+```php
+$schema->patternProperty('^env_[A-Z_]+$',
+    SchemaFactory::string()
+        ->description('Environment variables (uppercase with underscores)')
+);
+```
+
+### 3. Escape Special Regex Characters
+
+```php
+// Good: Properly escaped special characters
+$schema->patternProperty('^\$[a-z]+',        // For properties starting with $
+    SchemaFactory::string()
+);
+
+// Be careful with: . + * ? ^ $ { } ( ) [ ] | \
+```
+
+### 4. Order Patterns by Specificity
+
+```php
+// Good: More specific patterns first
+$schema->patternProperties([
+    '^api_v2_endpoint_' => $v2EndpointSchema,    // Most specific
+    '^api_v2_' => $v2GeneralSchema,              // Less specific
+    '^api_' => $generalApiSchema                 // Least specific
+]);
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Dynamic Configuration" icon="gear">
+    Configure applications with dynamic settings that follow naming conventions.
+  </Card>
+  <Card title="Multi-language Content" icon="globe">
+    Validate internationalization data with language-specific property patterns.
+  </Card>
+  <Card title="API Versioning" icon="code-branch">
+    Handle different API versions with version-specific property validation.
+  </Card>
+  <Card title="Custom Fields" icon="puzzle-piece">
+    Allow users to define custom fields that follow specific naming rules.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Object Schema"
+    icon="cube"
+    href="/schema-types/object"
+  >
+    Learn more about object validation and additional properties
+  </Card>
+  <Card
+    title="Code Generation"
+    icon="code"
+    href="/code-generation/from-classes"
+  >
+    Generate schemas with pattern properties from PHP classes
+  </Card>
+</CardGroup>

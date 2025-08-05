@@ -1,0 +1,386 @@
+---
+title: Integer Schema
+description: 'Integer validation with ranges, multiples, and exclusivity constraints'
+---
+
+Integer schemas provide validation for whole numbers with support for range constraints, multiple validation, and exclusive boundaries.
+
+## Basic Integer Schema
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+$ageSchema = SchemaFactory::integer('age')
+    ->description('User age in years')
+    ->required();
+
+$ageSchema->isValid(25);    // true
+$ageSchema->isValid(0);     // true
+$ageSchema->isValid(-5);    // true
+$ageSchema->isValid(25.5);  // false (not a whole number)
+$ageSchema->isValid('25');  // false (string, not integer)
+```
+
+## Range Constraints
+
+Set minimum and maximum values for integers:
+
+```php
+// Age validation
+$ageSchema = SchemaFactory::integer('age')
+    ->minimum(0)
+    ->maximum(150)
+    ->description('Age between 0 and 150 years');
+
+$ageSchema->isValid(30);   // true
+$ageSchema->isValid(0);    // true (inclusive minimum)
+$ageSchema->isValid(150);  // true (inclusive maximum)
+$ageSchema->isValid(-1);   // false (below minimum)
+$ageSchema->isValid(151);  // false (above maximum)
+
+// Port number validation
+$portSchema = SchemaFactory::integer('port')
+    ->minimum(1)
+    ->maximum(65535)
+    ->description('Valid network port number');
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "integer",
+    "title": "age",
+    "description": "Age between 0 and 150 years",
+    "minimum": 0,
+    "maximum": 150
+}
+```
+</Accordion>
+
+## Exclusive Boundaries
+
+Use exclusive minimum and maximum for strict range validation:
+
+```php
+// Count greater than zero
+$countSchema = SchemaFactory::integer('count')
+    ->exclusiveMinimum(0)  // Must be > 0 (not >= 0)
+    ->description('Positive integer count');
+
+$countSchema->isValid(1);  // true
+$countSchema->isValid(0);  // false (not exclusive)
+
+// Rating between 1 and 5 (exclusive boundaries)
+$ratingSchema = SchemaFactory::integer('rating')
+    ->exclusiveMinimum(0)   // > 0
+    ->exclusiveMaximum(6)   // < 6
+    ->description('Rating from 1 to 5');
+
+$ratingSchema->isValid(3);  // true
+$ratingSchema->isValid(1);  // true
+$ratingSchema->isValid(5);  // true
+$ratingSchema->isValid(0);  // false (not exclusive)
+$ratingSchema->isValid(6);  // false (not exclusive)
+```
+
+## Multiple Validation
+
+Ensure integers are multiples of a specific value:
+
+```php
+// Even numbers only
+$evenSchema = SchemaFactory::integer('even_number')
+    ->multipleOf(2)
+    ->description('Must be an even number');
+
+$evenSchema->isValid(4);   // true
+$evenSchema->isValid(10);  // true
+$evenSchema->isValid(0);   // true (0 is even)
+$evenSchema->isValid(3);   // false (odd number)
+
+// Multiples of 5
+$multiplesOfFiveSchema = SchemaFactory::integer('step')
+    ->multipleOf(5)
+    ->minimum(0)
+    ->description('Steps in increments of 5');
+
+$multiplesOfFiveSchema->isValid(0);   // true
+$multiplesOfFiveSchema->isValid(15);  // true
+$multiplesOfFiveSchema->isValid(7);   // false (not multiple of 5)
+
+// Minutes (multiples of 15)
+$quarterHourSchema = SchemaFactory::integer('minutes')
+    ->minimum(0)
+    ->maximum(45)
+    ->multipleOf(15)
+    ->description('Quarter-hour intervals');
+
+$quarterHourSchema->isValid(0);   // true
+$quarterHourSchema->isValid(15);  // true
+$quarterHourSchema->isValid(30);  // true
+$quarterHourSchema->isValid(45);  // true
+$quarterHourSchema->isValid(10);  // false (not multiple of 15)
+```
+
+## Combining Constraints
+
+Combine multiple validation rules for comprehensive integer validation:
+
+```php
+// Inventory count
+$inventorySchema = SchemaFactory::integer('stock_count')
+    ->minimum(0)        // Can't be negative
+    ->maximum(10000)    // Reasonable upper limit
+    ->multipleOf(1)     // Whole numbers only (redundant but explicit)
+    ->description('Product stock count');
+
+// Page numbers
+$pageSchema = SchemaFactory::integer('page')
+    ->exclusiveMinimum(0)  // Must be positive
+    ->maximum(9999)        // Reasonable limit
+    ->description('Page number for pagination');
+
+// Percentage as integer
+$percentageSchema = SchemaFactory::integer('percentage')
+    ->minimum(0)
+    ->maximum(100)
+    ->description('Percentage as whole number');
+```
+
+## Default Values
+
+Set default values for optional integer fields:
+
+```php
+$configSchema = SchemaFactory::object('config')
+    ->properties(
+        SchemaFactory::integer('timeout')
+            ->minimum(1)
+            ->maximum(300)
+            ->default(30)
+            ->description('Timeout in seconds'),
+
+        SchemaFactory::integer('max_retries')
+            ->minimum(0)
+            ->maximum(10)
+            ->default(3)
+            ->description('Maximum retry attempts'),
+
+        SchemaFactory::integer('port')
+            ->minimum(1)
+            ->maximum(65535)
+            ->default(8080)
+            ->description('Server port number')
+    );
+```
+
+## Enumeration Values
+
+Restrict integers to specific allowed values:
+
+```php
+// Priority levels
+$prioritySchema = SchemaFactory::integer('priority')
+    ->enum([1, 2, 3, 4, 5])
+    ->description('Priority level (1=lowest, 5=highest)');
+
+$prioritySchema->isValid(3);  // true
+$prioritySchema->isValid(0);  // false (not in enum)
+$prioritySchema->isValid(6);  // false (not in enum)
+
+// HTTP status codes
+$statusCodeSchema = SchemaFactory::integer('status_code')
+    ->enum([200, 201, 400, 401, 403, 404, 500, 502, 503])
+    ->description('HTTP response status code');
+```
+
+## Read-Only Integers
+
+Create read-only integer fields for system-generated values:
+
+```php
+$recordSchema = SchemaFactory::object('record')
+    ->properties(
+        SchemaFactory::string('name')->required(),
+
+        // Auto-generated ID
+        SchemaFactory::integer('id')
+            ->minimum(1)
+            ->readOnly()
+            ->description('Auto-generated record ID'),
+
+        // Calculated field
+        SchemaFactory::integer('total_count')
+            ->minimum(0)
+            ->readOnly()
+            ->description('Calculated total count'),
+
+        // Timestamp
+        SchemaFactory::integer('created_at')
+            ->minimum(0)
+            ->readOnly()
+            ->description('Unix timestamp of creation')
+    );
+```
+
+## Complex Example
+
+Here's a comprehensive example for a survey response:
+
+```php
+$surveyResponseSchema = SchemaFactory::object('survey_response')
+    ->properties(
+        // Response ID
+        SchemaFactory::integer('response_id')
+            ->minimum(1)
+            ->readOnly()
+            ->description('Unique response identifier'),
+
+        // User age
+        SchemaFactory::integer('age')
+            ->minimum(13)     // COPPA compliance
+            ->maximum(120)    // Reasonable upper limit
+            ->required()
+            ->description('Respondent age'),
+
+        // Satisfaction rating
+        SchemaFactory::integer('satisfaction')
+            ->minimum(1)
+            ->maximum(10)
+            ->required()
+            ->description('Satisfaction rating (1-10)'),
+
+        // Number of visits
+        SchemaFactory::integer('visit_count')
+            ->minimum(0)
+            ->maximum(1000)
+            ->description('Number of previous visits'),
+
+        // Recommendation likelihood
+        SchemaFactory::integer('nps_score')
+            ->minimum(0)
+            ->maximum(10)
+            ->description('Net Promoter Score (0-10)'),
+
+        // Priority ranking
+        SchemaFactory::integer('priority_rank')
+            ->enum([1, 2, 3, 4, 5])
+            ->description('Priority ranking (1=highest)'),
+
+        // Usage frequency (days per week)
+        SchemaFactory::integer('weekly_usage')
+            ->minimum(0)
+            ->maximum(7)
+            ->multipleOf(1)
+            ->description('Days per week of usage'),
+
+        // Submission timestamp
+        SchemaFactory::integer('submitted_at')
+            ->minimum(1609459200)  // 2021-01-01 timestamp
+            ->readOnly()
+            ->description('Unix timestamp of submission')
+    );
+```
+
+## Integer vs Number
+
+<Info>
+Integers are a subset of numbers. Use integer schemas when you specifically need whole numbers, and number schemas when you need to allow decimal values.
+</Info>
+
+```php
+// Integer schema - only whole numbers
+$integerSchema = SchemaFactory::integer('count');
+$integerSchema->isValid(42);    // true
+$integerSchema->isValid(42.0);  // true (42.0 is whole)
+$integerSchema->isValid(42.5);  // false (not whole)
+
+// Number schema - allows decimals
+$numberSchema = SchemaFactory::number('value');
+$numberSchema->isValid(42);    // true
+$numberSchema->isValid(42.0);  // true
+$numberSchema->isValid(42.5);  // true
+```
+
+## Validation Examples
+
+```php
+$schema = SchemaFactory::integer('score')
+    ->minimum(0)
+    ->maximum(100)
+    ->multipleOf(5);
+
+// Valid values
+$schema->isValid(0);    // true
+$schema->isValid(85);   // true
+$schema->isValid(100);  // true
+
+// Invalid values
+$schema->isValid(-5);   // false (below minimum)
+$schema->isValid(105);  // false (above maximum)
+$schema->isValid(83);   // false (not multiple of 5)
+$schema->isValid(85.0); // true (whole number)
+$schema->isValid(85.5); // false (not whole number)
+$schema->isValid('85'); // false (string, not integer)
+```
+
+## Error Messages
+
+Integer validation provides specific error messages:
+
+```php
+try {
+    $schema->validate(105);
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must be less than or equal to 100"
+}
+
+try {
+    $schema->validate(83);
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must be a multiple of 5"
+}
+
+try {
+    $schema->validate(85.5);
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must be an integer"
+}
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Counters & Quantities" icon="calculator">
+    Validate counts, quantities, stock levels, and other discrete numeric values.
+  </Card>
+  <Card title="IDs & References" icon="hashtag">
+    Validate database IDs, reference numbers, and other unique integer identifiers.
+  </Card>
+  <Card title="Ratings & Scores" icon="star">
+    Validate user ratings, test scores, and other integer-based measurements.
+  </Card>
+  <Card title="Configuration Values" icon="gear">
+    Validate integer configuration parameters like ports, timeouts, and limits.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Number Schema"
+    icon="hashtag"
+    href="/schema-types/number"
+  >
+    Learn about number validation for decimal values
+  </Card>
+  <Card
+    title="Boolean Schema"
+    icon="toggle-on"
+    href="/schema-types/boolean"
+  >
+    Validate boolean true/false values
+  </Card>
+</CardGroup>

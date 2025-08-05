@@ -1,0 +1,509 @@
+---
+title: Object Schema
+description: 'Object validation with properties, patterns, and constraints'
+---
+
+Object schemas provide comprehensive validation for JSON objects with support for property validation, pattern properties, additional properties control, and complex nested structures.
+
+## Basic Object Schema
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+$userSchema = SchemaFactory::object('user')
+    ->description('User profile object')
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required(),
+        SchemaFactory::integer('age')
+    );
+
+$userSchema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'age' => 30
+]); // true
+
+$userSchema->isValid([
+    'name' => 'John Doe'
+    // Missing required email
+]); // false
+```
+
+## Properties
+
+Define specific properties with their own validation schemas:
+
+```php
+$productSchema = SchemaFactory::object('product')
+    ->properties(
+        // Required string property
+        SchemaFactory::string('name')
+            ->minLength(1)
+            ->maxLength(100)
+            ->required(),
+
+        // Optional string with format
+        SchemaFactory::string('description')
+            ->maxLength(500),
+
+        // Required number with constraints
+        SchemaFactory::number('price')
+            ->minimum(0)
+            ->multipleOf(0.01)
+            ->required(),
+
+        // Boolean with default
+        SchemaFactory::boolean('in_stock')
+            ->default(true),
+
+        // Array of strings
+        SchemaFactory::array('tags')
+            ->items(SchemaFactory::string())
+            ->maxItems(10)
+    );
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "product",
+    "properties": {
+        "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+        },
+        "description": {
+            "type": "string",
+            "maxLength": 500
+        },
+        "price": {
+            "type": "number",
+            "minimum": 0,
+            "multipleOf": 0.01
+        },
+        "in_stock": {
+            "type": "boolean",
+            "default": true
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "maxItems": 10
+        }
+    },
+    "required": ["name", "price"]
+}
+```
+</Accordion>
+
+## Required Properties
+
+Specify which properties are mandatory:
+
+```php
+$registrationSchema = SchemaFactory::object('registration')
+    ->properties(
+        SchemaFactory::string('username')
+            ->minLength(3)
+            ->required(),
+
+        SchemaFactory::string('email')
+            ->format(SchemaFormat::Email)
+            ->required(),
+
+        SchemaFactory::string('password')
+            ->minLength(8)
+            ->required(),
+
+        // Optional fields
+        SchemaFactory::string('full_name'),
+        SchemaFactory::string('phone')
+    );
+
+// This will fail validation - missing required fields
+$invalidData = [
+    'username' => 'john',
+    // Missing email and password
+];
+```
+
+## Additional Properties
+
+Control whether objects can have properties beyond those defined:
+
+```php
+// Strict object - no additional properties allowed
+$strictSchema = SchemaFactory::object('config')
+    ->properties(
+        SchemaFactory::string('host')->required(),
+        SchemaFactory::integer('port')->required()
+    )
+    ->additionalProperties(false);
+
+$strictSchema->isValid([
+    'host' => 'localhost',
+    'port' => 3000
+]); // true
+
+$strictSchema->isValid([
+    'host' => 'localhost',
+    'port' => 3000,
+    'extra' => 'not allowed'
+]); // false
+
+// Allow additional properties with validation
+$flexibleSchema = SchemaFactory::object('metadata')
+    ->properties(
+        SchemaFactory::string('title')->required()
+    )
+    ->additionalProperties(
+        SchemaFactory::string()->minLength(1)
+    );
+
+$flexibleSchema->isValid([
+    'title' => 'Document',
+    'author' => 'John Doe',  // Additional string property - OK
+    'version' => 'v1.0'      // Additional string property - OK
+]); // true
+
+$flexibleSchema->isValid([
+    'title' => 'Document',
+    'count' => 42           // Additional non-string property - fails
+]); // false
+```
+
+## Property Count Constraints
+
+Limit the number of properties in an object:
+
+```php
+$taggedSchema = SchemaFactory::object('tagged_item')
+    ->properties(
+        SchemaFactory::string('name')->required()
+    )
+    ->additionalProperties(SchemaFactory::string())
+    ->minProperties(2)  // At least name + 1 tag
+    ->maxProperties(10) // No more than 10 total properties
+    ->description('Item with 1-9 tags');
+
+$taggedSchema->isValid([
+    'name' => 'Item',
+    'category' => 'electronics'
+]); // true (2 properties)
+
+$taggedSchema->isValid([
+    'name' => 'Item'
+]); // false (only 1 property, need at least 2)
+```
+
+## Property Name Validation
+
+Validate property names against a pattern:
+
+```php
+$configSchema = SchemaFactory::object('config')
+    ->propertyNames(
+        SchemaFactory::string()->pattern('^[a-zA-Z][a-zA-Z0-9_]*$')
+    )
+    ->additionalProperties(SchemaFactory::string())
+    ->description('Config with valid identifier names');
+
+$configSchema->isValid([
+    'validName' => 'value',
+    'valid_name2' => 'value'
+]); // true
+
+$configSchema->isValid([
+    'invalid-name' => 'value',  // Contains hyphen
+    '123invalid' => 'value'     // Starts with number
+]); // false
+```
+
+## Pattern Properties
+
+Validate properties based on name patterns:
+
+```php
+$apiResponseSchema = SchemaFactory::object('api_response')
+    // Regular properties
+    ->properties(
+        SchemaFactory::string('status')->required(),
+        SchemaFactory::string('message')
+    )
+    // Pattern-based properties
+    ->patternProperty('^data_[a-z]+$',
+        SchemaFactory::object()->additionalProperties(true)
+    )
+    ->patternProperty('^meta_[a-z]+$',
+        SchemaFactory::string()
+    )
+    ->additionalProperties(false);
+
+$apiResponseSchema->isValid([
+    'status' => 'success',
+    'message' => 'Operation completed',
+    'data_users' => ['user1', 'user2'],  // Matches ^data_[a-z]+$
+    'meta_version' => 'v1.0'             // Matches ^meta_[a-z]+$
+]); // true
+
+$apiResponseSchema->isValid([
+    'status' => 'success',
+    'invalid_property' => 'value'        // Doesn't match any pattern
+]); // false
+```
+
+You can add multiple pattern properties:
+
+```php
+$schema = SchemaFactory::object('flexible_config')
+    ->patternProperties([
+        '^[A-Z][a-z]+$' => SchemaFactory::string(),      // CamelCase = string
+        '^\d+$' => SchemaFactory::number(),              // Numbers = number
+        '^prefix_' => SchemaFactory::boolean(),          // Prefixed = boolean
+    ])
+    ->additionalProperties(false);
+```
+
+## Nested Objects
+
+Create complex nested object structures:
+
+```php
+$orderSchema = SchemaFactory::object('order')
+    ->properties(
+        SchemaFactory::string('id')->required(),
+
+        // Nested customer object
+        SchemaFactory::object('customer')
+            ->properties(
+                SchemaFactory::string('name')->required(),
+                SchemaFactory::string('email')->required(),
+
+                // Nested address object
+                SchemaFactory::object('address')
+                    ->properties(
+                        SchemaFactory::string('street')->required(),
+                        SchemaFactory::string('city')->required(),
+                        SchemaFactory::string('postal_code')->required(),
+                        SchemaFactory::string('country')->required()
+                    )
+                    ->additionalProperties(false)
+                    ->required()
+            )
+            ->additionalProperties(false)
+            ->required(),
+
+        // Array of nested item objects
+        SchemaFactory::array('items')
+            ->items(
+                SchemaFactory::object('item')
+                    ->properties(
+                        SchemaFactory::string('sku')->required(),
+                        SchemaFactory::string('name')->required(),
+                        SchemaFactory::integer('quantity')
+                            ->minimum(1)
+                            ->required(),
+                        SchemaFactory::number('price')
+                            ->minimum(0)
+                            ->multipleOf(0.01)
+                            ->required()
+                    )
+                    ->additionalProperties(false)
+            )
+            ->minItems(1)
+            ->required()
+    )
+    ->additionalProperties(false);
+```
+
+## Complex Validation Example
+
+Here's a comprehensive user profile schema demonstrating various object features:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
+$userProfileSchema = SchemaFactory::object('user_profile')
+    ->description('Complete user profile with validation')
+
+    // Core required fields
+    ->properties(
+        SchemaFactory::string('username')
+            ->pattern('^[a-zA-Z0-9_]{3,20}$')
+            ->required(),
+
+        SchemaFactory::string('email')
+            ->format(SchemaFormat::Email)
+            ->required(),
+
+        SchemaFactory::string('full_name')
+            ->minLength(2)
+            ->maxLength(100)
+            ->required()
+    )
+
+    // Optional personal information
+    ->properties(
+        SchemaFactory::string('bio')
+            ->maxLength(500),
+
+        SchemaFactory::string('website')
+            ->format(SchemaFormat::Uri),
+
+        SchemaFactory::string('location')
+            ->maxLength(100),
+
+        // Nested preferences object
+        SchemaFactory::object('preferences')
+            ->properties(
+                SchemaFactory::string('theme')
+                    ->enum(['light', 'dark', 'auto'])
+                    ->default('auto'),
+
+                SchemaFactory::string('language')
+                    ->pattern('^[a-z]{2}(-[A-Z]{2})?$')
+                    ->default('en'),
+
+                SchemaFactory::boolean('notifications')
+                    ->default(true),
+
+                SchemaFactory::object('privacy')
+                    ->properties(
+                        SchemaFactory::boolean('public_profile')
+                            ->default(false),
+                        SchemaFactory::boolean('show_email')
+                            ->default(false)
+                    )
+                    ->additionalProperties(false)
+            )
+            ->additionalProperties(false),
+
+        // Social media links with pattern properties
+        SchemaFactory::object('social_links')
+            ->patternProperty('^(twitter|github|linkedin|instagram)$',
+                SchemaFactory::string()
+                    ->format(SchemaFormat::Uri)
+                    ->pattern('^https?://')
+            )
+            ->additionalProperties(false)
+            ->maxProperties(10)
+    )
+
+    // No additional properties at root level
+    ->additionalProperties(false)
+
+    // Validate property names
+    ->propertyNames(
+        SchemaFactory::string()
+            ->pattern('^[a-z][a-z_]*$')
+    );
+```
+
+## Version-Specific Features
+
+Some object features require specific JSON Schema versions:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Unevaluated properties (Draft 2019-09+)
+$strictSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    ->properties(
+        SchemaFactory::string('name')->required()
+    )
+    ->unevaluatedProperties(false)  // Strict validation
+    ->description('No properties beyond those explicitly defined');
+
+// Dependent schemas (Draft 2019-09+)
+$conditionalSchema = SchemaFactory::object('payment', SchemaVersion::Draft_2019_09)
+    ->properties(
+        SchemaFactory::string('method')->enum(['card', 'paypal']),
+        SchemaFactory::string('card_number'),
+        SchemaFactory::string('paypal_email')
+    )
+    ->dependentSchema('method',
+        SchemaFactory::object()
+            ->if(SchemaFactory::object()->properties(
+                SchemaFactory::string('method')->const('card')
+            ))
+            ->then(SchemaFactory::object()->properties(
+                SchemaFactory::string('card_number')->required()
+            ))
+    );
+```
+
+## Validation Examples
+
+```php
+$schema = SchemaFactory::object('config')
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::integer('port')->required()
+    )
+    ->additionalProperties(false);
+
+// Valid data
+$schema->isValid([
+    'name' => 'myapp',
+    'port' => 3000
+]); // true
+
+// Invalid data examples
+$schema->isValid([
+    'name' => 'myapp'
+    // Missing required 'port'
+]); // false
+
+$schema->isValid([
+    'name' => 'myapp',
+    'port' => 3000,
+    'extra' => 'not allowed'
+]); // false (additional properties disabled)
+
+$schema->isValid([
+    'name' => 'myapp',
+    'port' => '3000'  // String instead of integer
+]); // false
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="API Request/Response" icon="api">
+    Validate JSON API payloads with structured data and specific field requirements.
+  </Card>
+  <Card title="Configuration Files" icon="gear">
+    Validate application configuration with known properties and constraints.
+  </Card>
+  <Card title="Form Data" icon="file-text">
+    Validate complex form submissions with nested data and validation rules.
+  </Card>
+  <Card title="Database Models" icon="database">
+    Validate data models before persistence with property and constraint validation.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Array Schema"
+    icon="list"
+    href="/schema-types/array"
+  >
+    Learn about array validation and nested data structures
+  </Card>
+  <Card
+    title="Advanced Object Features"
+    icon="star"
+    href="/advanced/pattern-properties"
+  >
+    Explore pattern properties and advanced object validation
+  </Card>
+</CardGroup>

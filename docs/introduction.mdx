@@ -1,0 +1,94 @@
+---
+title: Introduction
+description: 'Fluently build and validate JSON Schemas in PHP'
+---
+
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.png"
+  alt="Hero Light"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero-dark.png"
+  alt="Hero Dark"
+/>
+
+## What is JSON Schema?
+
+[JSON Schema](https://json-schema.org/overview/what-is-jsonschema) is a vocabulary that allows you to annotate and validate JSON documents. It provides a contract for what JSON data is required for a given application and how to interact with it.
+
+## About This Package
+
+This PHP package provides a fluent, type-safe way to build and validate JSON Schemas. Built with PHP 8.3+ features and strict typing, it supports multiple JSON Schema specification versions with automatic feature validation.
+
+<CardGroup cols={2}>
+  <Card
+    title="Type Safety"
+    icon="shield-check"
+    href="/features"
+  >
+    Built with PHP 8.3+ features and strict typing for reliable code
+  </Card>
+  <Card
+    title="Multi-Version Support"
+    icon="code-branch"
+    href="/versions"
+  >
+    Support for Draft-07, Draft 2019-09, and Draft 2020-12
+  </Card>
+  <Card
+    title="Fluent API"
+    icon="wand-magic-sparkles"
+    href="/quickstart"
+  >
+    Intuitive fluent interface for building complex schemas
+  </Card>
+  <Card
+    title="Validation"
+    icon="check-circle"
+    href="/validation/data-validation"
+  >
+    Validate data against schemas with detailed error messages
+  </Card>
+</CardGroup>
+
+## Quick Example
+
+Here's a simple example of how to create and use a JSON Schema:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
+// Create a user schema
+$schema = SchemaFactory::object('user')
+    ->description('User schema')
+    ->properties(
+        SchemaFactory::string('name')
+            ->minLength(2)
+            ->maxLength(100)
+            ->required(),
+        SchemaFactory::string('email')
+            ->format(SchemaFormat::Email)
+            ->required(),
+        SchemaFactory::integer('age')
+            ->minimum(18)
+            ->maximum(150)
+    );
+
+// Validate data
+$data = [
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'age' => 30
+];
+
+if ($schema->isValid($data)) {
+    echo "Valid user data!";
+}
+```
+
+<Note>
+This package requires PHP 8.3 or higher and uses modern PHP features for optimal performance and developer experience.
+</Note>

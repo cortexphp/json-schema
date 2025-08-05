@@ -1,0 +1,635 @@
+---
+title: Version Feature Validation
+description: 'Automatic validation of JSON Schema version compatibility and feature support'
+---
+
+The package automatically validates that schema features are compatible with the specified JSON Schema version, preventing runtime errors and ensuring schema portability across different validators.
+
+## Automatic Feature Validation
+
+When you use features that require specific JSON Schema versions, the package automatically validates compatibility:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+use Cortex\JsonSchema\Exceptions\SchemaException;
+
+// ✅ This works - deprecated is supported in Draft 2019-09+
+$modernSchema = SchemaFactory::string('legacy_field', SchemaVersion::Draft_2019_09)
+    ->deprecated()
+    ->comment('Use new_field instead');
+
+// ❌ This throws an exception - deprecated requires Draft 2019-09+
+try {
+    $invalidSchema = SchemaFactory::string('legacy_field', SchemaVersion::Draft_07)
+        ->deprecated(); // SchemaException thrown here
+} catch (SchemaException $e) {
+    echo $e->getMessage();
+    // "Feature 'Property deprecation annotation' is not supported in Draft 7.
+    //  Minimum version required: Draft 2019-09."
+}
+```
+
+## Feature Support Matrix
+
+Understanding which features are available in each JSON Schema version:
+
+### Core Validation (All Versions)
+
+```php
+// These features work in all supported versions
+$basicSchema = SchemaFactory::object('basic', SchemaVersion::Draft_07)
+    ->properties(
+        SchemaFactory::string('name')
+            ->minLength(2)
+            ->maxLength(100)
+            ->pattern('^[A-Za-z\s]+$')
+            ->required(),
+        SchemaFactory::integer('age')
+            ->minimum(0)
+            ->maximum(150)
+            ->required(),
+        SchemaFactory::array('tags')
+            ->items(SchemaFactory::string())
+            ->minItems(1)
+            ->maxItems(10)
+            ->uniqueItems(true)
+    )
+    ->additionalProperties(false);
+```
+
+### Conditional Logic (Draft-07+)
+
+```php
+// if/then/else works in Draft-07 and later
+$conditionalSchema = SchemaFactory::object('user', SchemaVersion::Draft_07)
+    ->properties(
+        SchemaFactory::string('type')->enum(['personal', 'business']),
+        SchemaFactory::string('company_name'),
+        SchemaFactory::string('tax_id')
+    )
+    ->if(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('type')->const('business')
+        )
+    )
+    ->then(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('company_name')->required(),
+            SchemaFactory::string('tax_id')->required()
+        )
+    );
+```
+
+### Draft 2019-09 Features
+
+```php
+// Advanced features requiring Draft 2019-09+
+$modernSchema = SchemaFactory::object('modern_user', SchemaVersion::Draft_2019_09)
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required(),
+
+        // Deprecated annotation
+        SchemaFactory::string('old_email')
+            ->deprecated()
+            ->comment('Use email field instead'),
+
+        // Array contains validation
+        SchemaFactory::array('roles')
+            ->items(SchemaFactory::string())
+            ->minContains(1)    // At least one role required
+            ->maxContains(5),   // Maximum 5 roles
+
+        // Extended format support
+        SchemaFactory::string('id')
+            ->format(SchemaFormat::Uuid),
+
+        SchemaFactory::string('session_duration')
+            ->format(SchemaFormat::Duration)
+    )
+    // Unevaluated properties
+    ->unevaluatedProperties(false)
+
+    // Dependent schemas
+    ->dependentSchema('old_email',
+        SchemaFactory::object()
+            ->if(SchemaFactory::object()->properties(
+                SchemaFactory::string('old_email')->minLength(1)
+            ))
+            ->then(SchemaFactory::object()
+                ->properties(
+                    SchemaFactory::string('migration_date')
+                        ->format(SchemaFormat::Date)
+                        ->required()
+                )
+            )
+    );
+```
+
+### Draft 2020-12 Features
+
+```php
+// Cutting-edge features in Draft 2020-12
+$latestSchema = SchemaFactory::array('tuple_array', SchemaVersion::Draft_2020_12)
+    // Prefix items for tuple validation
+    ->prefixItems([
+        SchemaFactory::string()->description('Name'),
+        SchemaFactory::integer()->minimum(0)->description('Age'),
+        SchemaFactory::boolean()->description('Active status')
+    ])
+    // Additional items after prefix
+    ->items(SchemaFactory::string()->description('Additional info'))
+    // Unevaluated items control
+    ->unevaluatedItems(false);
+```
+
+## Version Detection and Error Messages
+
+The package provides clear error messages when incompatible features are used:
+
+```php
+function demonstrateVersionErrors()
+{
+    $examples = [
+        'Deprecated annotation' => function() {
+            return SchemaFactory::string('field', SchemaVersion::Draft_07)
+                ->deprecated();
+        },
+
+        'Min/Max contains' => function() {
+            return SchemaFactory::array('items', SchemaVersion::Draft_07)
+                ->minContains(1);
+        },
+
+        'UUID format' => function() {
+            return SchemaFactory::string('id', SchemaVersion::Draft_07)
+                ->format(SchemaFormat::Uuid);
+        },
+
+        'Unevaluated properties' => function() {
+            return SchemaFactory::object('strict', SchemaVersion::Draft_07)
+                ->unevaluatedProperties(false);
+        },
+
+        'Dependent schemas' => function() {
+            return SchemaFactory::object('conditional', SchemaVersion::Draft_07)
+                ->dependentSchema('field', SchemaFactory::object());
+        }
+    ];
+
+    foreach ($examples as $featureName => $schemaBuilder) {
+        try {
+            $schemaBuilder();
+            echo "✅ {$featureName}: Compatible\n";
+        } catch (SchemaException $e) {
+            echo "❌ {$featureName}: {$e->getMessage()}\n";
+        }
+    }
+}
+
+demonstrateVersionErrors();
+```
+
+## Feature Detection
+
+Check feature support programmatically:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaFeature;
+
+/**
+ * Check if a feature is supported in a specific version
+ */
+function checkFeatureSupport(SchemaVersion $version, SchemaFeature $feature): bool
+{
+    return $version->supports($feature);
+}
+
+/**
+ * Get minimum version required for a feature
+ */
+function getMinimumVersion(SchemaFeature $feature): SchemaVersion
+{
+    return $feature->getMinimumVersion();
+}
+
+// Feature compatibility checking
+$features = [
+    SchemaFeature::Deprecated,
+    SchemaFeature::MinContains,
+    SchemaFeature::MaxContains,
+    SchemaFeature::UnevaluatedProperties,
+    SchemaFeature::DependentSchemas,
+    SchemaFeature::PrefixItems
+];
+
+foreach ($features as $feature) {
+    $minVersion = getMinimumVersion($feature);
+    $description = $feature->getDescription();
+
+    echo "Feature: {$description}\n";
+    echo "Minimum version: {$minVersion->name}\n";
+    echo "Supported in Draft-07: " .
+         (checkFeatureSupport(SchemaVersion::Draft_07, $feature) ? 'Yes' : 'No') . "\n";
+    echo "Supported in Draft 2019-09: " .
+         (checkFeatureSupport(SchemaVersion::Draft_2019_09, $feature) ? 'Yes' : 'No') . "\n";
+    echo "Supported in Draft 2020-12: " .
+         (checkFeatureSupport(SchemaVersion::Draft_2020_12, $feature) ? 'Yes' : 'No') . "\n\n";
+}
+```
+
+## Schema Migration Between Versions
+
+Migrate schemas to take advantage of newer features:
+
+```php
+class SchemaMigrator
+{
+    public function upgradeToDraft201909(Schema $draft07Schema): Schema
+    {
+        $schemaArray = $draft07Schema->toArray();
+
+        // Update schema version
+        $schemaArray['$schema'] = 'https://json-schema.org/draft/2019-09/schema';
+
+        // Convert definitions to $defs
+        if (isset($schemaArray['definitions'])) {
+            $schemaArray['$defs'] = $schemaArray['definitions'];
+            unset($schemaArray['definitions']);
+
+            // Update $ref paths
+            $schemaArray = $this->updateRefPaths($schemaArray);
+        }
+
+        return SchemaFactory::fromJson($schemaArray, SchemaVersion::Draft_2019_09);
+    }
+
+    public function addModernFeatures(Schema $basicSchema): Schema
+    {
+        $schemaArray = $basicSchema->toArray();
+
+        // Ensure we're using a modern version
+        if (!isset($schemaArray['$schema']) ||
+            strpos($schemaArray['$schema'], '2019-09') === false) {
+            $schemaArray['$schema'] = 'https://json-schema.org/draft/2019-09/schema';
+        }
+
+        // Add modern validation features
+        if ($schemaArray['type'] === 'object') {
+            // Add strict property validation
+            $schemaArray['unevaluatedProperties'] = false;
+
+            // Add examples for better documentation
+            if (isset($schemaArray['properties'])) {
+                foreach ($schemaArray['properties'] as $prop => &$propSchema) {
+                    if ($propSchema['type'] === 'string' && !isset($propSchema['examples'])) {
+                        $propSchema['examples'] = ["example_{$prop}"];
+                    }
+                }
+            }
+        }
+
+        return SchemaFactory::fromJson($schemaArray, SchemaVersion::Draft_2019_09);
+    }
+
+    private function updateRefPaths(array $schema): array
+    {
+        foreach ($schema as $key => &$value) {
+            if ($key === '$ref' && is_string($value)) {
+                $value = str_replace('#/definitions/', '#/$defs/', $value);
+            } elseif (is_array($value)) {
+                $value = $this->updateRefPaths($value);
+            }
+        }
+
+        return $schema;
+    }
+}
+
+// Usage example
+$migrator = new SchemaMigrator();
+
+// Original Draft-07 schema
+$originalSchema = SchemaFactory::object('user', SchemaVersion::Draft_07)
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required()
+    )
+    ->addDefinition('address',
+        SchemaFactory::object()
+            ->properties(
+                SchemaFactory::string('street')->required(),
+                SchemaFactory::string('city')->required()
+            )
+    );
+
+// Upgrade to take advantage of Draft 2019-09 features
+$modernSchema = $migrator->upgradeToDraft201909($originalSchema);
+$enhancedSchema = $migrator->addModernFeatures($modernSchema);
+
+// Now we can use modern features
+$enhancedSchema = $enhancedSchema
+    ->unevaluatedProperties(false)  // This now works
+    ->properties(
+        SchemaFactory::string('legacy_field')
+            ->deprecated()  // This now works too
+    );
+```
+
+## Conditional Feature Usage
+
+Use features conditionally based on version support:
+
+```php
+class VersionAwareSchemaBuilder
+{
+    public function buildUserSchema(SchemaVersion $version): Schema
+    {
+        $schema = SchemaFactory::object('user', $version)
+            ->properties(
+                SchemaFactory::string('name')->required(),
+                SchemaFactory::string('email')->required()
+            );
+
+        // Add version-specific features
+        if ($version->supports(SchemaFeature::Deprecated)) {
+            $schema = $schema->properties(
+                SchemaFactory::string('old_email')
+                    ->deprecated()
+                    ->comment('Use email field instead')
+            );
+        }
+
+        if ($version->supports(SchemaFeature::UnevaluatedProperties)) {
+            $schema = $schema->unevaluatedProperties(false);
+        }
+
+        if ($version->supports(SchemaFeature::MinContains)) {
+            $schema = $schema->properties(
+                SchemaFactory::array('roles')
+                    ->items(SchemaFactory::string())
+                    ->minContains(1)
+                    ->maxContains(5)
+            );
+        } else {
+            // Fallback for older versions
+            $schema = $schema->properties(
+                SchemaFactory::array('roles')
+                    ->items(SchemaFactory::string())
+                    ->minItems(1)
+                    ->maxItems(5)
+            );
+        }
+
+        return $schema;
+    }
+
+    public function buildWithBestFeatures(SchemaVersion $targetVersion): Schema
+    {
+        // Use the most advanced features available
+        $availableFeatures = [
+            SchemaFeature::Deprecated,
+            SchemaFeature::UnevaluatedProperties,
+            SchemaFeature::MinContains,
+            SchemaFeature::DependentSchemas
+        ];
+
+        $schema = SchemaFactory::object('advanced_user', $targetVersion)
+            ->properties(
+                SchemaFactory::string('username')->required(),
+                SchemaFactory::string('email')->required()
+            );
+
+        foreach ($availableFeatures as $feature) {
+            if ($targetVersion->supports($feature)) {
+                $schema = $this->addFeatureToSchema($schema, $feature);
+            }
+        }
+
+        return $schema;
+    }
+
+    private function addFeatureToSchema(Schema $schema, SchemaFeature $feature): Schema
+    {
+        switch ($feature) {
+            case SchemaFeature::Deprecated:
+                return $schema->properties(
+                    SchemaFactory::string('legacy_username')
+                        ->deprecated()
+                        ->comment('Use username instead')
+                );
+
+            case SchemaFeature::UnevaluatedProperties:
+                return $schema->unevaluatedProperties(false);
+
+            case SchemaFeature::MinContains:
+                return $schema->properties(
+                    SchemaFactory::array('permissions')
+                        ->items(SchemaFactory::string())
+                        ->minContains(1)
+                );
+
+            case SchemaFeature::DependentSchemas:
+                return $schema->dependentSchema('legacy_username',
+                    SchemaFactory::object()
+                        ->properties(
+                            SchemaFactory::string('migration_date')
+                                ->format(SchemaFormat::Date)
+                                ->required()
+                        )
+                );
+
+            default:
+                return $schema;
+        }
+    }
+}
+
+// Usage
+$builder = new VersionAwareSchemaBuilder();
+
+// Build schemas for different target environments
+$draft07Schema = $builder->buildUserSchema(SchemaVersion::Draft_07);
+$modernSchema = $builder->buildUserSchema(SchemaVersion::Draft_2019_09);
+$latestSchema = $builder->buildUserSchema(SchemaVersion::Draft_2020_12);
+
+// Each schema uses the best features available for its version
+```
+
+## Validation Environment Detection
+
+Detect and adapt to different validation environments:
+
+```php
+class EnvironmentAwareValidator
+{
+    private SchemaVersion $supportedVersion;
+
+    public function __construct()
+    {
+        $this->supportedVersion = $this->detectEnvironmentVersion();
+    }
+
+    private function detectEnvironmentVersion(): SchemaVersion
+    {
+        // In a real application, you might:
+        // - Check client capabilities
+        // - Read from configuration
+        // - Test feature support
+
+        // For demo, assume based on PHP version or configuration
+        $configVersion = $_ENV['JSON_SCHEMA_VERSION'] ?? 'draft-07';
+
+        return match($configVersion) {
+            'draft-2020-12' => SchemaVersion::Draft_2020_12,
+            'draft-2019-09' => SchemaVersion::Draft_2019_09,
+            default => SchemaVersion::Draft_07
+        };
+    }
+
+    public function createCompatibleSchema(array $requirements): Schema
+    {
+        $schema = SchemaFactory::object('dynamic', $this->supportedVersion);
+
+        foreach ($requirements as $field => $config) {
+            $fieldSchema = $this->createFieldSchema($config);
+            $schema = $schema->properties($fieldSchema->propertyName($field));
+        }
+
+        // Add version-appropriate constraints
+        if ($this->supportedVersion->supports(SchemaFeature::UnevaluatedProperties)) {
+            $schema = $schema->unevaluatedProperties(false);
+        } else {
+            $schema = $schema->additionalProperties(false);
+        }
+
+        return $schema;
+    }
+
+    private function createFieldSchema(array $config): Schema
+    {
+        $type = $config['type'] ?? 'string';
+        $fieldSchema = match($type) {
+            'string' => SchemaFactory::string(),
+            'integer' => SchemaFactory::integer(),
+            'number' => SchemaFactory::number(),
+            'boolean' => SchemaFactory::boolean(),
+            'array' => SchemaFactory::array(),
+            default => SchemaFactory::string()
+        };
+
+        // Apply constraints based on version support
+        if (isset($config['deprecated']) &&
+            $this->supportedVersion->supports(SchemaFeature::Deprecated)) {
+            $fieldSchema = $fieldSchema->deprecated();
+        }
+
+        if (isset($config['format'])) {
+            $format = SchemaFormat::from($config['format']);
+            if ($this->isFormatSupported($format)) {
+                $fieldSchema = $fieldSchema->format($format);
+            }
+        }
+
+        return $fieldSchema;
+    }
+
+    private function isFormatSupported(SchemaFormat $format): bool
+    {
+        $modernFormats = [SchemaFormat::Uuid, SchemaFormat::Duration];
+
+        if (in_array($format, $modernFormats)) {
+            return $this->supportedVersion->supports(SchemaFeature::ExtendedFormats);
+        }
+
+        return true; // Basic formats supported in all versions
+    }
+}
+```
+
+## Best Practices
+
+### 1. Use Version Detection
+
+```php
+// Good: Check version support before using features
+if (SchemaVersion::Draft_2019_09->supports(SchemaFeature::Deprecated)) {
+    $schema = $schema->deprecated();
+}
+
+// Avoid: Assuming feature support
+$schema = $schema->deprecated(); // May fail in older versions
+```
+
+### 2. Provide Fallbacks
+
+```php
+// Good: Provide fallbacks for unsupported features
+function addStrictValidation(Schema $schema, SchemaVersion $version): Schema
+{
+    if ($version->supports(SchemaFeature::UnevaluatedProperties)) {
+        return $schema->unevaluatedProperties(false);
+    } else {
+        return $schema->additionalProperties(false);
+    }
+}
+```
+
+### 3. Document Version Requirements
+
+```php
+/**
+ * Create a modern user schema with advanced validation
+ *
+ * @param SchemaVersion $version Must be Draft 2019-09 or later for full features
+ * @throws SchemaException If version doesn't support required features
+ */
+function createAdvancedUserSchema(SchemaVersion $version): Schema
+{
+    if (!$version->supports(SchemaFeature::UnevaluatedProperties)) {
+        throw new SchemaException(
+            "Advanced user schema requires Draft 2019-09 or later"
+        );
+    }
+
+    return SchemaFactory::object('advanced_user', $version)
+        ->unevaluatedProperties(false);
+}
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="API Versioning" icon="code-branch">
+    Adapt schema validation based on API version and client capabilities.
+  </Card>
+  <Card title="Progressive Enhancement" icon="arrow-up">
+    Start with basic validation and add advanced features when supported.
+  </Card>
+  <Card title="Cross-Platform Support" icon="globe">
+    Ensure schema compatibility across different JSON Schema validators.
+  </Card>
+  <Card title="Schema Evolution" icon="history">
+    Migrate schemas to newer versions while maintaining backward compatibility.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="JSON Schema Versions"
+    icon="code-branch"
+    href="/versions"
+  >
+    Learn more about JSON Schema version differences and capabilities
+  </Card>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api-reference/schema-factory"
+  >
+    Explore the complete API reference and method documentation
+  </Card>
+</CardGroup>

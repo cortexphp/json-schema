@@ -1,0 +1,289 @@
+---
+title: Quick Start
+description: 'Get up and running with JSON Schema Builder in minutes'
+---
+
+## Your First Schema
+
+Let's create a simple user schema to demonstrate the core concepts:
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
+// Create a user schema
+$userSchema = SchemaFactory::object('user')
+    ->description('User registration schema')
+    ->properties(
+        SchemaFactory::string('name')
+            ->minLength(2)
+            ->maxLength(100)
+            ->required(),
+        SchemaFactory::string('email')
+            ->format(SchemaFormat::Email)
+            ->required(),
+        SchemaFactory::integer('age')
+            ->minimum(18)
+            ->maximum(150),
+        SchemaFactory::boolean('active')
+            ->default(true)
+    );
+```
+
+## Validating Data
+
+Now let's validate some data against our schema:
+
+```php
+// Valid data
+$validData = [
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'age' => 30,
+    'active' => true
+];
+
+// Check if data is valid
+if ($userSchema->isValid($validData)) {
+    echo "User data is valid!";
+}
+
+// Or use validate() for detailed error information
+try {
+    $userSchema->validate($validData);
+    echo "Validation passed!";
+} catch (SchemaException $e) {
+    echo "Validation failed: " . $e->getMessage();
+}
+```
+
+## Working with Invalid Data
+
+Let's see what happens with invalid data:
+
+```php
+// Invalid data
+$invalidData = [
+    'name' => 'J',  // Too short (minimum 2 characters)
+    'email' => 'not-an-email',  // Invalid email format
+    'age' => 15  // Too young (minimum 18)
+];
+
+// This will return false
+$isValid = $userSchema->isValid($invalidData);
+
+// This will throw a SchemaException with details
+try {
+    $userSchema->validate($invalidData);
+} catch (SchemaException $e) {
+    echo "Error: " . $e->getMessage();
+    // "The data must match the 'email' format"
+}
+```
+
+## Converting to JSON Schema
+
+Convert your schema to standard JSON Schema format:
+
+<CodeGroup>
+
+```php PHP Code
+// Convert to array
+$schemaArray = $userSchema->toArray();
+
+// Convert to JSON string
+$schemaJson = $userSchema->toJson();
+
+// Pretty-printed JSON
+$prettyJson = $userSchema->toJson(JSON_PRETTY_PRINT);
+```
+
+```json JSON Output
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "user",
+    "description": "User registration schema",
+    "properties": {
+        "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+        },
+        "email": {
+            "type": "string",
+            "format": "email"
+        },
+        "age": {
+            "type": "integer",
+            "minimum": 18,
+            "maximum": 150
+        },
+        "active": {
+            "type": "boolean",
+            "default": true
+        }
+    },
+    "required": ["name", "email"]
+}
+```
+
+</CodeGroup>
+
+## Using Different Schema Types
+
+### String Schema with Patterns
+
+```php
+$usernameSchema = SchemaFactory::string('username')
+    ->pattern('^[a-zA-Z0-9_]{3,20}$')
+    ->description('Username with alphanumeric characters and underscores');
+
+$usernameSchema->isValid('john_doe123'); // true
+$usernameSchema->isValid('jo');          // false (too short)
+$usernameSchema->isValid('john-doe');    // false (contains hyphen)
+```
+
+### Array Schema
+
+```php
+$tagsSchema = SchemaFactory::array('tags')
+    ->items(SchemaFactory::string())
+    ->minItems(1)
+    ->maxItems(5)
+    ->uniqueItems(true);
+
+$tagsSchema->isValid(['php', 'json', 'schema']); // true
+$tagsSchema->isValid(['php', 'php']);            // false (not unique)
+$tagsSchema->isValid([]);                        // false (too few items)
+```
+
+### Nested Objects
+
+```php
+$profileSchema = SchemaFactory::object('profile')
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::object('address')
+            ->properties(
+                SchemaFactory::string('street')->required(),
+                SchemaFactory::string('city')->required(),
+                SchemaFactory::string('country')->required()
+            )
+            ->required()
+    );
+```
+
+## Alternative Syntax
+
+You can also use schema classes directly instead of the factory:
+
+<CodeGroup>
+
+```php Factory Method (Recommended)
+use Cortex\JsonSchema\SchemaFactory;
+
+$schema = SchemaFactory::string('name')
+    ->minLength(2)
+    ->required();
+```
+
+```php Direct Class Usage
+use Cortex\JsonSchema\Types\StringSchema;
+
+$schema = new StringSchema('name')
+    ->minLength(2)
+    ->required();
+```
+
+</CodeGroup>
+
+## Working with Schema Versions
+
+Specify JSON Schema versions for advanced features:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Use Draft 2019-09 for advanced features
+$modernSchema = SchemaFactory::string('field', SchemaVersion::Draft_2019_09)
+    ->deprecated()  // Only available in Draft 2019-09+
+    ->comment('Use newField instead');
+
+// Set default version for all schemas
+SchemaFactory::setDefaultVersion(SchemaVersion::Draft_2019_09);
+```
+
+<Warning>
+Using features with incompatible versions will throw a `SchemaException`. See the [Version Compatibility](/versions) guide for details.
+</Warning>
+
+## Common Patterns
+
+### Conditional Validation
+
+```php
+$userSchema = SchemaFactory::object('user')
+    ->properties(
+        SchemaFactory::string('type')->enum(['personal', 'business']),
+        SchemaFactory::string('company_name')
+    )
+    ->if(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('type')->const('business')
+        )
+    )
+    ->then(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('company_name')->required()
+        )
+    );
+```
+
+### Union Types
+
+```php
+$idSchema = SchemaFactory::union([SchemaType::String, SchemaType::Integer], 'id')
+    ->description('ID can be string or integer');
+
+$idSchema->isValid('abc123'); // true
+$idSchema->isValid(12345);    // true
+$idSchema->isValid(true);     // false
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Schema Types"
+    icon="shapes"
+    href="/schema-types/string"
+  >
+    Learn about all available schema types and their validation options
+  </Card>
+  <Card
+    title="Advanced Features"
+    icon="star"
+    href="/advanced/conditional-validation"
+  >
+    Explore conditional validation, definitions, and complex patterns
+  </Card>
+  <Card
+    title="Code Generation"
+    icon="code"
+    href="/code-generation/from-classes"
+  >
+    Generate schemas automatically from PHP classes and functions
+  </Card>
+  <Card
+    title="Validation Guide"
+    icon="check-circle"
+    href="/validation/data-validation"
+  >
+    Master data validation and error handling techniques
+  </Card>
+</CardGroup>
+
+<Tip>
+The SchemaFactory provides the most convenient way to create schemas. All examples in this documentation use the factory methods unless otherwise specified.
+</Tip>

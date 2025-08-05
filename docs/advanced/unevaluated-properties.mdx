@@ -1,0 +1,439 @@
+---
+title: Unevaluated Properties & Items
+description: 'Advanced validation with unevaluated properties and items in modern JSON Schema'
+---
+
+<Note>
+Unevaluated properties and items are advanced features available in JSON Schema Draft 2019-09 and later. They provide more sophisticated control over additional content in objects and arrays.
+</Note>
+
+Unevaluated properties and items allow you to control validation of object properties and array items that weren't explicitly defined or evaluated by other schema keywords, providing stricter validation than traditional `additionalProperties` and `additionalItems`.
+
+## Unevaluated Properties
+
+### Basic Unevaluated Properties
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Strict object validation - no unevaluated properties allowed
+$strictUserSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required()
+    )
+    ->unevaluatedProperties(false)  // No additional properties allowed
+    ->description('Strict user schema');
+
+// Valid data
+$strictUserSchema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@example.com'
+]); // true
+
+// Invalid data - contains unevaluated property
+$strictUserSchema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'age' => 30  // This property is not allowed
+]); // false
+```
+
+### Unevaluated Properties with Schema
+
+Allow unevaluated properties but validate them against a schema:
+
+```php
+$flexibleUserSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required()
+    )
+    ->unevaluatedProperties(
+        SchemaFactory::string()->minLength(1)  // Any extra properties must be non-empty strings
+    )
+    ->description('User with validated additional properties');
+
+// Valid data
+$flexibleUserSchema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'nickname' => 'Johnny',     // Valid: non-empty string
+    'title' => 'Developer'      // Valid: non-empty string
+]); // true
+
+// Invalid data
+$flexibleUserSchema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'age' => 30,               // Invalid: not a string
+    'bio' => ''                // Invalid: empty string
+]); // false
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "type": "object",
+    "title": "user",
+    "description": "User with validated additional properties",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "email": {
+            "type": "string"
+        }
+    },
+    "required": ["name", "email"],
+    "unevaluatedProperties": {
+        "type": "string",
+        "minLength": 1
+    }
+}
+```
+</Accordion>
+
+## Unevaluated Properties with Pattern Properties
+
+Unevaluated properties work with pattern properties:
+
+```php
+$configSchema = SchemaFactory::object('config', SchemaVersion::Draft_2019_09)
+    ->properties(
+        SchemaFactory::string('app_name')->required(),
+        SchemaFactory::string('version')->required()
+    )
+    ->patternProperties([
+        '^env_' => SchemaFactory::string(),          // Environment variables
+        '^feature_' => SchemaFactory::boolean(),     // Feature flags
+    ])
+    ->unevaluatedProperties(false)  // Only allow defined props and pattern props
+    ->description('Configuration with controlled additional properties');
+
+// Valid data
+$configSchema->isValid([
+    'app_name' => 'MyApp',
+    'version' => '1.0.0',
+    'env_database_url' => 'mysql://localhost',  // Matches ^env_ pattern
+    'feature_dark_mode' => true                 // Matches ^feature_ pattern
+]); // true
+
+// Invalid data
+$configSchema->isValid([
+    'app_name' => 'MyApp',
+    'version' => '1.0.0',
+    'custom_setting' => 'value'  // Doesn't match any pattern - not allowed
+]); // false
+```
+
+## Unevaluated Items
+
+### Basic Unevaluated Items
+
+```php
+// Strict array validation - no unevaluated items allowed
+$strictArraySchema = SchemaFactory::array('tags', SchemaVersion::Draft_2019_09)
+    ->items(SchemaFactory::string())  // All items must be strings
+    ->maxItems(3)                     // Maximum 3 items
+    ->unevaluatedItems(false)         // No items beyond what's defined
+    ->description('Strict string array');
+
+// Valid data
+$strictArraySchema->isValid(['php', 'json', 'schema']); // true
+
+// Invalid data - would be allowed with additionalItems but not unevaluatedItems
+$strictArraySchema->isValid(['php', 'json', 'schema', 'extra']); // false
+```
+
+### Unevaluated Items with Schema
+
+```php
+$mixedArraySchema = SchemaFactory::array('mixed_data', SchemaVersion::Draft_2019_09)
+    ->items(
+        SchemaFactory::string(),   // First item: string
+        SchemaFactory::integer()   // Second item: integer
+    )
+    ->unevaluatedItems(
+        SchemaFactory::boolean()   // Any additional items must be boolean
+    )
+    ->description('Array with typed prefix and boolean extras');
+
+// Valid data
+$mixedArraySchema->isValid(['name', 42]);                    // true
+$mixedArraySchema->isValid(['name', 42, true, false]);       // true
+$mixedArraySchema->isValid(['name', 42, true, false, true]); // true
+
+// Invalid data
+$mixedArraySchema->isValid(['name', 42, 'extra']);           // false (string not boolean)
+$mixedArraySchema->isValid(['name', 42, 123]);               // false (number not boolean)
+```
+
+## Complex Conditional Scenarios
+
+Unevaluated properties shine in complex conditional schemas:
+
+```php
+$conditionalUserSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    ->properties(
+        SchemaFactory::string('type')->enum(['basic', 'premium', 'admin']),
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required()
+    )
+    // Different properties for different user types
+    ->if(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('type')->const('premium')
+        )
+    )
+    ->then(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('subscription_id')->required(),
+            SchemaFactory::string('billing_cycle')->enum(['monthly', 'yearly'])
+        )
+    )
+    ->if(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('type')->const('admin')
+        )
+    )
+    ->then(
+        SchemaFactory::object()->properties(
+            SchemaFactory::array('permissions')
+                ->items(SchemaFactory::string())
+                ->required(),
+            SchemaFactory::string('admin_level')->enum(['super', 'limited'])
+        )
+    )
+    // No other properties allowed beyond what's conditionally evaluated
+    ->unevaluatedProperties(false)
+    ->description('User with type-specific properties');
+
+// Valid premium user
+$conditionalUserSchema->isValid([
+    'type' => 'premium',
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'subscription_id' => 'sub_123',
+    'billing_cycle' => 'monthly'
+]); // true
+
+// Invalid - has property not defined for basic user
+$conditionalUserSchema->isValid([
+    'type' => 'basic',
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'subscription_id' => 'sub_123'  // Not allowed for basic user
+]); // false
+```
+
+## Difference from Additional Properties
+
+Understanding the difference between `additionalProperties` and `unevaluatedProperties`:
+
+### Traditional Additional Properties
+
+```php
+$traditionalSchema = SchemaFactory::object('user', SchemaVersion::Draft_07)
+    ->properties(
+        SchemaFactory::string('name')->required()
+    )
+    ->additionalProperties(false);  // No additional properties
+```
+
+### Unevaluated Properties
+
+```php
+$modernSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    ->properties(
+        SchemaFactory::string('name')->required()
+    )
+    ->unevaluatedProperties(false);  // No unevaluated properties
+```
+
+The key difference appears in complex schemas with conditionals:
+
+```php
+$complexSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    ->properties(
+        SchemaFactory::string('type')->required(),
+        SchemaFactory::string('name')->required()
+    )
+    ->if(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('type')->const('premium')
+        )
+    )
+    ->then(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('subscription_id')->required()
+        )
+    )
+    // additionalProperties(false) would prevent 'subscription_id'
+    // unevaluatedProperties(false) allows conditionally evaluated properties
+    ->unevaluatedProperties(false);
+```
+
+## Real-World Example: API Response Schema
+
+```php
+$apiResponseSchema = SchemaFactory::object('api_response', SchemaVersion::Draft_2019_09)
+    ->properties(
+        SchemaFactory::boolean('success')->required(),
+        SchemaFactory::string('message'),
+        SchemaFactory::integer('status_code')->required()
+    )
+    // Success responses have data
+    ->if(
+        SchemaFactory::object()->properties(
+            SchemaFactory::boolean('success')->const(true)
+        )
+    )
+    ->then(
+        SchemaFactory::object()->properties(
+            SchemaFactory::union([SchemaType::Object, SchemaType::Array], 'data')
+                ->description('Response data on success')
+        )
+    )
+    // Error responses have error details
+    ->if(
+        SchemaFactory::object()->properties(
+            SchemaFactory::boolean('success')->const(false)
+        )
+    )
+    ->then(
+        SchemaFactory::object()->properties(
+            SchemaFactory::object('error')
+                ->properties(
+                    SchemaFactory::string('code')->required(),
+                    SchemaFactory::string('details'),
+                    SchemaFactory::array('validation_errors')
+                        ->items(SchemaFactory::string())
+                )
+                ->required()
+        )
+    )
+    // No other properties beyond what's conditionally defined
+    ->unevaluatedProperties(false)
+    ->description('Strict API response with conditional properties');
+
+// Valid success response
+$apiResponseSchema->isValid([
+    'success' => true,
+    'status_code' => 200,
+    'message' => 'Operation completed',
+    'data' => ['result' => 'success']
+]); // true
+
+// Valid error response
+$apiResponseSchema->isValid([
+    'success' => false,
+    'status_code' => 400,
+    'message' => 'Validation failed',
+    'error' => [
+        'code' => 'VALIDATION_ERROR',
+        'details' => 'Required fields missing',
+        'validation_errors' => ['name is required', 'email is required']
+    ]
+]); // true
+
+// Invalid - mixing success and error properties
+$apiResponseSchema->isValid([
+    'success' => true,
+    'status_code' => 200,
+    'data' => ['result' => 'success'],
+    'error' => ['code' => 'ERROR']  // Not allowed for success response
+]); // false
+```
+
+## Performance Considerations
+
+<Warning>
+Unevaluated properties require more complex evaluation than traditional `additionalProperties`, which may impact validation performance for very large or deeply nested objects.
+</Warning>
+
+```php
+// For simple cases, prefer additionalProperties
+$simpleSchema = SchemaFactory::object('simple')
+    ->properties(
+        SchemaFactory::string('name')->required()
+    )
+    ->additionalProperties(false);  // Simple and fast
+
+// Use unevaluatedProperties for complex conditional schemas
+$complexSchema = SchemaFactory::object('complex', SchemaVersion::Draft_2019_09)
+    ->properties(/* base properties */)
+    ->if(/* condition */)
+    ->then(/* conditional properties */)
+    ->unevaluatedProperties(false);  // Necessary for complex logic
+```
+
+## Best Practices
+
+### 1. Use with Conditional Schemas
+
+```php
+// Good: Unevaluated properties with conditional logic
+$schema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    ->properties(/* base properties */)
+    ->if(/* condition */)
+    ->then(/* additional properties */)
+    ->unevaluatedProperties(false);
+```
+
+### 2. Combine with Pattern Properties
+
+```php
+// Good: Control both pattern and additional properties
+$schema = SchemaFactory::object('config', SchemaVersion::Draft_2019_09)
+    ->properties(/* known properties */)
+    ->patternProperties(/* pattern-based properties */)
+    ->unevaluatedProperties(SchemaFactory::string());  // Validate remaining
+```
+
+### 3. Document the Behavior
+
+```php
+$schema = SchemaFactory::object('strict_user', SchemaVersion::Draft_2019_09)
+    ->properties(/* properties */)
+    ->unevaluatedProperties(false)
+    ->description('Strict user object - only defined and conditionally evaluated properties allowed');
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Strict API Contracts" icon="shield-check">
+    Ensure API requests/responses contain only expected properties, even with conditional fields.
+  </Card>
+  <Card title="Configuration Validation" icon="gear">
+    Validate configuration files with complex conditional requirements and strict property control.
+  </Card>
+  <Card title="Form Validation" icon="file-text">
+    Handle dynamic forms where available fields depend on user selections or conditions.
+  </Card>
+  <Card title="Data Migration" icon="exchange-alt">
+    Validate data during migration with strict control over allowed properties and transformations.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Dependent Schemas"
+    icon="link"
+    href="/advanced/dependent-schemas"
+  >
+    Learn about property-dependent validation in modern JSON Schema
+  </Card>
+  <Card
+    title="Version Features"
+    icon="code-branch"
+    href="/validation/version-features"
+  >
+    Understand JSON Schema version compatibility and feature support
+  </Card>
+</CardGroup>

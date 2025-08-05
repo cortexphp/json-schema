@@ -1,0 +1,368 @@
+---
+title: Null Schema
+description: 'Null value validation for explicitly empty fields'
+---
+
+Null schemas provide validation for explicit null values, useful for representing absent or empty data in JSON structures.
+
+## Basic Null Schema
+
+```php
+use Cortex\JsonSchema\SchemaFactory;
+
+$deletedAtSchema = SchemaFactory::null('deleted_at')
+    ->description('Timestamp when record was deleted (null if not deleted)');
+
+$deletedAtSchema->isValid(null);    // true
+$deletedAtSchema->isValid(false);   // false (boolean, not null)
+$deletedAtSchema->isValid(0);       // false (integer, not null)
+$deletedAtSchema->isValid('');      // false (string, not null)
+$deletedAtSchema->isValid([]);      // false (array, not null)
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "null",
+    "title": "deleted_at",
+    "description": "Timestamp when record was deleted (null if not deleted)"
+}
+```
+</Accordion>
+
+## When to Use Null Schemas
+
+Null schemas are primarily useful in specific scenarios:
+
+### 1. Soft Delete Patterns
+
+```php
+$recordSchema = SchemaFactory::object('record')
+    ->properties(
+        SchemaFactory::string('id')->required(),
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('created_at')->required(),
+
+        // Null when not deleted, timestamp when deleted
+        SchemaFactory::null('deleted_at')
+            ->description('Soft delete timestamp')
+    );
+
+// Active record
+$recordSchema->isValid([
+    'id' => '123',
+    'name' => 'Active Record',
+    'created_at' => '2023-01-01T00:00:00Z',
+    'deleted_at' => null
+]); // true
+
+// Note: For actual soft delete, you'd typically use a union type
+// to allow both null and timestamp values
+```
+
+### 2. Optional References
+
+```php
+$userSchema = SchemaFactory::object('user')
+    ->properties(
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::string('email')->required(),
+
+        // Optional manager reference (null if no manager)
+        SchemaFactory::null('manager_id')
+            ->description('ID of manager (null for top-level users)')
+    );
+```
+
+### 3. Placeholder Values
+
+```php
+$configSchema = SchemaFactory::object('config')
+    ->properties(
+        SchemaFactory::string('app_name')->required(),
+
+        // Null indicates system should auto-detect
+        SchemaFactory::null('timezone')
+            ->description('Timezone override (null for auto-detection)')
+    );
+```
+
+## Null in Practice - Union Types
+
+<Info>
+In practice, null schemas are more commonly used as part of union types to represent optional values that can be either null or another type.
+</Info>
+
+### Nullable String
+
+```php
+use Cortex\JsonSchema\Enums\SchemaType;
+
+$nullableStringSchema = SchemaFactory::union([SchemaType::String, SchemaType::Null], 'optional_field')
+    ->description('String value or null');
+
+$nullableStringSchema->isValid('hello');  // true
+$nullableStringSchema->isValid(null);     // true
+$nullableStringSchema->isValid(123);      // false (not string or null)
+
+// Shorter syntax using nullable()
+$shortNullableSchema = SchemaFactory::string('optional_field')
+    ->nullable()
+    ->description('String value or null');
+```
+
+### Nullable Object
+
+```php
+$addressSchema = SchemaFactory::object('address')
+    ->properties(
+        SchemaFactory::string('street')->required(),
+        SchemaFactory::string('city')->required()
+    );
+
+$userSchema = SchemaFactory::object('user')
+    ->properties(
+        SchemaFactory::string('name')->required(),
+
+        // Address can be null or a full address object
+        SchemaFactory::union([SchemaType::Object, SchemaType::Null], 'address')
+            ->oneOf($addressSchema, SchemaFactory::null())
+            ->description('User address (null if not provided)')
+    );
+```
+
+## Complex Examples
+
+### API Response with Nullable Fields
+
+```php
+$apiResponseSchema = SchemaFactory::object('api_response')
+    ->properties(
+        SchemaFactory::string('status')->required(),
+        SchemaFactory::string('message'),
+
+        // Data can be object, array, or null
+        SchemaFactory::union([SchemaType::Object, SchemaType::Array, SchemaType::Null], 'data')
+            ->description('Response data (null on error)'),
+
+        // Error details (null on success)
+        SchemaFactory::union([SchemaType::Object, SchemaType::Null], 'error')
+            ->description('Error information (null on success)'),
+
+        // Pagination info (null for non-paginated responses)
+        SchemaFactory::union([SchemaType::Object, SchemaType::Null], 'pagination')
+            ->description('Pagination metadata (null if not applicable)')
+    );
+```
+
+### Database Record with Nullable Foreign Keys
+
+```php
+$orderSchema = SchemaFactory::object('order')
+    ->properties(
+        SchemaFactory::integer('id')->required(),
+        SchemaFactory::integer('customer_id')->required(),
+        SchemaFactory::number('total')->required(),
+
+        // Optional foreign key relationships
+        SchemaFactory::union([SchemaType::Integer, SchemaType::Null], 'coupon_id')
+            ->description('Applied coupon ID (null if no coupon)'),
+
+        SchemaFactory::union([SchemaType::Integer, SchemaType::Null], 'assigned_rep_id')
+            ->description('Sales representative ID (null if unassigned)'),
+
+        // Timestamps that can be null
+        SchemaFactory::union([SchemaType::String, SchemaType::Null], 'shipped_at')
+            ->description('Shipping timestamp (null if not shipped)'),
+
+        SchemaFactory::union([SchemaType::String, SchemaType::Null], 'delivered_at')
+            ->description('Delivery timestamp (null if not delivered)')
+    );
+```
+
+## Validation with Null Types
+
+### Strict Null Validation
+
+```php
+$strictNullSchema = SchemaFactory::null('must_be_null');
+
+// Only null is valid
+$strictNullSchema->isValid(null);      // true
+$strictNullSchema->isValid(false);     // false
+$strictNullSchema->isValid(0);         // false
+$strictNullSchema->isValid('');        // false
+$strictNullSchema->isValid('null');    // false
+$strictNullSchema->isValid(undefined); // false (in JavaScript context)
+```
+
+### Conditional Null Validation
+
+```php
+$conditionalSchema = SchemaFactory::object('conditional_data')
+    ->properties(
+        SchemaFactory::string('type')->enum(['active', 'deleted']),
+        SchemaFactory::string('name')->required(),
+        SchemaFactory::union([SchemaType::String, SchemaType::Null], 'deleted_reason')
+    )
+    // If type is 'deleted', deleted_reason cannot be null
+    ->if(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('type')->const('deleted')
+        )
+    )
+    ->then(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('deleted_reason')
+                ->minLength(1)
+                ->description('Must provide deletion reason')
+        )
+    )
+    // If type is 'active', deleted_reason must be null
+    ->else(
+        SchemaFactory::object()->properties(
+            SchemaFactory::null('deleted_reason')
+                ->description('Must be null for active records')
+        )
+    );
+```
+
+## Error Messages
+
+Null validation provides clear error messages:
+
+```php
+$nullSchema = SchemaFactory::null('field');
+
+try {
+    $nullSchema->validate('not null');
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must be null"
+}
+
+try {
+    $nullSchema->validate(false);
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must be null"
+}
+```
+
+## Null vs Undefined vs Empty
+
+<Warning>
+Be aware of the distinction between null, undefined, and empty values in different contexts:
+</Warning>
+
+```php
+// Null schema only accepts explicit null
+$nullSchema = SchemaFactory::null('field');
+
+// In PHP context:
+$nullSchema->isValid(null);     // true
+$nullSchema->isValid(false);    // false
+$nullSchema->isValid(0);        // false
+$nullSchema->isValid('');       // false
+$nullSchema->isValid([]);       // false
+
+// For optional fields that can be missing, use:
+$optionalSchema = SchemaFactory::object('data')
+    ->properties(
+        SchemaFactory::string('required_field')->required(),
+        SchemaFactory::string('optional_field')  // Not required, can be omitted
+    );
+
+// For fields that can be null OR another type:
+$nullableSchema = SchemaFactory::string('nullable_field')->nullable();
+```
+
+## Best Practices
+
+### 1. Use Union Types for Nullable Fields
+
+```php
+// Good: Explicit about null being allowed
+$goodSchema = SchemaFactory::string('name')->nullable();
+
+// Less clear: Separate null schema
+$lessGoodSchema = SchemaFactory::null('name');
+```
+
+### 2. Document Null Semantics
+
+```php
+$userSchema = SchemaFactory::object('user')
+    ->properties(
+        SchemaFactory::string('name')->required(),
+
+        SchemaFactory::string('avatar_url')
+            ->nullable()
+            ->description('Profile picture URL (null if using default avatar)'),
+
+        SchemaFactory::string('last_login')
+            ->nullable()
+            ->description('Last login timestamp (null if never logged in)')
+    );
+```
+
+### 3. Use Conditional Logic for Null Constraints
+
+```php
+$processedDataSchema = SchemaFactory::object('processed_data')
+    ->properties(
+        SchemaFactory::boolean('is_processed')->required(),
+        SchemaFactory::string('processed_at')->nullable(),
+        SchemaFactory::string('error_message')->nullable()
+    )
+    // If processed, must have timestamp
+    ->if(
+        SchemaFactory::object()->properties(
+            SchemaFactory::boolean('is_processed')->const(true)
+        )
+    )
+    ->then(
+        SchemaFactory::object()->properties(
+            SchemaFactory::string('processed_at')
+                ->minLength(1)
+                ->description('Must have processing timestamp'),
+            SchemaFactory::null('error_message')
+                ->description('No error on successful processing')
+        )
+    );
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Soft Deletes" icon="trash">
+    Represent deleted records with null timestamps or nullable foreign keys.
+  </Card>
+  <Card title="Optional References" icon="link">
+    Handle optional relationships and foreign key references that may not exist.
+  </Card>
+  <Card title="Conditional Fields" icon="question-circle">
+    Represent fields that are only relevant under certain conditions.
+  </Card>
+  <Card title="API Responses" icon="server">
+    Handle API fields that may not be present or applicable in all responses.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Union Schema"
+    icon="code-merge"
+    href="/schema-types/union"
+  >
+    Learn about combining multiple types including null
+  </Card>
+  <Card
+    title="Conditional Validation"
+    icon="code-branch"
+    href="/advanced/conditional-validation"
+  >
+    Use null in conditional schema logic
+  </Card>
+</CardGroup>
