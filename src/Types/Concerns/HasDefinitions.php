@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Types\Concerns;
 
-use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaFeature;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 
 trait HasDefinitions
 {
     /**
-     * @var array<string, Schema>
+     * @var array<string, JsonSchema>
      */
     protected array $definitions = [];
 
     /**
      * Add a definition to the schema.
      */
-    public function addDefinition(string $name, Schema $schema): static
+    public function addDefinition(string $name, JsonSchema $jsonSchema): static
     {
-        $this->definitions[$name] = $schema;
+        $this->definitions[$name] = $jsonSchema;
 
         return $this;
     }
@@ -27,7 +27,7 @@ trait HasDefinitions
     /**
      * Add multiple definitions to the schema.
      *
-     * @param array<string, \Cortex\JsonSchema\Contracts\Schema> $definitions
+     * @param array<string, \Cortex\JsonSchema\Contracts\JsonSchema> $definitions
      */
     public function addDefinitions(array $definitions): static
     {
@@ -41,7 +41,7 @@ trait HasDefinitions
     /**
      * Get a definition from the schema.
      */
-    public function getDefinition(string $name): ?Schema
+    public function getDefinition(string $name): ?JsonSchema
     {
         return $this->definitions[$name] ?? null;
     }

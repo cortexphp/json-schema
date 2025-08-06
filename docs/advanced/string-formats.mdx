@@ -8,10 +8,10 @@ String formats provide built-in validation for common data types like emails, UR
 ## Basic Format Usage
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 
-$emailSchema = SchemaFactory::string('email')
+$emailSchema = Schema::string('email')
     ->format(SchemaFormat::Email)
     ->required();
 
@@ -24,7 +24,7 @@ $emailSchema->isValid('invalid-email');     // false
 ### Standard Email (`Email`)
 
 ```php
-$emailSchema = SchemaFactory::string('email')
+$emailSchema = Schema::string('email')
     ->format(SchemaFormat::Email)
     ->description('Standard email address');
 
@@ -48,7 +48,7 @@ Available in JSON Schema Draft 2019-09 and later.
 ```php
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
-$idnEmailSchema = SchemaFactory::string('idn_email', SchemaVersion::Draft_2019_09)
+$idnEmailSchema = Schema::string('idn_email', SchemaVersion::Draft_2019_09)
     ->format(SchemaFormat::IdnEmail)
     ->description('Internationalized email address');
 
@@ -63,7 +63,7 @@ $idnEmailSchema->isValid('user@example.com');      // true (regular emails work 
 ### URI (`Uri`)
 
 ```php
-$uriSchema = SchemaFactory::string('website')
+$uriSchema = Schema::string('website')
     ->format(SchemaFormat::Uri)
     ->description('URI reference');
 
@@ -87,7 +87,7 @@ Available in JSON Schema Draft 2019-09 and later.
 </Note>
 
 ```php
-$iriSchema = SchemaFactory::string('iri', SchemaVersion::Draft_2019_09)
+$iriSchema = Schema::string('iri', SchemaVersion::Draft_2019_09)
     ->format(SchemaFormat::Iri)
     ->description('Internationalized Resource Identifier');
 
@@ -100,7 +100,7 @@ $iriSchema->isValid('https://example.com');          // true
 ### IRI Reference (`IriReference`)
 
 ```php
-$iriRefSchema = SchemaFactory::string('iri_ref', SchemaVersion::Draft_2019_09)
+$iriRefSchema = Schema::string('iri_ref', SchemaVersion::Draft_2019_09)
     ->format(SchemaFormat::IriReference)
     ->description('IRI reference including relative IRIs');
 
@@ -115,7 +115,7 @@ $iriRefSchema->isValid('https://例え.テスト');         // true
 ### Hostname (`Hostname`)
 
 ```php
-$hostnameSchema = SchemaFactory::string('hostname')
+$hostnameSchema = Schema::string('hostname')
     ->format(SchemaFormat::Hostname)
     ->description('Internet hostname');
 
@@ -134,7 +134,7 @@ $hostnameSchema->isValid('192.168.1.1');            // false (IP address)
 ### Internationalized Hostname (`IdnHostname`)
 
 ```php
-$idnHostnameSchema = SchemaFactory::string('idn_hostname', SchemaVersion::Draft_2019_09)
+$idnHostnameSchema = Schema::string('idn_hostname', SchemaVersion::Draft_2019_09)
     ->format(SchemaFormat::IdnHostname)
     ->description('Internationalized hostname');
 
@@ -147,7 +147,7 @@ $idnHostnameSchema->isValid('example.com');         // true
 ### IPv4 Address (`Ipv4`)
 
 ```php
-$ipv4Schema = SchemaFactory::string('ipv4')
+$ipv4Schema = Schema::string('ipv4')
     ->format(SchemaFormat::Ipv4)
     ->description('IPv4 address');
 
@@ -166,7 +166,7 @@ $ipv4Schema->isValid('192.168.1.1.1');              // false (too many octets)
 ### IPv6 Address (`Ipv6`)
 
 ```php
-$ipv6Schema = SchemaFactory::string('ipv6')
+$ipv6Schema = Schema::string('ipv6')
     ->format(SchemaFormat::Ipv6)
     ->description('IPv6 address');
 
@@ -186,7 +186,7 @@ $ipv6Schema->isValid('invalid');                     // false
 ### Date (`Date`)
 
 ```php
-$dateSchema = SchemaFactory::string('birth_date')
+$dateSchema = Schema::string('birth_date')
     ->format(SchemaFormat::Date)
     ->description('Full date (RFC 3339)');
 
@@ -205,7 +205,7 @@ $dateSchema->isValid('2023/12/25');                  // false (wrong separator)
 ### Time (`Time`)
 
 ```php
-$timeSchema = SchemaFactory::string('appointment_time')
+$timeSchema = Schema::string('appointment_time')
     ->format(SchemaFormat::Time)
     ->description('Time (RFC 3339)');
 
@@ -225,7 +225,7 @@ $timeSchema->isValid('2:30:00');                     // false (single digit hour
 ### Date-Time (`DateTime`)
 
 ```php
-$dateTimeSchema = SchemaFactory::string('created_at')
+$dateTimeSchema = Schema::string('created_at')
     ->format(SchemaFormat::DateTime)
     ->description('Date and time (RFC 3339)');
 
@@ -248,7 +248,7 @@ Available in JSON Schema Draft 2019-09 and later.
 </Note>
 
 ```php
-$durationSchema = SchemaFactory::string('duration', SchemaVersion::Draft_2019_09)
+$durationSchema = Schema::string('duration', SchemaVersion::Draft_2019_09)
     ->format(SchemaFormat::Duration)
     ->description('ISO 8601 duration');
 
@@ -270,7 +270,7 @@ $durationSchema->isValid('PT');                      // false (empty time part)
 ### JSON Pointer (`JsonPointer`)
 
 ```php
-$jsonPointerSchema = SchemaFactory::string('json_pointer')
+$jsonPointerSchema = Schema::string('json_pointer')
     ->format(SchemaFormat::JsonPointer)
     ->description('JSON Pointer reference');
 
@@ -288,7 +288,7 @@ $jsonPointerSchema->isValid('/users/123/');          // false (trailing slash)
 ### Relative JSON Pointer (`RelativeJsonPointer`)
 
 ```php
-$relativeJsonPointerSchema = SchemaFactory::string('relative_json_pointer')
+$relativeJsonPointerSchema = Schema::string('relative_json_pointer')
     ->format(SchemaFormat::RelativeJsonPointer)
     ->description('Relative JSON Pointer');
 
@@ -305,7 +305,7 @@ $relativeJsonPointerSchema->isValid('-1/name');      // false (negative index)
 ### URI Template (`UriTemplate`)
 
 ```php
-$uriTemplateSchema = SchemaFactory::string('uri_template')
+$uriTemplateSchema = Schema::string('uri_template')
     ->format(SchemaFormat::UriTemplate)
     ->description('URI Template (RFC 6570)');
 
@@ -328,7 +328,7 @@ Available in JSON Schema Draft 2019-09 and later.
 </Note>
 
 ```php
-$uuidSchema = SchemaFactory::string('id', SchemaVersion::Draft_2019_09)
+$uuidSchema = Schema::string('id', SchemaVersion::Draft_2019_09)
     ->format(SchemaFormat::Uuid)
     ->description('Universally Unique Identifier');
 
@@ -349,49 +349,49 @@ $uuidSchema->isValid('not-a-uuid');                          // false
 ### Real-World Schema with Multiple Formats
 
 ```php
-$userProfileSchema = SchemaFactory::object('user_profile')
+$userProfileSchema = Schema::object('user_profile')
     ->properties(
         // Contact information
-        SchemaFactory::string('email')
+        Schema::string('email')
             ->format(SchemaFormat::Email)
             ->required()
             ->description('User email address'),
 
-        SchemaFactory::string('website')
+        Schema::string('website')
             ->format(SchemaFormat::Uri)
             ->description('Personal website URL'),
 
-        SchemaFactory::string('phone')
+        Schema::string('phone')
             ->pattern('^\+\d{1,3}-\d{3,4}-\d{6,8}$')  // Custom pattern for phone
             ->description('International phone number'),
 
         // Timestamps
-        SchemaFactory::string('created_at')
+        Schema::string('created_at')
             ->format(SchemaFormat::DateTime)
             ->readOnly()
             ->description('Account creation timestamp'),
 
-        SchemaFactory::string('birth_date')
+        Schema::string('birth_date')
             ->format(SchemaFormat::Date)
             ->description('Date of birth'),
 
         // Identifiers
-        SchemaFactory::string('user_id', SchemaVersion::Draft_2019_09)
+        Schema::string('user_id', SchemaVersion::Draft_2019_09)
             ->format(SchemaFormat::Uuid)
             ->readOnly()
             ->description('Unique user identifier'),
 
         // Network information
-        SchemaFactory::string('last_ip')
+        Schema::string('last_ip')
             ->anyOf(
-                SchemaFactory::string()->format(SchemaFormat::Ipv4),
-                SchemaFactory::string()->format(SchemaFormat::Ipv6)
+                Schema::string()->format(SchemaFormat::Ipv4),
+                Schema::string()->format(SchemaFormat::Ipv6)
             )
             ->readOnly()
             ->description('Last known IP address'),
 
         // Duration fields
-        SchemaFactory::string('session_duration', SchemaVersion::Draft_2019_09)
+        Schema::string('session_duration', SchemaVersion::Draft_2019_09)
             ->format(SchemaFormat::Duration)
             ->readOnly()
             ->description('Total session duration')
@@ -420,15 +420,15 @@ Use formats for standard data types and patterns for custom validation rules.
 
 ```php
 // Good: Use format for standard email validation
-$emailSchema = SchemaFactory::string('email')
+$emailSchema = Schema::string('email')
     ->format(SchemaFormat::Email);
 
 // Less ideal: Custom email pattern (unless you need specific rules)
-$customEmailSchema = SchemaFactory::string('email')
+$customEmailSchema = Schema::string('email')
     ->pattern('^[^@]+@[^@]+\.[^@]+$');  // Simplified, less robust
 
 // Good: Use pattern for custom formats
-$productCodeSchema = SchemaFactory::string('product_code')
+$productCodeSchema = Schema::string('product_code')
     ->pattern('^[A-Z]{3}-\d{4}-[A-Z]{2}$')  // Custom business format
     ->description('Product code format: ABC-1234-XY');
 ```
@@ -438,7 +438,7 @@ $productCodeSchema = SchemaFactory::string('product_code')
 Format validation provides specific error messages:
 
 ```php
-$emailSchema = SchemaFactory::string('email')->format(SchemaFormat::Email);
+$emailSchema = Schema::string('email')->format(SchemaFormat::Email);
 
 try {
     $emailSchema->validate('invalid-email');
@@ -446,7 +446,7 @@ try {
     echo $e->getMessage(); // "Value must match the 'email' format"
 }
 
-$dateSchema = SchemaFactory::string('date')->format(SchemaFormat::Date);
+$dateSchema = Schema::string('date')->format(SchemaFormat::Date);
 
 try {
     $dateSchema->validate('2023-13-01');

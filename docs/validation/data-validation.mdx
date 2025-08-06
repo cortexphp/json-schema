@@ -10,10 +10,10 @@ Data validation is the core functionality of JSON Schema. Learn how to validate 
 Every schema provides two primary validation methods:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-$schema = SchemaFactory::string('name')
+$schema = Schema::string('name')
     ->minLength(2)
     ->maxLength(50)
     ->required();
@@ -36,7 +36,7 @@ try {
 The `isValid()` method is perfect for simple true/false validation:
 
 ```php
-$emailSchema = SchemaFactory::string('email')
+$emailSchema = Schema::string('email')
     ->format(SchemaFormat::Email)
     ->required();
 
@@ -59,11 +59,11 @@ foreach ($emails as $email) {
 ### Conditional Logic with isValid()
 
 ```php
-$userSchema = SchemaFactory::object('user')
+$userSchema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::integer('age')->minimum(18)->required(),
-        SchemaFactory::string('email')->format(SchemaFormat::Email)->required()
+        Schema::string('name')->required(),
+        Schema::integer('age')->minimum(18)->required(),
+        Schema::string('email')->format(SchemaFormat::Email)->required()
     );
 
 $userData = [
@@ -86,18 +86,18 @@ if ($userSchema->isValid($userData)) {
 The `validate()` method throws descriptive exceptions when validation fails:
 
 ```php
-$productSchema = SchemaFactory::object('product')
+$productSchema = Schema::object('product')
     ->properties(
-        SchemaFactory::string('name')
+        Schema::string('name')
             ->minLength(1)
             ->maxLength(100)
             ->required(),
-        SchemaFactory::number('price')
+        Schema::number('price')
             ->minimum(0)
             ->multipleOf(0.01)
             ->required(),
-        SchemaFactory::array('tags')
-            ->items(SchemaFactory::string())
+        Schema::array('tags')
+            ->items(Schema::string())
             ->maxItems(10)
     )
     ->additionalProperties(false);
@@ -126,22 +126,22 @@ try {
 ### Object Validation
 
 ```php
-$orderSchema = SchemaFactory::object('order')
+$orderSchema = Schema::object('order')
     ->properties(
-        SchemaFactory::string('id')->required(),
-        SchemaFactory::object('customer')
+        Schema::string('id')->required(),
+        Schema::object('customer')
             ->properties(
-                SchemaFactory::string('name')->required(),
-                SchemaFactory::string('email')->format(SchemaFormat::Email)->required()
+                Schema::string('name')->required(),
+                Schema::string('email')->format(SchemaFormat::Email)->required()
             )
             ->required(),
-        SchemaFactory::array('items')
+        Schema::array('items')
             ->items(
-                SchemaFactory::object()
+                Schema::object()
                     ->properties(
-                        SchemaFactory::string('sku')->required(),
-                        SchemaFactory::integer('quantity')->minimum(1)->required(),
-                        SchemaFactory::number('price')->minimum(0)->required()
+                        Schema::string('sku')->required(),
+                        Schema::integer('quantity')->minimum(1)->required(),
+                        Schema::number('price')->minimum(0)->required()
                     )
             )
             ->minItems(1)
@@ -182,16 +182,16 @@ if ($orderSchema->isValid($orderData)) {
 ### Array Validation
 
 ```php
-$scoresSchema = SchemaFactory::array('test_scores')
+$scoresSchema = Schema::array('test_scores')
     ->items(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('student_id')->required(),
-                SchemaFactory::integer('score')
+                Schema::string('student_id')->required(),
+                Schema::integer('score')
                     ->minimum(0)
                     ->maximum(100)
                     ->required(),
-                SchemaFactory::string('subject')
+                Schema::string('subject')
                     ->enum(['math', 'science', 'english', 'history'])
                     ->required()
             )
@@ -226,21 +226,21 @@ try {
 
 ```php
 function validateRegistrationForm(array $formData): array {
-    $registrationSchema = SchemaFactory::object('registration')
+    $registrationSchema = Schema::object('registration')
         ->properties(
-            SchemaFactory::string('username')
+            Schema::string('username')
                 ->pattern('^[a-zA-Z0-9_]{3,20}$')
                 ->required(),
-            SchemaFactory::string('email')
+            Schema::string('email')
                 ->format(SchemaFormat::Email)
                 ->required(),
-            SchemaFactory::string('password')
+            Schema::string('password')
                 ->minLength(8)
                 ->pattern('(?=.*[a-z])(?=.*[A-Z])(?=.*\d)')
                 ->required(),
-            SchemaFactory::string('confirm_password')
+            Schema::string('confirm_password')
                 ->required(),
-            SchemaFactory::boolean('accept_terms')
+            Schema::boolean('accept_terms')
                 ->const(true)
                 ->required()
         );
@@ -287,30 +287,30 @@ if (empty($errors)) {
 ```php
 function validateApiRequest(string $endpoint, array $requestData): bool {
     $schemas = [
-        'POST:/users' => SchemaFactory::object('create_user')
+        'POST:/users' => Schema::object('create_user')
             ->properties(
-                SchemaFactory::string('name')->required(),
-                SchemaFactory::string('email')->format(SchemaFormat::Email)->required(),
-                SchemaFactory::string('role')->enum(['user', 'admin'])->default('user')
+                Schema::string('name')->required(),
+                Schema::string('email')->format(SchemaFormat::Email)->required(),
+                Schema::string('role')->enum(['user', 'admin'])->default('user')
             ),
 
-        'PUT:/users/{id}' => SchemaFactory::object('update_user')
+        'PUT:/users/{id}' => Schema::object('update_user')
             ->properties(
-                SchemaFactory::string('name'),
-                SchemaFactory::string('email')->format(SchemaFormat::Email),
-                SchemaFactory::string('role')->enum(['user', 'admin'])
+                Schema::string('name'),
+                Schema::string('email')->format(SchemaFormat::Email),
+                Schema::string('role')->enum(['user', 'admin'])
             )
             ->minProperties(1),  // At least one field must be provided
 
-        'POST:/orders' => SchemaFactory::object('create_order')
+        'POST:/orders' => Schema::object('create_order')
             ->properties(
-                SchemaFactory::string('customer_id')->required(),
-                SchemaFactory::array('items')
+                Schema::string('customer_id')->required(),
+                Schema::array('items')
                     ->items(
-                        SchemaFactory::object()
+                        Schema::object()
                             ->properties(
-                                SchemaFactory::string('product_id')->required(),
-                                SchemaFactory::integer('quantity')->minimum(1)->required()
+                                Schema::string('product_id')->required(),
+                                Schema::integer('quantity')->minimum(1)->required()
                             )
                     )
                     ->minItems(1)
@@ -346,36 +346,36 @@ try {
 
 ```php
 function validateConfiguration(array $config): void {
-    $configSchema = SchemaFactory::object('app_config')
+    $configSchema = Schema::object('app_config')
         ->properties(
-            SchemaFactory::string('app_name')
+            Schema::string('app_name')
                 ->minLength(1)
                 ->required(),
-            SchemaFactory::string('environment')
+            Schema::string('environment')
                 ->enum(['development', 'staging', 'production'])
                 ->required(),
-            SchemaFactory::object('database')
+            Schema::object('database')
                 ->properties(
-                    SchemaFactory::string('host')->required(),
-                    SchemaFactory::integer('port')
+                    Schema::string('host')->required(),
+                    Schema::integer('port')
                         ->minimum(1)
                         ->maximum(65535)
                         ->default(3306),
-                    SchemaFactory::string('username')->required(),
-                    SchemaFactory::string('password')->required(),
-                    SchemaFactory::string('database')->required()
+                    Schema::string('username')->required(),
+                    Schema::string('password')->required(),
+                    Schema::string('database')->required()
                 )
                 ->required(),
-            SchemaFactory::object('cache')
+            Schema::object('cache')
                 ->properties(
-                    SchemaFactory::string('driver')
+                    Schema::string('driver')
                         ->enum(['redis', 'memcached', 'file'])
                         ->default('file'),
-                    SchemaFactory::string('host')->default('localhost'),
-                    SchemaFactory::integer('port')->minimum(1)
+                    Schema::string('host')->default('localhost'),
+                    Schema::integer('port')->minimum(1)
                 )
                 ->default([]),
-            SchemaFactory::boolean('debug')
+            Schema::boolean('debug')
                 ->default(false)
         )
         ->additionalProperties(false);
@@ -436,10 +436,10 @@ function validateBatch(Schema $schema, array $items): array {
     return $results;
 }
 
-$userSchema = SchemaFactory::object('user')
+$userSchema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::integer('age')->minimum(0)->required()
+        Schema::string('name')->required(),
+        Schema::integer('age')->minimum(0)->required()
     );
 
 $users = [
@@ -466,10 +466,10 @@ foreach ($results as $index => $result) {
 
 ```php
 // Good: Reuse schema objects
-$userSchema = SchemaFactory::object('user')
+$userSchema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->format(SchemaFormat::Email)->required()
+        Schema::string('name')->required(),
+        Schema::string('email')->format(SchemaFormat::Email)->required()
     );
 
 // Validate multiple users with the same schema
@@ -481,7 +481,7 @@ foreach ($users as $user) {
 
 // Avoid: Creating new schemas for each validation
 foreach ($users as $user) {
-    $schema = SchemaFactory::object('user')...;  // Inefficient
+    $schema = Schema::object('user')...;  // Inefficient
     if ($schema->isValid($user)) {
         // Process user
     }

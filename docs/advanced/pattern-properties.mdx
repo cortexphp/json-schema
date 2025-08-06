@@ -10,17 +10,17 @@ Pattern properties allow you to validate object properties based on their names 
 Validate properties that match a specific naming pattern:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$configSchema = SchemaFactory::object('config')
+$configSchema = Schema::object('config')
     // Regular properties
     ->properties(
-        SchemaFactory::string('app_name')->required(),
-        SchemaFactory::string('version')->required()
+        Schema::string('app_name')->required(),
+        Schema::string('version')->required()
     )
     // Pattern-based properties
     ->patternProperty('^env_',  // Properties starting with 'env_'
-        SchemaFactory::string()
+        Schema::string()
             ->minLength(1)
             ->description('Environment variable')
     )
@@ -75,25 +75,25 @@ $configSchema->isValid([
 Define multiple patterns for different types of dynamic properties:
 
 ```php
-$flexibleApiSchema = SchemaFactory::object('api_config')
+$flexibleApiSchema = Schema::object('api_config')
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('version')->required()
+        Schema::string('name')->required(),
+        Schema::string('version')->required()
     )
     ->patternProperties([
-        '^header_' => SchemaFactory::string()
+        '^header_' => Schema::string()
             ->description('HTTP headers'),
 
-        '^param_' => SchemaFactory::union([SchemaType::String, SchemaType::Number])
+        '^param_' => Schema::union([SchemaType::String, SchemaType::Number])
             ->description('Query parameters'),
 
-        '^feature_' => SchemaFactory::boolean()
+        '^feature_' => Schema::boolean()
             ->description('Feature flags'),
 
-        '^\d+$' => SchemaFactory::object()
+        '^\d+$' => Schema::object()
             ->properties(
-                SchemaFactory::string('endpoint')->required(),
-                SchemaFactory::string('method')->enum(['GET', 'POST', 'PUT', 'DELETE'])
+                Schema::string('endpoint')->required(),
+                Schema::string('method')->enum(['GET', 'POST', 'PUT', 'DELETE'])
             )
             ->description('Numeric endpoint definitions')
     ])
@@ -120,48 +120,48 @@ $flexibleApiSchema->isValid([
 Create sophisticated validation rules for pattern-matched properties:
 
 ```php
-$dynamicFormSchema = SchemaFactory::object('dynamic_form')
+$dynamicFormSchema = Schema::object('dynamic_form')
     ->properties(
-        SchemaFactory::string('form_id')->required(),
-        SchemaFactory::string('title')->required()
+        Schema::string('form_id')->required(),
+        Schema::string('title')->required()
     )
     ->patternProperties([
         // Text input fields
-        '^field_text_' => SchemaFactory::object()
+        '^field_text_' => Schema::object()
             ->properties(
-                SchemaFactory::string('type')->const('text')->required(),
-                SchemaFactory::string('label')->required(),
-                SchemaFactory::string('placeholder'),
-                SchemaFactory::boolean('required')->default(false),
-                SchemaFactory::integer('max_length')->minimum(1)->maximum(1000)
+                Schema::string('type')->const('text')->required(),
+                Schema::string('label')->required(),
+                Schema::string('placeholder'),
+                Schema::boolean('required')->default(false),
+                Schema::integer('max_length')->minimum(1)->maximum(1000)
             )
             ->additionalProperties(false),
 
         // Number input fields
-        '^field_number_' => SchemaFactory::object()
+        '^field_number_' => Schema::object()
             ->properties(
-                SchemaFactory::string('type')->const('number')->required(),
-                SchemaFactory::string('label')->required(),
-                SchemaFactory::boolean('required')->default(false),
-                SchemaFactory::number('min_value'),
-                SchemaFactory::number('max_value'),
-                SchemaFactory::number('step')->exclusiveMinimum(0)
+                Schema::string('type')->const('number')->required(),
+                Schema::string('label')->required(),
+                Schema::boolean('required')->default(false),
+                Schema::number('min_value'),
+                Schema::number('max_value'),
+                Schema::number('step')->exclusiveMinimum(0)
             )
             ->additionalProperties(false),
 
         // Select/dropdown fields
-        '^field_select_' => SchemaFactory::object()
+        '^field_select_' => Schema::object()
             ->properties(
-                SchemaFactory::string('type')->const('select')->required(),
-                SchemaFactory::string('label')->required(),
-                SchemaFactory::boolean('required')->default(false),
-                SchemaFactory::boolean('multiple')->default(false),
-                SchemaFactory::array('options')
+                Schema::string('type')->const('select')->required(),
+                Schema::string('label')->required(),
+                Schema::boolean('required')->default(false),
+                Schema::boolean('multiple')->default(false),
+                Schema::array('options')
                     ->items(
-                        SchemaFactory::object()
+                        Schema::object()
                             ->properties(
-                                SchemaFactory::string('value')->required(),
-                                SchemaFactory::string('label')->required()
+                                Schema::string('value')->required(),
+                                Schema::string('label')->required()
                             )
                     )
                     ->minItems(1)
@@ -170,14 +170,14 @@ $dynamicFormSchema = SchemaFactory::object('dynamic_form')
             ->additionalProperties(false),
 
         // Validation rules pattern
-        '^validation_' => SchemaFactory::object()
+        '^validation_' => Schema::object()
             ->properties(
-                SchemaFactory::string('field_name')->required(),
-                SchemaFactory::string('rule_type')
+                Schema::string('field_name')->required(),
+                Schema::string('rule_type')
                     ->enum(['required', 'email', 'regex', 'min_length', 'max_length'])
                     ->required(),
-                SchemaFactory::string('message')->required(),
-                SchemaFactory::union([SchemaType::String, SchemaType::Number], 'parameter')
+                Schema::string('message')->required(),
+                Schema::union([SchemaType::String, SchemaType::Number], 'parameter')
             )
             ->additionalProperties(false)
     ])
@@ -222,29 +222,29 @@ $dynamicFormSchema->isValid([
 Pattern properties work alongside regular properties and additional properties:
 
 ```php
-$userProfileSchema = SchemaFactory::object('user_profile')
+$userProfileSchema = Schema::object('user_profile')
     // Fixed properties
     ->properties(
-        SchemaFactory::string('username')->required(),
-        SchemaFactory::string('email')->required(),
-        SchemaFactory::integer('age')->minimum(13)
+        Schema::string('username')->required(),
+        Schema::string('email')->required(),
+        Schema::integer('age')->minimum(13)
     )
     // Pattern properties for custom fields
     ->patternProperties([
-        '^custom_' => SchemaFactory::string()
+        '^custom_' => Schema::string()
             ->minLength(1)
             ->maxLength(255)
             ->description('Custom user fields'),
 
-        '^social_' => SchemaFactory::string()
+        '^social_' => Schema::string()
             ->format(SchemaFormat::Uri)
             ->description('Social media profiles'),
 
-        '^pref_' => SchemaFactory::union([SchemaType::String, SchemaType::Boolean, SchemaType::Number])
+        '^pref_' => Schema::union([SchemaType::String, SchemaType::Boolean, SchemaType::Number])
             ->description('User preferences')
     ])
     // Allow additional string properties not matching patterns
-    ->additionalProperties(SchemaFactory::string()->maxLength(100));
+    ->additionalProperties(Schema::string()->maxLength(100));
 
 // Valid user profile
 $userProfileSchema->isValid([
@@ -267,29 +267,29 @@ $userProfileSchema->isValid([
 ### Hierarchical Configuration
 
 ```php
-$hierarchicalConfigSchema = SchemaFactory::object('hierarchical_config')
+$hierarchicalConfigSchema = Schema::object('hierarchical_config')
     ->patternProperties([
         // Environment-specific settings: dev_*, staging_*, prod_*
-        '^(dev|staging|prod)_' => SchemaFactory::object()
+        '^(dev|staging|prod)_' => Schema::object()
             ->properties(
-                SchemaFactory::string('database_url')->required(),
-                SchemaFactory::boolean('debug_mode')->required(),
-                SchemaFactory::integer('max_connections')->minimum(1)
+                Schema::string('database_url')->required(),
+                Schema::boolean('debug_mode')->required(),
+                Schema::integer('max_connections')->minimum(1)
             ),
 
         // Service-specific settings: service_auth_*, service_cache_*, etc.
-        '^service_[a-z]+_' => SchemaFactory::object()
+        '^service_[a-z]+_' => Schema::object()
             ->properties(
-                SchemaFactory::boolean('enabled')->required(),
-                SchemaFactory::object('config')->additionalProperties(true)
+                Schema::boolean('enabled')->required(),
+                Schema::object('config')->additionalProperties(true)
             ),
 
         // Region-specific settings: region_us_*, region_eu_*, etc.
-        '^region_[a-z]{2}_' => SchemaFactory::object()
+        '^region_[a-z]{2}_' => Schema::object()
             ->properties(
-                SchemaFactory::string('datacenter')->required(),
-                SchemaFactory::array('availability_zones')
-                    ->items(SchemaFactory::string())
+                Schema::string('datacenter')->required(),
+                Schema::array('availability_zones')
+                    ->items(Schema::string())
                     ->minItems(1)
             )
     ])
@@ -299,28 +299,28 @@ $hierarchicalConfigSchema = SchemaFactory::object('hierarchical_config')
 ### API Versioning
 
 ```php
-$versionedApiSchema = SchemaFactory::object('versioned_api')
+$versionedApiSchema = Schema::object('versioned_api')
     ->properties(
-        SchemaFactory::string('name')->required()
+        Schema::string('name')->required()
     )
     ->patternProperties([
         // Version-specific endpoints: v1_*, v2_*, v3_*
-        '^v\d+_' => SchemaFactory::object()
+        '^v\d+_' => Schema::object()
             ->properties(
-                SchemaFactory::string('path')->required(),
-                SchemaFactory::string('method')->enum(['GET', 'POST', 'PUT', 'DELETE'])->required(),
-                SchemaFactory::boolean('deprecated')->default(false),
-                SchemaFactory::string('successor_version')
+                Schema::string('path')->required(),
+                Schema::string('method')->enum(['GET', 'POST', 'PUT', 'DELETE'])->required(),
+                Schema::boolean('deprecated')->default(false),
+                Schema::string('successor_version')
             )
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('deprecated')->const(true)
+            ->if(Schema::object()->properties(
+                Schema::boolean('deprecated')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('successor_version')->required()
+            ->then(Schema::object()->properties(
+                Schema::string('successor_version')->required()
             )),
 
         // Feature flags per version: feature_v1_*, feature_v2_*
-        '^feature_v\d+_' => SchemaFactory::boolean()
+        '^feature_v\d+_' => Schema::boolean()
             ->description('Version-specific feature flags')
     ])
     ->additionalProperties(false);
@@ -329,13 +329,13 @@ $versionedApiSchema = SchemaFactory::object('versioned_api')
 ### Localization Keys
 
 ```php
-$localizationSchema = SchemaFactory::object('translations')
+$localizationSchema = Schema::object('translations')
     ->patternProperties([
         // Language codes: en, es, fr, de, etc.
-        '^[a-z]{2}(-[A-Z]{2})?$' => SchemaFactory::object()
+        '^[a-z]{2}(-[A-Z]{2})?$' => Schema::object()
             ->patternProperties([
                 // Translation keys: button.save, error.validation.required, etc.
-                '^[a-z]+(\.[a-z_]+)*$' => SchemaFactory::string()
+                '^[a-z]+(\.[a-z_]+)*$' => Schema::string()
                     ->minLength(1)
                     ->description('Translation text')
             ])
@@ -367,24 +367,24 @@ $localizationSchema->isValid([
 Combine pattern properties with conditional validation:
 
 ```php
-$conditionalPatternSchema = SchemaFactory::object('conditional_config')
+$conditionalPatternSchema = Schema::object('conditional_config')
     ->properties(
-        SchemaFactory::string('mode')->enum(['development', 'production'])->required()
+        Schema::string('mode')->enum(['development', 'production'])->required()
     )
     ->patternProperties([
-        '^debug_' => SchemaFactory::boolean()
+        '^debug_' => Schema::boolean()
             ->description('Debug settings')
     ])
     // Debug settings only allowed in development mode
-    ->if(SchemaFactory::object()->properties(
-        SchemaFactory::string('mode')->const('development')
+    ->if(Schema::object()->properties(
+        Schema::string('mode')->const('development')
     ))
-    ->then(SchemaFactory::object()
-        ->patternProperty('^debug_', SchemaFactory::boolean())
+    ->then(Schema::object()
+        ->patternProperty('^debug_', Schema::boolean())
     )
-    ->else(SchemaFactory::object()
+    ->else(Schema::object()
         // In production, debug properties must be false or absent
-        ->patternProperty('^debug_', SchemaFactory::boolean()->const(false))
+        ->patternProperty('^debug_', Schema::boolean()->const(false))
     )
     ->additionalProperties(false);
 ```
@@ -398,15 +398,15 @@ Understanding property validation order:
 3. **Additional properties** (controlled by `additionalProperties`)
 
 ```php
-$prioritySchema = SchemaFactory::object('priority_example')
+$prioritySchema = Schema::object('priority_example')
     ->properties(
-        'exact_match' => SchemaFactory::string()->maxLength(10)  // 1. Exact match
+        'exact_match' => Schema::string()->maxLength(10)  // 1. Exact match
     )
     ->patternProperty('^exact_',  // 2. Pattern match (won't match 'exact_match')
-        SchemaFactory::string()->maxLength(20)
+        Schema::string()->maxLength(20)
     )
     ->additionalProperties(  // 3. Anything else
-        SchemaFactory::string()->maxLength(5)
+        Schema::string()->maxLength(5)
     );
 
 // 'exact_match' uses the exact property definition (maxLength: 10)
@@ -434,7 +434,7 @@ $schema->patternProperty('^[a-z]+_', $someSchema);  // Too broad
 
 ```php
 $schema->patternProperty('^env_[A-Z_]+$',
-    SchemaFactory::string()
+    Schema::string()
         ->description('Environment variables (uppercase with underscores)')
 );
 ```
@@ -444,7 +444,7 @@ $schema->patternProperty('^env_[A-Z_]+$',
 ```php
 // Good: Properly escaped special characters
 $schema->patternProperty('^\$[a-z]+',        // For properties starting with $
-    SchemaFactory::string()
+    Schema::string()
 );
 
 // Be careful with: . + * ? ^ $ { } ( ) [ ] | \

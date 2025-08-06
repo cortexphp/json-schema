@@ -6,7 +6,6 @@ namespace Cortex\JsonSchema;
 
 use Closure;
 use BackedEnum;
-use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\NullSchema;
 use Cortex\JsonSchema\Types\ArraySchema;
@@ -17,13 +16,14 @@ use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Converters\EnumConverter;
 use Cortex\JsonSchema\Converters\JsonConverter;
 use Cortex\JsonSchema\Converters\ClassConverter;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 use Cortex\JsonSchema\Converters\ClosureConverter;
 
-class SchemaFactory
+class Schema
 {
     private static ?SchemaVersion $schemaVersion = null;
 
@@ -133,7 +133,7 @@ class SchemaFactory
     /**
      * Create a schema from a given value.
      */
-    public static function from(mixed $value, ?SchemaVersion $version = null): Schema
+    public static function from(mixed $value, ?SchemaVersion $version = null): JsonSchema
     {
         $schemaVersion = $version ?? self::getDefaultVersion();
 
@@ -161,7 +161,7 @@ class SchemaFactory
      *
      * @param string|array<string, mixed> $json
      */
-    public static function fromJson(string|array $json, ?SchemaVersion $schemaVersion = null): Schema
+    public static function fromJson(string|array $json, ?SchemaVersion $schemaVersion = null): JsonSchema
     {
         return (new JsonConverter($json, $schemaVersion ?? self::getDefaultVersion()))->convert();
     }

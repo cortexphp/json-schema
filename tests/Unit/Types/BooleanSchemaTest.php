@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\BooleanSchema;
-use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 covers(BooleanSchema::class);

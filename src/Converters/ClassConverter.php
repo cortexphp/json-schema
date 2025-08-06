@@ -9,11 +9,11 @@ use ReflectionEnum;
 use ReflectionClass;
 use ReflectionProperty;
 use ReflectionNamedType;
-use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
 use Cortex\JsonSchema\Enums\SchemaVersion;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
 
 class ClassConverter implements Converter
@@ -66,23 +66,23 @@ class ClassConverter implements Converter
      */
     protected function getSchemaFromReflectionProperty(
         ReflectionProperty $reflectionProperty,
-    ): Schema {
+    ): JsonSchema {
         $type = $reflectionProperty->getType();
 
         // @phpstan-ignore argument.type
-        $schema = self::getSchemaFromReflectionType($type);
+        $jsonSchema = self::getSchemaFromReflectionType($type);
 
-        $schema->title($reflectionProperty->getName());
+        $jsonSchema->title($reflectionProperty->getName());
 
         $variable = $this->getDocParser($reflectionProperty)?->variable();
 
         // Add the description to the schema if it exists
         if ($variable?->description !== null) {
-            $schema->description($variable->description);
+            $jsonSchema->description($variable->description);
         }
 
         if ($type === null || $type->allowsNull()) {
-            $schema->nullable();
+            $jsonSchema->nullable();
         }
 
         if ($reflectionProperty->hasDefaultValue()) {
@@ -93,9 +93,9 @@ class ClassConverter implements Converter
                 $defaultValue = $defaultValue->value;
             }
 
-            $schema->default($defaultValue);
+            $jsonSchema->default($defaultValue);
         } else {
-            $schema->required();
+            $jsonSchema->required();
         }
 
         // If it's an enum, add the possible values
@@ -108,12 +108,12 @@ class ClassConverter implements Converter
                 if ($reflectionEnum->isBacked()) {
                     /** @var non-empty-array<int, string|int> $values */
                     $values = array_column($typeName::cases(), 'value');
-                    $schema->enum($values);
+                    $jsonSchema->enum($values);
                 }
             }
         }
 
-        return $schema;
+        return $jsonSchema;
     }
 
     /**

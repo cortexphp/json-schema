@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Targets;
 
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
-use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 it('can add a single definition to a schema', function (): void {

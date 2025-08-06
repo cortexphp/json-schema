@@ -14,14 +14,14 @@ Unevaluated properties and items allow you to control validation of object prope
 ### Basic Unevaluated Properties
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // Strict object validation - no unevaluated properties allowed
-$strictUserSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$strictUserSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->required()
+        Schema::string('name')->required(),
+        Schema::string('email')->required()
     )
     ->unevaluatedProperties(false)  // No additional properties allowed
     ->description('Strict user schema');
@@ -45,13 +45,13 @@ $strictUserSchema->isValid([
 Allow unevaluated properties but validate them against a schema:
 
 ```php
-$flexibleUserSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$flexibleUserSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->required()
+        Schema::string('name')->required(),
+        Schema::string('email')->required()
     )
     ->unevaluatedProperties(
-        SchemaFactory::string()->minLength(1)  // Any extra properties must be non-empty strings
+        Schema::string()->minLength(1)  // Any extra properties must be non-empty strings
     )
     ->description('User with validated additional properties');
 
@@ -101,14 +101,14 @@ $flexibleUserSchema->isValid([
 Unevaluated properties work with pattern properties:
 
 ```php
-$configSchema = SchemaFactory::object('config', SchemaVersion::Draft_2019_09)
+$configSchema = Schema::object('config', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('app_name')->required(),
-        SchemaFactory::string('version')->required()
+        Schema::string('app_name')->required(),
+        Schema::string('version')->required()
     )
     ->patternProperties([
-        '^env_' => SchemaFactory::string(),          // Environment variables
-        '^feature_' => SchemaFactory::boolean(),     // Feature flags
+        '^env_' => Schema::string(),          // Environment variables
+        '^feature_' => Schema::boolean(),     // Feature flags
     ])
     ->unevaluatedProperties(false)  // Only allow defined props and pattern props
     ->description('Configuration with controlled additional properties');
@@ -135,8 +135,8 @@ $configSchema->isValid([
 
 ```php
 // Strict array validation - no unevaluated items allowed
-$strictArraySchema = SchemaFactory::array('tags', SchemaVersion::Draft_2019_09)
-    ->items(SchemaFactory::string())  // All items must be strings
+$strictArraySchema = Schema::array('tags', SchemaVersion::Draft_2019_09)
+    ->items(Schema::string())  // All items must be strings
     ->maxItems(3)                     // Maximum 3 items
     ->unevaluatedItems(false)         // No items beyond what's defined
     ->description('Strict string array');
@@ -151,13 +151,13 @@ $strictArraySchema->isValid(['php', 'json', 'schema', 'extra']); // false
 ### Unevaluated Items with Schema
 
 ```php
-$mixedArraySchema = SchemaFactory::array('mixed_data', SchemaVersion::Draft_2019_09)
+$mixedArraySchema = Schema::array('mixed_data', SchemaVersion::Draft_2019_09)
     ->items(
-        SchemaFactory::string(),   // First item: string
-        SchemaFactory::integer()   // Second item: integer
+        Schema::string(),   // First item: string
+        Schema::integer()   // Second item: integer
     )
     ->unevaluatedItems(
-        SchemaFactory::boolean()   // Any additional items must be boolean
+        Schema::boolean()   // Any additional items must be boolean
     )
     ->description('Array with typed prefix and boolean extras');
 
@@ -176,35 +176,35 @@ $mixedArraySchema->isValid(['name', 42, 123]);               // false (number no
 Unevaluated properties shine in complex conditional schemas:
 
 ```php
-$conditionalUserSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$conditionalUserSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('type')->enum(['basic', 'premium', 'admin']),
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->required()
+        Schema::string('type')->enum(['basic', 'premium', 'admin']),
+        Schema::string('name')->required(),
+        Schema::string('email')->required()
     )
     // Different properties for different user types
     ->if(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('type')->const('premium')
+        Schema::object()->properties(
+            Schema::string('type')->const('premium')
         )
     )
     ->then(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('subscription_id')->required(),
-            SchemaFactory::string('billing_cycle')->enum(['monthly', 'yearly'])
+        Schema::object()->properties(
+            Schema::string('subscription_id')->required(),
+            Schema::string('billing_cycle')->enum(['monthly', 'yearly'])
         )
     )
     ->if(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('type')->const('admin')
+        Schema::object()->properties(
+            Schema::string('type')->const('admin')
         )
     )
     ->then(
-        SchemaFactory::object()->properties(
-            SchemaFactory::array('permissions')
-                ->items(SchemaFactory::string())
+        Schema::object()->properties(
+            Schema::array('permissions')
+                ->items(Schema::string())
                 ->required(),
-            SchemaFactory::string('admin_level')->enum(['super', 'limited'])
+            Schema::string('admin_level')->enum(['super', 'limited'])
         )
     )
     // No other properties allowed beyond what's conditionally evaluated
@@ -236,9 +236,9 @@ Understanding the difference between `additionalProperties` and `unevaluatedProp
 ### Traditional Additional Properties
 
 ```php
-$traditionalSchema = SchemaFactory::object('user', SchemaVersion::Draft_07)
+$traditionalSchema = Schema::object('user', SchemaVersion::Draft_07)
     ->properties(
-        SchemaFactory::string('name')->required()
+        Schema::string('name')->required()
     )
     ->additionalProperties(false);  // No additional properties
 ```
@@ -246,9 +246,9 @@ $traditionalSchema = SchemaFactory::object('user', SchemaVersion::Draft_07)
 ### Unevaluated Properties
 
 ```php
-$modernSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$modernSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('name')->required()
+        Schema::string('name')->required()
     )
     ->unevaluatedProperties(false);  // No unevaluated properties
 ```
@@ -256,19 +256,19 @@ $modernSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
 The key difference appears in complex schemas with conditionals:
 
 ```php
-$complexSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$complexSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('type')->required(),
-        SchemaFactory::string('name')->required()
+        Schema::string('type')->required(),
+        Schema::string('name')->required()
     )
     ->if(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('type')->const('premium')
+        Schema::object()->properties(
+            Schema::string('type')->const('premium')
         )
     )
     ->then(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('subscription_id')->required()
+        Schema::object()->properties(
+            Schema::string('subscription_id')->required()
         )
     )
     // additionalProperties(false) would prevent 'subscription_id'
@@ -279,38 +279,38 @@ $complexSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
 ## Real-World Example: API Response Schema
 
 ```php
-$apiResponseSchema = SchemaFactory::object('api_response', SchemaVersion::Draft_2019_09)
+$apiResponseSchema = Schema::object('api_response', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::boolean('success')->required(),
-        SchemaFactory::string('message'),
-        SchemaFactory::integer('status_code')->required()
+        Schema::boolean('success')->required(),
+        Schema::string('message'),
+        Schema::integer('status_code')->required()
     )
     // Success responses have data
     ->if(
-        SchemaFactory::object()->properties(
-            SchemaFactory::boolean('success')->const(true)
+        Schema::object()->properties(
+            Schema::boolean('success')->const(true)
         )
     )
     ->then(
-        SchemaFactory::object()->properties(
-            SchemaFactory::union([SchemaType::Object, SchemaType::Array], 'data')
+        Schema::object()->properties(
+            Schema::union([SchemaType::Object, SchemaType::Array], 'data')
                 ->description('Response data on success')
         )
     )
     // Error responses have error details
     ->if(
-        SchemaFactory::object()->properties(
-            SchemaFactory::boolean('success')->const(false)
+        Schema::object()->properties(
+            Schema::boolean('success')->const(false)
         )
     )
     ->then(
-        SchemaFactory::object()->properties(
-            SchemaFactory::object('error')
+        Schema::object()->properties(
+            Schema::object('error')
                 ->properties(
-                    SchemaFactory::string('code')->required(),
-                    SchemaFactory::string('details'),
-                    SchemaFactory::array('validation_errors')
-                        ->items(SchemaFactory::string())
+                    Schema::string('code')->required(),
+                    Schema::string('details'),
+                    Schema::array('validation_errors')
+                        ->items(Schema::string())
                 )
                 ->required()
         )
@@ -356,14 +356,14 @@ Unevaluated properties require more complex evaluation than traditional `additio
 
 ```php
 // For simple cases, prefer additionalProperties
-$simpleSchema = SchemaFactory::object('simple')
+$simpleSchema = Schema::object('simple')
     ->properties(
-        SchemaFactory::string('name')->required()
+        Schema::string('name')->required()
     )
     ->additionalProperties(false);  // Simple and fast
 
 // Use unevaluatedProperties for complex conditional schemas
-$complexSchema = SchemaFactory::object('complex', SchemaVersion::Draft_2019_09)
+$complexSchema = Schema::object('complex', SchemaVersion::Draft_2019_09)
     ->properties(/* base properties */)
     ->if(/* condition */)
     ->then(/* conditional properties */)
@@ -376,7 +376,7 @@ $complexSchema = SchemaFactory::object('complex', SchemaVersion::Draft_2019_09)
 
 ```php
 // Good: Unevaluated properties with conditional logic
-$schema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$schema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->properties(/* base properties */)
     ->if(/* condition */)
     ->then(/* additional properties */)
@@ -387,16 +387,16 @@ $schema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
 
 ```php
 // Good: Control both pattern and additional properties
-$schema = SchemaFactory::object('config', SchemaVersion::Draft_2019_09)
+$schema = Schema::object('config', SchemaVersion::Draft_2019_09)
     ->properties(/* known properties */)
     ->patternProperties(/* pattern-based properties */)
-    ->unevaluatedProperties(SchemaFactory::string());  // Validate remaining
+    ->unevaluatedProperties(Schema::string());  // Validate remaining
 ```
 
 ### 3. Document the Behavior
 
 ```php
-$schema = SchemaFactory::object('strict_user', SchemaVersion::Draft_2019_09)
+$schema = Schema::object('strict_user', SchemaVersion::Draft_2019_09)
     ->properties(/* properties */)
     ->unevaluatedProperties(false)
     ->description('Strict user object - only defined and conditionally evaluated properties allowed');

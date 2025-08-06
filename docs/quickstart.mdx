@@ -11,24 +11,24 @@ icon: 'rocket'
   Let's build a user registration schema with validation rules:
 
   ```php
-  use Cortex\JsonSchema\SchemaFactory;
+  use Cortex\JsonSchema\Schema;
   use Cortex\JsonSchema\Enums\SchemaFormat;
 
   // Create a user schema
-  $userSchema = SchemaFactory::object('user')
+  $userSchema = Schema::object('user')
       ->description('User registration schema')
       ->properties(
-          SchemaFactory::string('name')
+          Schema::string('name')
               ->minLength(2)
               ->maxLength(100)
               ->required(),
-          SchemaFactory::string('email')
+          Schema::string('email')
               ->format(SchemaFormat::Email)
               ->required(),
-          SchemaFactory::integer('age')
+          Schema::integer('age')
               ->minimum(18)
               ->maximum(150),
-          SchemaFactory::boolean('active')
+          Schema::boolean('active')
               ->default(true)
       );
   ```
@@ -162,7 +162,7 @@ Use `toArray()` when you need to programmatically work with the schema structure
   Create string schemas with pattern matching and constraints:
 
   ```php
-  $usernameSchema = SchemaFactory::string('username')
+  $usernameSchema = Schema::string('username')
       ->pattern('^[a-zA-Z0-9_]{3,20}$')
       ->description('Username with alphanumeric characters and underscores');
 
@@ -181,8 +181,8 @@ Use `toArray()` when you need to programmatically work with the schema structure
   Build array schemas with item validation and constraints:
 
   ```php
-  $tagsSchema = SchemaFactory::array('tags')
-      ->items(SchemaFactory::string())
+  $tagsSchema = Schema::array('tags')
+      ->items(Schema::string())
       ->minItems(1)
       ->maxItems(5)
       ->uniqueItems(true);
@@ -202,14 +202,14 @@ Use `toArray()` when you need to programmatically work with the schema structure
   Create complex nested object structures:
 
   ```php
-  $profileSchema = SchemaFactory::object('profile')
+  $profileSchema = Schema::object('profile')
       ->properties(
-          SchemaFactory::string('name')->required(),
-          SchemaFactory::object('address')
+          Schema::string('name')->required(),
+          Schema::object('address')
               ->properties(
-                  SchemaFactory::string('street')->required(),
-                  SchemaFactory::string('city')->required(),
-                  SchemaFactory::string('country')->required()
+                  Schema::string('street')->required(),
+                  Schema::string('city')->required(),
+                  Schema::string('country')->required()
               )
               ->required()
       );
@@ -228,9 +228,9 @@ You can also use schema classes directly instead of the factory:
 <CodeGroup>
 
 ```php Factory Method (Recommended)
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$schema = SchemaFactory::string('name')
+$schema = Schema::string('name')
     ->minLength(2)
     ->required();
 ```
@@ -253,12 +253,12 @@ Specify JSON Schema versions for advanced features:
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // Use Draft 2019-09 for advanced features
-$modernSchema = SchemaFactory::string('field', SchemaVersion::Draft_2019_09)
+$modernSchema = Schema::string('field', SchemaVersion::Draft_2019_09)
     ->deprecated()  // Only available in Draft 2019-09+
     ->comment('Use newField instead');
 
 // Set default version for all schemas
-SchemaFactory::setDefaultVersion(SchemaVersion::Draft_2019_09);
+Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
 ```
 
 ## Common Validation Patterns
@@ -268,19 +268,19 @@ SchemaFactory::setDefaultVersion(SchemaVersion::Draft_2019_09);
   Create conditional validation rules based on property values:
 
   ```php
-  $userSchema = SchemaFactory::object('user')
+  $userSchema = Schema::object('user')
       ->properties(
-          SchemaFactory::string('type')->enum(['personal', 'business']),
-          SchemaFactory::string('company_name')
+          Schema::string('type')->enum(['personal', 'business']),
+          Schema::string('company_name')
       )
       ->if(
-          SchemaFactory::object()->properties(
-              SchemaFactory::string('type')->const('business')
+          Schema::object()->properties(
+              Schema::string('type')->const('business')
           )
       )
       ->then(
-          SchemaFactory::object()->properties(
-              SchemaFactory::string('company_name')->required()
+          Schema::object()->properties(
+              Schema::string('company_name')->required()
           )
       );
   ```
@@ -294,7 +294,7 @@ SchemaFactory::setDefaultVersion(SchemaVersion::Draft_2019_09);
   Allow properties to accept multiple data types:
 
   ```php
-  $idSchema = SchemaFactory::union([SchemaType::String, SchemaType::Integer], 'id')
+  $idSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'id')
       ->description('ID can be string or integer');
 
   // Test validation
@@ -315,12 +315,12 @@ SchemaFactory::setDefaultVersion(SchemaVersion::Draft_2019_09);
   use Cortex\JsonSchema\Enums\SchemaVersion;
 
   // Use Draft 2019-09 for advanced features
-  $modernSchema = SchemaFactory::string('legacy_field', SchemaVersion::Draft_2019_09)
+  $modernSchema = Schema::string('legacy_field', SchemaVersion::Draft_2019_09)
       ->deprecated()  // Mark field as deprecated
       ->comment('Use new_field instead');
 
   // Set default version for all schemas
-  SchemaFactory::setDefaultVersion(SchemaVersion::Draft_2019_09);
+  Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
   ```
 
   <Warning>
@@ -363,5 +363,5 @@ SchemaFactory::setDefaultVersion(SchemaVersion::Draft_2019_09);
 </CardGroup>
 
 <Tip>
-The SchemaFactory provides the most convenient way to create schemas. All examples in this documentation use the factory methods unless otherwise specified.
+The Schema class provides the most convenient way to create schemas. All examples in this documentation use the factory methods unless otherwise specified.
 </Tip>

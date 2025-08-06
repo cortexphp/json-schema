@@ -10,10 +10,10 @@ Master error handling in JSON Schema validation with detailed exception informat
 All validation errors throw `SchemaException` with detailed information:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-$schema = SchemaFactory::string('email')
+$schema = Schema::string('email')
     ->format(SchemaFormat::Email)
     ->minLength(5)
     ->maxLength(100)
@@ -34,16 +34,16 @@ try {
 Different validation failures produce specific error codes:
 
 ```php
-$userSchema = SchemaFactory::object('user')
+$userSchema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('name')
+        Schema::string('name')
             ->minLength(2)
             ->maxLength(50)
             ->required(),
-        SchemaFactory::string('email')
+        Schema::string('email')
             ->format(SchemaFormat::Email)
             ->required(),
-        SchemaFactory::integer('age')
+        Schema::integer('age')
             ->minimum(0)
             ->maximum(150)
             ->required()
@@ -86,7 +86,7 @@ Schema validation errors fall into several categories:
 ### Type Validation Errors
 
 ```php
-$typeSchema = SchemaFactory::string('name');
+$typeSchema = Schema::string('name');
 
 try {
     $typeSchema->validate(123);  // Number instead of string
@@ -99,7 +99,7 @@ try {
 ### Format Validation Errors
 
 ```php
-$emailSchema = SchemaFactory::string('email')->format(SchemaFormat::Email);
+$emailSchema = Schema::string('email')->format(SchemaFormat::Email);
 
 try {
     $emailSchema->validate('not-an-email');
@@ -111,7 +111,7 @@ try {
 ### Constraint Validation Errors
 
 ```php
-$lengthSchema = SchemaFactory::string('username')
+$lengthSchema = Schema::string('username')
     ->minLength(3)
     ->maxLength(20);
 
@@ -131,10 +131,10 @@ try {
 ### Required Field Errors
 
 ```php
-$requiredSchema = SchemaFactory::object('user')
+$requiredSchema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->required()
+        Schema::string('name')->required(),
+        Schema::string('email')->required()
     );
 
 try {
@@ -281,10 +281,10 @@ class ValidatorWithResults
 
 // Usage
 $validator = new ValidatorWithResults();
-$userSchema = SchemaFactory::object('user')
+$userSchema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('name')->minLength(2)->required(),
-        SchemaFactory::string('email')->format(SchemaFormat::Email)->required()
+        Schema::string('name')->minLength(2)->required(),
+        Schema::string('email')->format(SchemaFormat::Email)->required()
     );
 
 $result = $validator->validate($userSchema, ['name' => 'J']);
@@ -342,7 +342,7 @@ class NestedErrorHandler
                 foreach ($schemaArray['properties'] as $property => $propSchema) {
                     if (isset($data[$property])) {
                         $propertyPath = $basePath . ($basePath ? '.' : '') . $property;
-                        $propertySchema = SchemaFactory::fromJson($propSchema);
+                        $propertySchema = Schema::fromJson($propSchema);
 
                         $propertyErrors = $this->validateWithPath(
                             $propertySchema,
@@ -361,30 +361,30 @@ class NestedErrorHandler
 }
 
 // Complex nested schema
-$orderSchema = SchemaFactory::object('order')
+$orderSchema = Schema::object('order')
     ->properties(
-        SchemaFactory::string('id')->required(),
-        SchemaFactory::object('customer')
+        Schema::string('id')->required(),
+        Schema::object('customer')
             ->properties(
-                SchemaFactory::string('name')->minLength(2)->required(),
-                SchemaFactory::string('email')->format(SchemaFormat::Email)->required(),
-                SchemaFactory::object('address')
+                Schema::string('name')->minLength(2)->required(),
+                Schema::string('email')->format(SchemaFormat::Email)->required(),
+                Schema::object('address')
                     ->properties(
-                        SchemaFactory::string('street')->required(),
-                        SchemaFactory::string('city')->required(),
-                        SchemaFactory::string('postal_code')
+                        Schema::string('street')->required(),
+                        Schema::string('city')->required(),
+                        Schema::string('postal_code')
                             ->pattern('^\d{5}$')
                             ->required()
                     )
                     ->required()
             )
             ->required(),
-        SchemaFactory::array('items')
+        Schema::array('items')
             ->items(
-                SchemaFactory::object()
+                Schema::object()
                     ->properties(
-                        SchemaFactory::string('sku')->required(),
-                        SchemaFactory::integer('quantity')->minimum(1)->required()
+                        Schema::string('sku')->required(),
+                        Schema::integer('quantity')->minimum(1)->required()
                     )
             )
             ->minItems(1)
@@ -495,7 +495,7 @@ class ErrorRecoveryHelper
 $recoveryHelper = new ErrorRecoveryHelper();
 
 try {
-    $emailSchema = SchemaFactory::string('email')->format(SchemaFormat::Email);
+    $emailSchema = Schema::string('email')->format(SchemaFormat::Email);
     $emailSchema->validate('userexample.com');  // Missing @
 } catch (SchemaException $e) {
     $detailedError = $recoveryHelper->getDetailedError($e);
@@ -589,10 +589,10 @@ class BulkValidator
 
 // Usage
 $bulkValidator = new BulkValidator();
-$userSchema = SchemaFactory::object('user')
+$userSchema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('name')->minLength(2)->required(),
-        SchemaFactory::string('email')->format(SchemaFormat::Email)->required()
+        Schema::string('name')->minLength(2)->required(),
+        Schema::string('email')->format(SchemaFormat::Email)->required()
     );
 
 $users = [
@@ -625,7 +625,7 @@ if (!empty($summary['error_types'])) {
 
 ```php
 // Good: Specific validation rules with clear error context
-$passwordSchema = SchemaFactory::string('password')
+$passwordSchema = Schema::string('password')
     ->minLength(8)
     ->pattern('(?=.*[a-z])(?=.*[A-Z])(?=.*\d)')
     ->description('Password must be at least 8 characters with uppercase, lowercase, and number');
@@ -673,10 +673,10 @@ class ValidatorWithLogging
 ```php
 function processUserDataSafely(array $userData): array
 {
-    $userSchema = SchemaFactory::object('user')
+    $userSchema = Schema::object('user')
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::string('email')->format(SchemaFormat::Email)->required()
+            Schema::string('name')->required(),
+            Schema::string('email')->format(SchemaFormat::Email)->required()
         );
 
     try {

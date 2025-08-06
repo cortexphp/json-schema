@@ -10,7 +10,7 @@ Generate JSON schemas automatically from PHP classes using reflection and docblo
 Generate a schema from a simple PHP class:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
 /**
  * User profile information
@@ -39,7 +39,7 @@ class User
 }
 
 // Generate schema from class
-$schema = SchemaFactory::fromClass(User::class);
+$schema = Schema::fromClass(User::class);
 
 // Convert to JSON Schema
 $jsonSchema = $schema->toJson(JSON_PRETTY_PRINT);
@@ -117,7 +117,7 @@ class Product
     public array $tags = [];
 }
 
-$schema = SchemaFactory::fromClass(Product::class);
+$schema = Schema::fromClass(Product::class);
 ```
 
 <Accordion title="View Generated JSON Schema">
@@ -185,7 +185,7 @@ class ModernUser
 }
 
 // Generate with Draft 2019-09 for deprecated support
-$schema = SchemaFactory::fromClass(
+$schema = Schema::fromClass(
     ModernUser::class,
     version: SchemaVersion::Draft_2019_09
 );
@@ -256,7 +256,7 @@ class Address
     public string $country = 'US';
 }
 
-$schema = SchemaFactory::fromClass(Order::class);
+$schema = Schema::fromClass(Order::class);
 // This will analyze the entire object graph and create definitions for nested classes
 ```
 
@@ -313,7 +313,7 @@ class UserRegistration
     public array $interests = [];
 }
 
-$schema = SchemaFactory::fromClass(UserRegistration::class);
+$schema = Schema::fromClass(UserRegistration::class);
 ```
 
 <Accordion title="View Generated JSON Schema with Validation">
@@ -409,7 +409,7 @@ class Task
     public ?DateTime $due_date = null;
 }
 
-$schema = SchemaFactory::fromClass(Task::class);
+$schema = Schema::fromClass(Task::class);
 ```
 
 The generated schema will automatically include enum constraints:
@@ -482,7 +482,7 @@ class CompleteUser extends BaseEntity
     public array $roles = ['user'];
 }
 
-$schema = SchemaFactory::fromClass(CompleteUser::class);
+$schema = Schema::fromClass(CompleteUser::class);
 // Schema will include properties from base class and traits
 ```
 
@@ -526,7 +526,7 @@ class ApiConfig
 }
 
 // Generate schema with custom options
-$schema = SchemaFactory::fromClass(
+$schema = Schema::fromClass(
     ApiConfig::class,
     version: SchemaVersion::Draft_2019_09,
     options: [
@@ -704,7 +704,7 @@ class Order
 }
 
 // Generate comprehensive order schema
-$orderSchema = SchemaFactory::fromClass(Order::class, SchemaVersion::Draft_2019_09);
+$orderSchema = Schema::fromClass(Order::class, SchemaVersion::Draft_2019_09);
 
 // The schema will include definitions for all nested classes
 // and proper validation rules from docblock annotations
@@ -716,7 +716,7 @@ Use the generated schema to validate data:
 
 ```php
 // Generate schema from class
-$userSchema = SchemaFactory::fromClass(UserRegistration::class);
+$userSchema = Schema::fromClass(UserRegistration::class);
 
 // Test data
 $userData = [

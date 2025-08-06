@@ -14,41 +14,41 @@ Dependent schemas provide a powerful way to create conditional validation based 
 Define validation that depends on the presence of a property:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
-$paymentSchema = SchemaFactory::object('payment', SchemaVersion::Draft_2019_09)
+$paymentSchema = Schema::object('payment', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('amount')->required(),
-        SchemaFactory::string('method')->enum(['card', 'bank', 'paypal']),
-        SchemaFactory::string('card_number'),
-        SchemaFactory::string('bank_account'),
-        SchemaFactory::string('paypal_email')
+        Schema::string('amount')->required(),
+        Schema::string('method')->enum(['card', 'bank', 'paypal']),
+        Schema::string('card_number'),
+        Schema::string('bank_account'),
+        Schema::string('paypal_email')
     )
     // When 'method' property is present, apply additional validation
     ->dependentSchema('method',
-        SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::string('method')->const('card')
+        Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::string('method')->const('card')
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('card_number')
+            ->then(Schema::object()->properties(
+                Schema::string('card_number')
                     ->pattern('^\d{16}$')
                     ->required()
             ))
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::string('method')->const('bank')
+            ->if(Schema::object()->properties(
+                Schema::string('method')->const('bank')
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('bank_account')
+            ->then(Schema::object()->properties(
+                Schema::string('bank_account')
                     ->pattern('^\d{8,20}$')
                     ->required()
             ))
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::string('method')->const('paypal')
+            ->if(Schema::object()->properties(
+                Schema::string('method')->const('paypal')
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('paypal_email')
+            ->then(Schema::object()->properties(
+                Schema::string('paypal_email')
                     ->format(SchemaFormat::Email)
                     ->required()
             ))
@@ -126,38 +126,38 @@ $paymentSchema->isValid([
 Apply different schemas based on multiple property dependencies:
 
 ```php
-$userRegistrationSchema = SchemaFactory::object('registration', SchemaVersion::Draft_2019_09)
+$userRegistrationSchema = Schema::object('registration', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('username')->required(),
-        SchemaFactory::string('email')->required(),
-        SchemaFactory::string('account_type')->enum(['personal', 'business']),
-        SchemaFactory::boolean('newsletter_signup'),
-        SchemaFactory::string('company_name'),
-        SchemaFactory::string('tax_id'),
-        SchemaFactory::string('marketing_source')
+        Schema::string('username')->required(),
+        Schema::string('email')->required(),
+        Schema::string('account_type')->enum(['personal', 'business']),
+        Schema::boolean('newsletter_signup'),
+        Schema::string('company_name'),
+        Schema::string('tax_id'),
+        Schema::string('marketing_source')
     )
     ->dependentSchemas([
         // Business account requirements
-        'account_type' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::string('account_type')->const('business')
+        'account_type' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::string('account_type')->const('business')
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('company_name')
+            ->then(Schema::object()->properties(
+                Schema::string('company_name')
                     ->minLength(1)
                     ->required(),
-                SchemaFactory::string('tax_id')
+                Schema::string('tax_id')
                     ->pattern('^\d{2}-\d{7}$')
                     ->required()
             )),
 
         // Newsletter signup requirements
-        'newsletter_signup' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('newsletter_signup')->const(true)
+        'newsletter_signup' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('newsletter_signup')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('marketing_source')
+            ->then(Schema::object()->properties(
+                Schema::string('marketing_source')
                     ->enum(['search', 'social', 'referral', 'advertising'])
                     ->required()
             ))
@@ -188,60 +188,60 @@ $userRegistrationSchema->isValid([
 Create sophisticated dependency chains and nested conditions:
 
 ```php
-$orderSchema = SchemaFactory::object('order', SchemaVersion::Draft_2019_09)
+$orderSchema = Schema::object('order', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('type')->enum(['pickup', 'delivery']),
-        SchemaFactory::boolean('requires_signature'),
-        SchemaFactory::boolean('is_gift'),
-        SchemaFactory::string('delivery_address'),
-        SchemaFactory::string('pickup_location'),
-        SchemaFactory::string('gift_message'),
-        SchemaFactory::string('gift_wrap_type'),
-        SchemaFactory::string('signature_instructions')
+        Schema::string('type')->enum(['pickup', 'delivery']),
+        Schema::boolean('requires_signature'),
+        Schema::boolean('is_gift'),
+        Schema::string('delivery_address'),
+        Schema::string('pickup_location'),
+        Schema::string('gift_message'),
+        Schema::string('gift_wrap_type'),
+        Schema::string('signature_instructions')
     )
     ->dependentSchemas([
         // Delivery orders need addresses
-        'type' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::string('type')->const('delivery')
+        'type' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::string('type')->const('delivery')
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('delivery_address')
+            ->then(Schema::object()->properties(
+                Schema::string('delivery_address')
                     ->minLength(10)
                     ->required()
             ))
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::string('type')->const('pickup')
+            ->if(Schema::object()->properties(
+                Schema::string('type')->const('pickup')
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('pickup_location')
+            ->then(Schema::object()->properties(
+                Schema::string('pickup_location')
                     ->enum(['store_a', 'store_b', 'warehouse'])
                     ->required()
             )),
 
         // Gift orders need gift options
-        'is_gift' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('is_gift')->const(true)
+        'is_gift' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('is_gift')->const(true)
             ))
-            ->then(SchemaFactory::object()
+            ->then(Schema::object()
                 ->properties(
-                    SchemaFactory::string('gift_message')
+                    Schema::string('gift_message')
                         ->maxLength(200)
                         ->required(),
-                    SchemaFactory::string('gift_wrap_type')
+                    Schema::string('gift_wrap_type')
                         ->enum(['standard', 'premium', 'eco_friendly'])
                         ->required()
                 )
                 // Nested dependency: premium gift wrap has additional requirements
                 ->dependentSchema('gift_wrap_type',
-                    SchemaFactory::object()
-                        ->if(SchemaFactory::object()->properties(
-                            SchemaFactory::string('gift_wrap_type')->const('premium')
+                    Schema::object()
+                        ->if(Schema::object()->properties(
+                            Schema::string('gift_wrap_type')->const('premium')
                         ))
-                        ->then(SchemaFactory::object()
+                        ->then(Schema::object()
                             ->properties(
-                                SchemaFactory::string('gift_message')
+                                Schema::string('gift_message')
                                     ->minLength(10)  // Premium requires longer message
                             )
                         )
@@ -249,12 +249,12 @@ $orderSchema = SchemaFactory::object('order', SchemaVersion::Draft_2019_09)
             ),
 
         // Signature requirements
-        'requires_signature' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('requires_signature')->const(true)
+        'requires_signature' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('requires_signature')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('signature_instructions')
+            ->then(Schema::object()->properties(
+                Schema::string('signature_instructions')
                     ->maxLength(100)
                     ->required()
             ))
@@ -266,46 +266,46 @@ $orderSchema = SchemaFactory::object('order', SchemaVersion::Draft_2019_09)
 Simple property presence requirements without complex validation:
 
 ```php
-$profileSchema = SchemaFactory::object('profile', SchemaVersion::Draft_2019_09)
+$profileSchema = Schema::object('profile', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::boolean('public_email'),
-        SchemaFactory::string('email'),
-        SchemaFactory::boolean('show_phone'),
-        SchemaFactory::string('phone'),
-        SchemaFactory::boolean('enable_notifications'),
-        SchemaFactory::string('notification_email')
+        Schema::string('name')->required(),
+        Schema::boolean('public_email'),
+        Schema::string('email'),
+        Schema::boolean('show_phone'),
+        Schema::string('phone'),
+        Schema::boolean('enable_notifications'),
+        Schema::string('notification_email')
     )
     ->dependentSchemas([
         // If public_email is true, email must be present
-        'public_email' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('public_email')->const(true)
+        'public_email' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('public_email')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('email')
+            ->then(Schema::object()->properties(
+                Schema::string('email')
                     ->format(SchemaFormat::Email)
                     ->required()
             )),
 
         // If show_phone is true, phone must be present
-        'show_phone' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('show_phone')->const(true)
+        'show_phone' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('show_phone')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('phone')
+            ->then(Schema::object()->properties(
+                Schema::string('phone')
                     ->pattern('^\+\d{1,3}-\d{3,4}-\d{6,8}$')
                     ->required()
             )),
 
         // If notifications enabled, notification email required
-        'enable_notifications' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('enable_notifications')->const(true)
+        'enable_notifications' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('enable_notifications')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('notification_email')
+            ->then(Schema::object()->properties(
+                Schema::string('notification_email')
                     ->format(SchemaFormat::Email)
                     ->required()
             ))
@@ -317,76 +317,76 @@ $profileSchema = SchemaFactory::object('profile', SchemaVersion::Draft_2019_09)
 Real-world example for API endpoint configuration:
 
 ```php
-$apiEndpointSchema = SchemaFactory::object('api_endpoint', SchemaVersion::Draft_2019_09)
+$apiEndpointSchema = Schema::object('api_endpoint', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('path')->required(),
-        SchemaFactory::string('method')->enum(['GET', 'POST', 'PUT', 'DELETE'])->required(),
-        SchemaFactory::boolean('requires_auth'),
-        SchemaFactory::string('auth_type')->enum(['jwt', 'api_key', 'oauth']),
-        SchemaFactory::boolean('rate_limited'),
-        SchemaFactory::integer('rate_limit_per_minute'),
-        SchemaFactory::boolean('cache_enabled'),
-        SchemaFactory::integer('cache_ttl_seconds'),
-        SchemaFactory::boolean('validate_request'),
-        SchemaFactory::object('request_schema'),
-        SchemaFactory::boolean('transform_response'),
-        SchemaFactory::object('response_transform')
+        Schema::string('path')->required(),
+        Schema::string('method')->enum(['GET', 'POST', 'PUT', 'DELETE'])->required(),
+        Schema::boolean('requires_auth'),
+        Schema::string('auth_type')->enum(['jwt', 'api_key', 'oauth']),
+        Schema::boolean('rate_limited'),
+        Schema::integer('rate_limit_per_minute'),
+        Schema::boolean('cache_enabled'),
+        Schema::integer('cache_ttl_seconds'),
+        Schema::boolean('validate_request'),
+        Schema::object('request_schema'),
+        Schema::boolean('transform_response'),
+        Schema::object('response_transform')
     )
     ->dependentSchemas([
         // Authentication dependencies
-        'requires_auth' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('requires_auth')->const(true)
+        'requires_auth' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('requires_auth')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('auth_type')->required()
+            ->then(Schema::object()->properties(
+                Schema::string('auth_type')->required()
             )),
 
         // Rate limiting dependencies
-        'rate_limited' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('rate_limited')->const(true)
+        'rate_limited' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('rate_limited')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::integer('rate_limit_per_minute')
+            ->then(Schema::object()->properties(
+                Schema::integer('rate_limit_per_minute')
                     ->minimum(1)
                     ->maximum(10000)
                     ->required()
             )),
 
         // Caching dependencies
-        'cache_enabled' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('cache_enabled')->const(true)
+        'cache_enabled' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('cache_enabled')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::integer('cache_ttl_seconds')
+            ->then(Schema::object()->properties(
+                Schema::integer('cache_ttl_seconds')
                     ->minimum(60)
                     ->maximum(86400)
                     ->required()
             )),
 
         // Request validation dependencies
-        'validate_request' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('validate_request')->const(true)
+        'validate_request' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('validate_request')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::object('request_schema')
+            ->then(Schema::object()->properties(
+                Schema::object('request_schema')
                     ->additionalProperties(true)
                     ->required()
             )),
 
         // Response transformation dependencies
-        'transform_response' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('transform_response')->const(true)
+        'transform_response' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('transform_response')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::object('response_transform')
+            ->then(Schema::object()->properties(
+                Schema::object('response_transform')
                     ->properties(
-                        SchemaFactory::string('type')->enum(['map', 'filter', 'custom'])->required(),
-                        SchemaFactory::object('config')->additionalProperties(true)
+                        Schema::string('type')->enum(['map', 'filter', 'custom'])->required(),
+                        Schema::object('config')->additionalProperties(true)
                     )
                     ->required()
             ))
@@ -450,20 +450,20 @@ try {
 
 ```php
 // Modern approach - property-dependent validation
-$modernSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$modernSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::boolean('has_address'),
-        SchemaFactory::string('street'),
-        SchemaFactory::string('city')
+        Schema::boolean('has_address'),
+        Schema::string('street'),
+        Schema::string('city')
     )
     ->dependentSchema('has_address',
-        SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('has_address')->const(true)
+        Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('has_address')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('street')->required(),
-                SchemaFactory::string('city')->required()
+            ->then(Schema::object()->properties(
+                Schema::string('street')->required(),
+                Schema::string('city')->required()
             ))
     );
 ```
@@ -472,11 +472,11 @@ $modernSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
 
 ```php
 // Traditional approach - less flexible
-$traditionalSchema = SchemaFactory::object('user', SchemaVersion::Draft_07)
+$traditionalSchema = Schema::object('user', SchemaVersion::Draft_07)
     ->properties(
-        SchemaFactory::boolean('has_address'),
-        SchemaFactory::string('street'),
-        SchemaFactory::string('city')
+        Schema::boolean('has_address'),
+        Schema::string('street'),
+        Schema::string('city')
     );
     // Would need complex if/then/else logic to achieve similar behavior
 ```
@@ -489,9 +489,9 @@ Dependent schemas are evaluated only when the triggering property is present, ma
 
 ```php
 // Efficient - dependency only evaluated when 'type' is present
-$efficientSchema = SchemaFactory::object('data', SchemaVersion::Draft_2019_09)
+$efficientSchema = Schema::object('data', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('name')->required()
+        Schema::string('name')->required()
         // 'type' is optional
     )
     ->dependentSchema('type', $complexValidationSchema);
@@ -526,7 +526,7 @@ $schema->dependentSchemas([
 
 ```php
 $schema->dependentSchema('complex_option',
-    SchemaFactory::object()
+    Schema::object()
         ->description('When complex_option is enabled, additional validation rules apply')
         ->if(/* condition */)
         ->then(/* validation */)
@@ -538,8 +538,8 @@ $schema->dependentSchema('complex_option',
 ```php
 // Avoid: Circular dependency chains
 $schema->dependentSchemas([
-    'field_a' => SchemaFactory::object()->dependentSchema('field_b', $validation),
-    'field_b' => SchemaFactory::object()->dependentSchema('field_a', $validation)
+    'field_a' => Schema::object()->dependentSchema('field_b', $validation),
+    'field_b' => Schema::object()->dependentSchema('field_a', $validation)
 ]);
 ```
 

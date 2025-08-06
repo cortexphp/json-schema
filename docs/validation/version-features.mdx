@@ -10,18 +10,18 @@ The package automatically validates that schema features are compatible with the
 When you use features that require specific JSON Schema versions, the package automatically validates compatibility:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 // ✅ This works - deprecated is supported in Draft 2019-09+
-$modernSchema = SchemaFactory::string('legacy_field', SchemaVersion::Draft_2019_09)
+$modernSchema = Schema::string('legacy_field', SchemaVersion::Draft_2019_09)
     ->deprecated()
     ->comment('Use new_field instead');
 
 // ❌ This throws an exception - deprecated requires Draft 2019-09+
 try {
-    $invalidSchema = SchemaFactory::string('legacy_field', SchemaVersion::Draft_07)
+    $invalidSchema = Schema::string('legacy_field', SchemaVersion::Draft_07)
         ->deprecated(); // SchemaException thrown here
 } catch (SchemaException $e) {
     echo $e->getMessage();
@@ -38,19 +38,19 @@ Understanding which features are available in each JSON Schema version:
 
 ```php
 // These features work in all supported versions
-$basicSchema = SchemaFactory::object('basic', SchemaVersion::Draft_07)
+$basicSchema = Schema::object('basic', SchemaVersion::Draft_07)
     ->properties(
-        SchemaFactory::string('name')
+        Schema::string('name')
             ->minLength(2)
             ->maxLength(100)
             ->pattern('^[A-Za-z\s]+$')
             ->required(),
-        SchemaFactory::integer('age')
+        Schema::integer('age')
             ->minimum(0)
             ->maximum(150)
             ->required(),
-        SchemaFactory::array('tags')
-            ->items(SchemaFactory::string())
+        Schema::array('tags')
+            ->items(Schema::string())
             ->minItems(1)
             ->maxItems(10)
             ->uniqueItems(true)
@@ -62,21 +62,21 @@ $basicSchema = SchemaFactory::object('basic', SchemaVersion::Draft_07)
 
 ```php
 // if/then/else works in Draft-07 and later
-$conditionalSchema = SchemaFactory::object('user', SchemaVersion::Draft_07)
+$conditionalSchema = Schema::object('user', SchemaVersion::Draft_07)
     ->properties(
-        SchemaFactory::string('type')->enum(['personal', 'business']),
-        SchemaFactory::string('company_name'),
-        SchemaFactory::string('tax_id')
+        Schema::string('type')->enum(['personal', 'business']),
+        Schema::string('company_name'),
+        Schema::string('tax_id')
     )
     ->if(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('type')->const('business')
+        Schema::object()->properties(
+            Schema::string('type')->const('business')
         )
     )
     ->then(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('company_name')->required(),
-            SchemaFactory::string('tax_id')->required()
+        Schema::object()->properties(
+            Schema::string('company_name')->required(),
+            Schema::string('tax_id')->required()
         )
     );
 ```
@@ -85,27 +85,27 @@ $conditionalSchema = SchemaFactory::object('user', SchemaVersion::Draft_07)
 
 ```php
 // Advanced features requiring Draft 2019-09+
-$modernSchema = SchemaFactory::object('modern_user', SchemaVersion::Draft_2019_09)
+$modernSchema = Schema::object('modern_user', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->required(),
+        Schema::string('name')->required(),
+        Schema::string('email')->required(),
 
         // Deprecated annotation
-        SchemaFactory::string('old_email')
+        Schema::string('old_email')
             ->deprecated()
             ->comment('Use email field instead'),
 
         // Array contains validation
-        SchemaFactory::array('roles')
-            ->items(SchemaFactory::string())
+        Schema::array('roles')
+            ->items(Schema::string())
             ->minContains(1)    // At least one role required
             ->maxContains(5),   // Maximum 5 roles
 
         // Extended format support
-        SchemaFactory::string('id')
+        Schema::string('id')
             ->format(SchemaFormat::Uuid),
 
-        SchemaFactory::string('session_duration')
+        Schema::string('session_duration')
             ->format(SchemaFormat::Duration)
     )
     // Unevaluated properties
@@ -113,13 +113,13 @@ $modernSchema = SchemaFactory::object('modern_user', SchemaVersion::Draft_2019_0
 
     // Dependent schemas
     ->dependentSchema('old_email',
-        SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::string('old_email')->minLength(1)
+        Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::string('old_email')->minLength(1)
             ))
-            ->then(SchemaFactory::object()
+            ->then(Schema::object()
                 ->properties(
-                    SchemaFactory::string('migration_date')
+                    Schema::string('migration_date')
                         ->format(SchemaFormat::Date)
                         ->required()
                 )
@@ -131,15 +131,15 @@ $modernSchema = SchemaFactory::object('modern_user', SchemaVersion::Draft_2019_0
 
 ```php
 // Cutting-edge features in Draft 2020-12
-$latestSchema = SchemaFactory::array('tuple_array', SchemaVersion::Draft_2020_12)
+$latestSchema = Schema::array('tuple_array', SchemaVersion::Draft_2020_12)
     // Prefix items for tuple validation
     ->prefixItems([
-        SchemaFactory::string()->description('Name'),
-        SchemaFactory::integer()->minimum(0)->description('Age'),
-        SchemaFactory::boolean()->description('Active status')
+        Schema::string()->description('Name'),
+        Schema::integer()->minimum(0)->description('Age'),
+        Schema::boolean()->description('Active status')
     ])
     // Additional items after prefix
-    ->items(SchemaFactory::string()->description('Additional info'))
+    ->items(Schema::string()->description('Additional info'))
     // Unevaluated items control
     ->unevaluatedItems(false);
 ```
@@ -153,28 +153,28 @@ function demonstrateVersionErrors()
 {
     $examples = [
         'Deprecated annotation' => function() {
-            return SchemaFactory::string('field', SchemaVersion::Draft_07)
+            return Schema::string('field', SchemaVersion::Draft_07)
                 ->deprecated();
         },
 
         'Min/Max contains' => function() {
-            return SchemaFactory::array('items', SchemaVersion::Draft_07)
+            return Schema::array('items', SchemaVersion::Draft_07)
                 ->minContains(1);
         },
 
         'UUID format' => function() {
-            return SchemaFactory::string('id', SchemaVersion::Draft_07)
+            return Schema::string('id', SchemaVersion::Draft_07)
                 ->format(SchemaFormat::Uuid);
         },
 
         'Unevaluated properties' => function() {
-            return SchemaFactory::object('strict', SchemaVersion::Draft_07)
+            return Schema::object('strict', SchemaVersion::Draft_07)
                 ->unevaluatedProperties(false);
         },
 
         'Dependent schemas' => function() {
-            return SchemaFactory::object('conditional', SchemaVersion::Draft_07)
-                ->dependentSchema('field', SchemaFactory::object());
+            return Schema::object('conditional', SchemaVersion::Draft_07)
+                ->dependentSchema('field', Schema::object());
         }
     ];
 
@@ -262,7 +262,7 @@ class SchemaMigrator
             $schemaArray = $this->updateRefPaths($schemaArray);
         }
 
-        return SchemaFactory::fromJson($schemaArray, SchemaVersion::Draft_2019_09);
+        return Schema::fromJson($schemaArray, SchemaVersion::Draft_2019_09);
     }
 
     public function addModernFeatures(Schema $basicSchema): Schema
@@ -290,7 +290,7 @@ class SchemaMigrator
             }
         }
 
-        return SchemaFactory::fromJson($schemaArray, SchemaVersion::Draft_2019_09);
+        return Schema::fromJson($schemaArray, SchemaVersion::Draft_2019_09);
     }
 
     private function updateRefPaths(array $schema): array
@@ -311,16 +311,16 @@ class SchemaMigrator
 $migrator = new SchemaMigrator();
 
 // Original Draft-07 schema
-$originalSchema = SchemaFactory::object('user', SchemaVersion::Draft_07)
+$originalSchema = Schema::object('user', SchemaVersion::Draft_07)
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->required()
+        Schema::string('name')->required(),
+        Schema::string('email')->required()
     )
     ->addDefinition('address',
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('street')->required(),
-                SchemaFactory::string('city')->required()
+                Schema::string('street')->required(),
+                Schema::string('city')->required()
             )
     );
 
@@ -332,7 +332,7 @@ $enhancedSchema = $migrator->addModernFeatures($modernSchema);
 $enhancedSchema = $enhancedSchema
     ->unevaluatedProperties(false)  // This now works
     ->properties(
-        SchemaFactory::string('legacy_field')
+        Schema::string('legacy_field')
             ->deprecated()  // This now works too
     );
 ```
@@ -346,16 +346,16 @@ class VersionAwareSchemaBuilder
 {
     public function buildUserSchema(SchemaVersion $version): Schema
     {
-        $schema = SchemaFactory::object('user', $version)
+        $schema = Schema::object('user', $version)
             ->properties(
-                SchemaFactory::string('name')->required(),
-                SchemaFactory::string('email')->required()
+                Schema::string('name')->required(),
+                Schema::string('email')->required()
             );
 
         // Add version-specific features
         if ($version->supports(SchemaFeature::Deprecated)) {
             $schema = $schema->properties(
-                SchemaFactory::string('old_email')
+                Schema::string('old_email')
                     ->deprecated()
                     ->comment('Use email field instead')
             );
@@ -367,16 +367,16 @@ class VersionAwareSchemaBuilder
 
         if ($version->supports(SchemaFeature::MinContains)) {
             $schema = $schema->properties(
-                SchemaFactory::array('roles')
-                    ->items(SchemaFactory::string())
+                Schema::array('roles')
+                    ->items(Schema::string())
                     ->minContains(1)
                     ->maxContains(5)
             );
         } else {
             // Fallback for older versions
             $schema = $schema->properties(
-                SchemaFactory::array('roles')
-                    ->items(SchemaFactory::string())
+                Schema::array('roles')
+                    ->items(Schema::string())
                     ->minItems(1)
                     ->maxItems(5)
             );
@@ -395,10 +395,10 @@ class VersionAwareSchemaBuilder
             SchemaFeature::DependentSchemas
         ];
 
-        $schema = SchemaFactory::object('advanced_user', $targetVersion)
+        $schema = Schema::object('advanced_user', $targetVersion)
             ->properties(
-                SchemaFactory::string('username')->required(),
-                SchemaFactory::string('email')->required()
+                Schema::string('username')->required(),
+                Schema::string('email')->required()
             );
 
         foreach ($availableFeatures as $feature) {
@@ -415,7 +415,7 @@ class VersionAwareSchemaBuilder
         switch ($feature) {
             case SchemaFeature::Deprecated:
                 return $schema->properties(
-                    SchemaFactory::string('legacy_username')
+                    Schema::string('legacy_username')
                         ->deprecated()
                         ->comment('Use username instead')
                 );
@@ -425,16 +425,16 @@ class VersionAwareSchemaBuilder
 
             case SchemaFeature::MinContains:
                 return $schema->properties(
-                    SchemaFactory::array('permissions')
-                        ->items(SchemaFactory::string())
+                    Schema::array('permissions')
+                        ->items(Schema::string())
                         ->minContains(1)
                 );
 
             case SchemaFeature::DependentSchemas:
                 return $schema->dependentSchema('legacy_username',
-                    SchemaFactory::object()
+                    Schema::object()
                         ->properties(
-                            SchemaFactory::string('migration_date')
+                            Schema::string('migration_date')
                                 ->format(SchemaFormat::Date)
                                 ->required()
                         )
@@ -490,7 +490,7 @@ class EnvironmentAwareValidator
 
     public function createCompatibleSchema(array $requirements): Schema
     {
-        $schema = SchemaFactory::object('dynamic', $this->supportedVersion);
+        $schema = Schema::object('dynamic', $this->supportedVersion);
 
         foreach ($requirements as $field => $config) {
             $fieldSchema = $this->createFieldSchema($config);
@@ -511,12 +511,12 @@ class EnvironmentAwareValidator
     {
         $type = $config['type'] ?? 'string';
         $fieldSchema = match($type) {
-            'string' => SchemaFactory::string(),
-            'integer' => SchemaFactory::integer(),
-            'number' => SchemaFactory::number(),
-            'boolean' => SchemaFactory::boolean(),
-            'array' => SchemaFactory::array(),
-            default => SchemaFactory::string()
+            'string' => Schema::string(),
+            'integer' => Schema::integer(),
+            'number' => Schema::number(),
+            'boolean' => Schema::boolean(),
+            'array' => Schema::array(),
+            default => Schema::string()
         };
 
         // Apply constraints based on version support
@@ -593,7 +593,7 @@ function createAdvancedUserSchema(SchemaVersion $version): Schema
         );
     }
 
-    return SchemaFactory::object('advanced_user', $version)
+    return Schema::object('advanced_user', $version)
         ->unevaluatedProperties(false);
 }
 ```

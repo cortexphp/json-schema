@@ -8,10 +8,10 @@ Union schemas allow validation against multiple types, enabling flexible data st
 ## Basic Union Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
 
-$idSchema = SchemaFactory::union([SchemaType::String, SchemaType::Integer], 'id')
+$idSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'id')
     ->description('ID can be either a string or integer');
 
 $idSchema->isValid('abc123');  // true (string)
@@ -37,19 +37,19 @@ The most common use of union schemas is creating nullable types:
 
 ```php
 // Nullable string
-$nullableStringSchema = SchemaFactory::string('optional_name')
+$nullableStringSchema = Schema::string('optional_name')
     ->nullable()
     ->description('Name or null if not provided');
 
 // Equivalent to:
-$explicitNullableSchema = SchemaFactory::union([SchemaType::String, SchemaType::Null], 'optional_name');
+$explicitNullableSchema = Schema::union([SchemaType::String, SchemaType::Null], 'optional_name');
 
 $nullableStringSchema->isValid('John Doe');  // true
 $nullableStringSchema->isValid(null);        // true
 $nullableStringSchema->isValid(123);         // false (not string or null)
 
 // Nullable with constraints
-$nullableEmailSchema = SchemaFactory::string('email')
+$nullableEmailSchema = Schema::string('email')
     ->format(SchemaFormat::Email)
     ->nullable()
     ->description('Email address or null');
@@ -60,7 +60,7 @@ $nullableEmailSchema = SchemaFactory::string('email')
 Apply constraints to union schemas:
 
 ```php
-$flexibleIdSchema = SchemaFactory::union([SchemaType::String, SchemaType::Integer], 'flexible_id')
+$flexibleIdSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'flexible_id')
     ->enum(['auto', 'manual', 1, 2, 3, 42])
     ->description('Predefined string values or specific integers');
 
@@ -70,7 +70,7 @@ $flexibleIdSchema->isValid('custom'); // false (not in enum)
 $flexibleIdSchema->isValid(99);       // false (not in enum)
 
 // Union with pattern (applies to string types)
-$codeSchema = SchemaFactory::union([SchemaType::String, SchemaType::Integer], 'code')
+$codeSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'code')
     ->pattern('^[A-Z]{3}-\d{3}$')  // Only applies to string values
     ->minimum(100)                  // Only applies to integer values
     ->maximum(999);                 // Only applies to integer values
@@ -87,7 +87,7 @@ Create unions with multiple different types:
 
 ```php
 // String, number, or boolean
-$mixedValueSchema = SchemaFactory::union([
+$mixedValueSchema = Schema::union([
     SchemaType::String,
     SchemaType::Number,
     SchemaType::Boolean
@@ -100,7 +100,7 @@ $mixedValueSchema->isValid(true);      // true
 $mixedValueSchema->isValid([]);        // false (array not allowed)
 
 // Complex union with objects and arrays
-$responseDataSchema = SchemaFactory::union([
+$responseDataSchema = Schema::union([
     SchemaType::Object,
     SchemaType::Array,
     SchemaType::String,
@@ -114,42 +114,42 @@ $responseDataSchema = SchemaFactory::union([
 Use `oneOf` to define specific schemas for each type:
 
 ```php
-$paymentMethodSchema = SchemaFactory::union([SchemaType::Object], 'payment_method')
+$paymentMethodSchema = Schema::union([SchemaType::Object], 'payment_method')
     ->oneOf(
         // Credit card payment
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('type')->const('credit_card'),
-                SchemaFactory::string('card_number')
+                Schema::string('type')->const('credit_card'),
+                Schema::string('card_number')
                     ->pattern('^\d{16}$')
                     ->required(),
-                SchemaFactory::string('expiry')
+                Schema::string('expiry')
                     ->pattern('^\d{2}/\d{2}$')
                     ->required(),
-                SchemaFactory::string('cvv')
+                Schema::string('cvv')
                     ->pattern('^\d{3,4}$')
                     ->required()
             )
             ->additionalProperties(false),
 
         // PayPal payment
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('type')->const('paypal'),
-                SchemaFactory::string('email')
+                Schema::string('type')->const('paypal'),
+                Schema::string('email')
                     ->format(SchemaFormat::Email)
                     ->required()
             )
             ->additionalProperties(false),
 
         // Bank transfer
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('type')->const('bank_transfer'),
-                SchemaFactory::string('account_number')
+                Schema::string('type')->const('bank_transfer'),
+                Schema::string('account_number')
                     ->pattern('^\d{8,20}$')
                     ->required(),
-                SchemaFactory::string('routing_number')
+                Schema::string('routing_number')
                     ->pattern('^\d{9}$')
                     ->required()
             )
@@ -163,35 +163,35 @@ $paymentMethodSchema = SchemaFactory::union([SchemaType::Object], 'payment_metho
 Create unions that use a discriminator field:
 
 ```php
-$eventSchema = SchemaFactory::union([SchemaType::Object], 'event')
+$eventSchema = Schema::union([SchemaType::Object], 'event')
     ->oneOf(
         // User event
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('type')->const('user'),
-                SchemaFactory::string('action')->enum(['login', 'logout', 'register']),
-                SchemaFactory::string('user_id')->required(),
-                SchemaFactory::string('timestamp')->required()
+                Schema::string('type')->const('user'),
+                Schema::string('action')->enum(['login', 'logout', 'register']),
+                Schema::string('user_id')->required(),
+                Schema::string('timestamp')->required()
             )
             ->additionalProperties(false),
 
         // System event
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('type')->const('system'),
-                SchemaFactory::string('level')->enum(['info', 'warning', 'error']),
-                SchemaFactory::string('message')->required(),
-                SchemaFactory::string('timestamp')->required()
+                Schema::string('type')->const('system'),
+                Schema::string('level')->enum(['info', 'warning', 'error']),
+                Schema::string('message')->required(),
+                Schema::string('timestamp')->required()
             )
             ->additionalProperties(false),
 
         // Custom event
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('type')->const('custom'),
-                SchemaFactory::string('name')->required(),
-                SchemaFactory::object('data')->additionalProperties(true),
-                SchemaFactory::string('timestamp')->required()
+                Schema::string('type')->const('custom'),
+                Schema::string('name')->required(),
+                Schema::object('data')->additionalProperties(true),
+                Schema::string('timestamp')->required()
             )
             ->additionalProperties(false)
     )
@@ -203,7 +203,7 @@ $eventSchema = SchemaFactory::union([SchemaType::Object], 'event')
 ### Configuration Value
 
 ```php
-$configValueSchema = SchemaFactory::union([
+$configValueSchema = Schema::union([
     SchemaType::String,
     SchemaType::Number,
     SchemaType::Boolean,
@@ -214,11 +214,11 @@ $configValueSchema = SchemaFactory::union([
     ->examples(['debug', 3000, true, ['option1', 'option2'], null]);
 
 // Usage in configuration object
-$configSchema = SchemaFactory::object('configuration')
+$configSchema = Schema::object('configuration')
     ->additionalProperties($configValueSchema)
     ->properties(
-        SchemaFactory::string('app_name')->required(),
-        SchemaFactory::string('version')->required()
+        Schema::string('app_name')->required(),
+        Schema::string('version')->required()
     );
 
 $configSchema->isValid([
@@ -234,7 +234,7 @@ $configSchema->isValid([
 ### Database Field Value
 
 ```php
-$dbFieldSchema = SchemaFactory::union([
+$dbFieldSchema = Schema::union([
     SchemaType::String,
     SchemaType::Integer,
     SchemaType::Number,
@@ -243,10 +243,10 @@ $dbFieldSchema = SchemaFactory::union([
 ], 'db_field')
     ->description('Database field value (supports common SQL types)');
 
-$recordSchema = SchemaFactory::object('database_record')
+$recordSchema = Schema::object('database_record')
     ->properties(
-        SchemaFactory::integer('id')->required(),
-        SchemaFactory::additionalProperties($dbFieldSchema)
+        Schema::integer('id')->required(),
+        Schema::additionalProperties($dbFieldSchema)
     )
     ->description('Flexible database record with typed fields');
 ```
@@ -254,30 +254,30 @@ $recordSchema = SchemaFactory::object('database_record')
 ### API Response Data
 
 ```php
-$apiDataSchema = SchemaFactory::union([SchemaType::Object, SchemaType::Array, SchemaType::Null], 'data')
+$apiDataSchema = Schema::union([SchemaType::Object, SchemaType::Array, SchemaType::Null], 'data')
     ->oneOf(
         // Single object response
-        SchemaFactory::object()
+        Schema::object()
             ->additionalProperties(true)
             ->description('Single resource'),
 
         // Array of objects response
-        SchemaFactory::array()
-            ->items(SchemaFactory::object()->additionalProperties(true))
+        Schema::array()
+            ->items(Schema::object()->additionalProperties(true))
             ->description('Collection of resources'),
 
         // Null for empty responses
-        SchemaFactory::null()
+        Schema::null()
             ->description('No data')
     )
     ->description('API response data in various formats');
 
-$apiResponseSchema = SchemaFactory::object('api_response')
+$apiResponseSchema = Schema::object('api_response')
     ->properties(
-        SchemaFactory::boolean('success')->required(),
-        SchemaFactory::string('message'),
+        Schema::boolean('success')->required(),
+        Schema::string('message'),
         $apiDataSchema,
-        SchemaFactory::object('meta')
+        Schema::object('meta')
             ->additionalProperties(true)
     );
 ```
@@ -288,13 +288,13 @@ Choose between `anyOf` and `oneOf` based on your validation needs:
 
 ```php
 // anyOf: Value must match at least one schema
-$anyOfSchema = SchemaFactory::union([SchemaType::Object], 'flexible')
+$anyOfSchema = Schema::union([SchemaType::Object], 'flexible')
     ->anyOf(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('name')->required()
+        Schema::object()->properties(
+            Schema::string('name')->required()
         ),
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('id')->required()
+        Schema::object()->properties(
+            Schema::string('id')->required()
         )
     )
     ->description('Must have either name or id (or both)');
@@ -304,13 +304,13 @@ $anyOfSchema->isValid(['id' => '123']);              // true
 $anyOfSchema->isValid(['name' => 'John', 'id' => '123']); // true (matches both)
 
 // oneOf: Value must match exactly one schema
-$oneOfSchema = SchemaFactory::union([SchemaType::Object], 'exclusive')
+$oneOfSchema = Schema::union([SchemaType::Object], 'exclusive')
     ->oneOf(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('name')->required()
+        Schema::object()->properties(
+            Schema::string('name')->required()
         ),
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('id')->required()
+        Schema::object()->properties(
+            Schema::string('id')->required()
         )
     )
     ->description('Must have either name or id (but not both)');
@@ -323,7 +323,7 @@ $oneOfSchema->isValid(['name' => 'John', 'id' => '123']); // false (matches both
 ## Validation Examples
 
 ```php
-$unionSchema = SchemaFactory::union([SchemaType::String, SchemaType::Integer], 'flexible_id')
+$unionSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'flexible_id')
     ->enum(['auto', 'manual', 1, 2, 3]);
 
 // Valid values
@@ -362,16 +362,16 @@ try {
 
 ```php
 // Good: Specific type when you know what you need
-$ageSchema = SchemaFactory::integer('age')->minimum(0);
+$ageSchema = Schema::integer('age')->minimum(0);
 
 // Less ideal: Union when not necessary
-$unnecessaryUnion = SchemaFactory::union([SchemaType::Integer], 'age');
+$unnecessaryUnion = Schema::union([SchemaType::Integer], 'age');
 ```
 
 ### 2. Document Union Semantics
 
 ```php
-$statusSchema = SchemaFactory::union([SchemaType::String, SchemaType::Integer], 'status')
+$statusSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'status')
     ->description('Status: string code ("active", "pending") or numeric code (1, 2, 3)')
     ->examples(['active', 'pending', 1, 2, 3]);
 ```
@@ -380,18 +380,18 @@ $statusSchema = SchemaFactory::union([SchemaType::String, SchemaType::Integer], 
 
 ```php
 // Good: Clear discriminator field
-$shapeSchema = SchemaFactory::union([SchemaType::Object], 'shape')
+$shapeSchema = Schema::union([SchemaType::Object], 'shape')
     ->oneOf(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('type')->const('circle'),
-                SchemaFactory::number('radius')->required()
+                Schema::string('type')->const('circle'),
+                Schema::number('radius')->required()
             ),
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('type')->const('rectangle'),
-                SchemaFactory::number('width')->required(),
-                SchemaFactory::number('height')->required()
+                Schema::string('type')->const('rectangle'),
+                Schema::number('width')->required(),
+                Schema::number('height')->required()
             )
     );
 ```

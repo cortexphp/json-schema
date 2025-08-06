@@ -10,7 +10,7 @@ Generate JSON schemas automatically from PHP backed enums. This feature extracts
 Generate a schema from a simple string-backed enum:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
 /**
  * User account status levels
@@ -24,7 +24,7 @@ enum UserStatus: string
 }
 
 // Generate schema from enum
-$schema = SchemaFactory::fromEnum(UserStatus::class);
+$schema = Schema::fromEnum(UserStatus::class);
 
 // Convert to JSON Schema
 $jsonSchema = $schema->toJson(JSON_PRETTY_PRINT);
@@ -64,7 +64,7 @@ enum Priority: int
     case Emergency = 5;
 }
 
-$prioritySchema = SchemaFactory::fromEnum(Priority::class);
+$prioritySchema = Schema::fromEnum(Priority::class);
 ```
 
 <Accordion title="View Generated JSON Schema">
@@ -123,7 +123,7 @@ enum PaymentStatus: string
     case Refunded = 'refunded';
 }
 
-$paymentSchema = SchemaFactory::fromEnum(PaymentStatus::class);
+$paymentSchema = Schema::fromEnum(PaymentStatus::class);
 ```
 
 ## Schema Version Support
@@ -152,7 +152,7 @@ enum OrderStatus: string
 }
 
 // Generate with Draft 2019-09 for deprecated support
-$schema = SchemaFactory::fromEnum(
+$schema = Schema::fromEnum(
     OrderStatus::class,
     version: SchemaVersion::Draft_2019_09
 );
@@ -212,9 +212,9 @@ enum TicketPriority: int
 }
 
 // Generate schemas for each enum
-$categorySchema = SchemaFactory::fromEnum(ProductCategory::class);
-$shippingSchema = SchemaFactory::fromEnum(ShippingMethod::class);
-$prioritySchema = SchemaFactory::fromEnum(TicketPriority::class);
+$categorySchema = Schema::fromEnum(ProductCategory::class);
+$shippingSchema = Schema::fromEnum(ShippingMethod::class);
+$prioritySchema = Schema::fromEnum(TicketPriority::class);
 ```
 
 ## Enums in Object Schemas
@@ -246,22 +246,22 @@ enum VerificationStatus: string
 }
 
 // Create object schema that uses enum schemas
-$userAccountSchema = SchemaFactory::object('user_account')
+$userAccountSchema = Schema::object('user_account')
     ->properties(
-        SchemaFactory::string('id')->required(),
-        SchemaFactory::string('username')->required(),
-        SchemaFactory::string('email')->required(),
+        Schema::string('id')->required(),
+        Schema::string('username')->required(),
+        Schema::string('email')->required(),
 
         // Use enum schemas for validation
-        SchemaFactory::fromEnum(UserRole::class)
+        Schema::fromEnum(UserRole::class)
             ->propertyName('role')
             ->required(),
 
-        SchemaFactory::fromEnum(VerificationStatus::class)
+        Schema::fromEnum(VerificationStatus::class)
             ->propertyName('verification_status')
             ->default('unverified'),
 
-        SchemaFactory::fromEnum(UserStatus::class)
+        Schema::fromEnum(UserStatus::class)
             ->propertyName('status')
             ->default('pending_verification')
     );
@@ -326,30 +326,30 @@ enum ValidationResult: string
 }
 
 // Create comprehensive API response schema
-$apiResponseSchema = SchemaFactory::object('api_response')
+$apiResponseSchema = Schema::object('api_response')
     ->properties(
-        SchemaFactory::fromEnum(ApiResponseCode::class)
+        Schema::fromEnum(ApiResponseCode::class)
             ->propertyName('code')
             ->required(),
 
-        SchemaFactory::fromEnum(OperationStatus::class)
+        Schema::fromEnum(OperationStatus::class)
             ->propertyName('status')
             ->required(),
 
-        SchemaFactory::string('message'),
+        Schema::string('message'),
 
-        SchemaFactory::object('data')
+        Schema::object('data')
             ->additionalProperties(true),
 
-        SchemaFactory::array('validation_results')
+        Schema::array('validation_results')
             ->items(
-                SchemaFactory::object()
+                Schema::object()
                     ->properties(
-                        SchemaFactory::string('field')->required(),
-                        SchemaFactory::fromEnum(ValidationResult::class)
+                        Schema::string('field')->required(),
+                        Schema::fromEnum(ValidationResult::class)
                             ->propertyName('result')
                             ->required(),
-                        SchemaFactory::string('message')
+                        Schema::string('message')
                     )
             )
     );
@@ -410,38 +410,38 @@ enum DatabaseDriver: string
 }
 
 // Application configuration schema
-$configSchema = SchemaFactory::object('app_config')
+$configSchema = Schema::object('app_config')
     ->properties(
-        SchemaFactory::string('app_name')->required(),
+        Schema::string('app_name')->required(),
 
-        SchemaFactory::fromEnum(Environment::class)
+        Schema::fromEnum(Environment::class)
             ->propertyName('environment')
             ->required(),
 
-        SchemaFactory::fromEnum(LogLevel::class)
+        Schema::fromEnum(LogLevel::class)
             ->propertyName('log_level')
             ->default('info'),
 
-        SchemaFactory::object('cache')
+        Schema::object('cache')
             ->properties(
-                SchemaFactory::fromEnum(CacheDriver::class)
+                Schema::fromEnum(CacheDriver::class)
                     ->propertyName('driver')
                     ->default('file'),
-                SchemaFactory::integer('ttl')
+                Schema::integer('ttl')
                     ->minimum(60)
                     ->default(3600)
             ),
 
-        SchemaFactory::object('database')
+        Schema::object('database')
             ->properties(
-                SchemaFactory::fromEnum(DatabaseDriver::class)
+                Schema::fromEnum(DatabaseDriver::class)
                     ->propertyName('driver')
                     ->required(),
-                SchemaFactory::string('host')->required(),
-                SchemaFactory::integer('port')
+                Schema::string('host')->required(),
+                Schema::integer('port')
                     ->minimum(1)
                     ->maximum(65535),
-                SchemaFactory::string('database')->required()
+                Schema::string('database')->required()
             )
             ->required()
     );
@@ -453,7 +453,7 @@ Validate data against enum schemas:
 
 ```php
 // Single enum validation
-$statusSchema = SchemaFactory::fromEnum(UserStatus::class);
+$statusSchema = Schema::fromEnum(UserStatus::class);
 
 // Test various values
 $statusSchema->isValid('active');           // true
@@ -462,7 +462,7 @@ $statusSchema->isValid('invalid_status');   // false
 $statusSchema->isValid(123);                // false (wrong type)
 
 // Priority enum validation
-$prioritySchema = SchemaFactory::fromEnum(Priority::class);
+$prioritySchema = Schema::fromEnum(Priority::class);
 
 $prioritySchema->isValid(1);                // true (Low)
 $prioritySchema->isValid(5);                // true (Emergency)
@@ -478,17 +478,17 @@ $taskData = [
     'assigned_role' => 'employee'
 ];
 
-$taskSchema = SchemaFactory::object('task')
+$taskSchema = Schema::object('task')
     ->properties(
-        SchemaFactory::string('title')->required(),
-        SchemaFactory::string('description'),
-        SchemaFactory::fromEnum(Priority::class)
+        Schema::string('title')->required(),
+        Schema::string('description'),
+        Schema::fromEnum(Priority::class)
             ->propertyName('priority')
             ->required(),
-        SchemaFactory::fromEnum(UserStatus::class)
+        Schema::fromEnum(UserStatus::class)
             ->propertyName('status')
             ->default('pending_verification'),
-        SchemaFactory::fromEnum(UserRole::class)
+        Schema::fromEnum(UserRole::class)
             ->propertyName('assigned_role')
             ->required()
     );
@@ -511,7 +511,7 @@ Work with enums dynamically in applications:
  */
 function getEnumValues(string $enumClass): array
 {
-    $schema = SchemaFactory::fromEnum($enumClass);
+    $schema = Schema::fromEnum($enumClass);
     $schemaArray = $schema->toArray();
 
     return $schemaArray['enum'] ?? [];
@@ -522,7 +522,7 @@ function getEnumValues(string $enumClass): array
  */
 function validateEnumWithSuggestions(string $enumClass, mixed $value): array
 {
-    $schema = SchemaFactory::fromEnum($enumClass);
+    $schema = Schema::fromEnum($enumClass);
 
     if ($schema->isValid($value)) {
         return ['valid' => true, 'suggestions' => []];
@@ -569,7 +569,7 @@ Generate HTML form options from enum schemas:
  */
 function generateSelectOptions(string $enumClass, ?string $selected = null): string
 {
-    $schema = SchemaFactory::fromEnum($enumClass);
+    $schema = Schema::fromEnum($enumClass);
     $schemaArray = $schema->toArray();
     $enumValues = $schemaArray['enum'] ?? [];
 
@@ -588,7 +588,7 @@ function generateSelectOptions(string $enumClass, ?string $selected = null): str
  */
 function generateValidationRules(string $enumClass): array
 {
-    $schema = SchemaFactory::fromEnum($enumClass);
+    $schema = Schema::fromEnum($enumClass);
     $schemaArray = $schema->toArray();
 
     return [
@@ -702,7 +702,7 @@ Handle enum validation errors gracefully:
 ```php
 function processUserRole(string $roleValue): void
 {
-    $roleSchema = SchemaFactory::fromEnum(UserRole::class);
+    $roleSchema = Schema::fromEnum(UserRole::class);
 
     try {
         $roleSchema->validate($roleValue);

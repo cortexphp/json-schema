@@ -8,14 +8,14 @@ Object schemas provide comprehensive validation for JSON objects with support fo
 ## Basic Object Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$userSchema = SchemaFactory::object('user')
+$userSchema = Schema::object('user')
     ->description('User profile object')
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->required(),
-        SchemaFactory::integer('age')
+        Schema::string('name')->required(),
+        Schema::string('email')->required(),
+        Schema::integer('age')
     );
 
 $userSchema->isValid([
@@ -35,31 +35,31 @@ $userSchema->isValid([
 Define specific properties with their own validation schemas:
 
 ```php
-$productSchema = SchemaFactory::object('product')
+$productSchema = Schema::object('product')
     ->properties(
         // Required string property
-        SchemaFactory::string('name')
+        Schema::string('name')
             ->minLength(1)
             ->maxLength(100)
             ->required(),
 
         // Optional string with format
-        SchemaFactory::string('description')
+        Schema::string('description')
             ->maxLength(500),
 
         // Required number with constraints
-        SchemaFactory::number('price')
+        Schema::number('price')
             ->minimum(0)
             ->multipleOf(0.01)
             ->required(),
 
         // Boolean with default
-        SchemaFactory::boolean('in_stock')
+        Schema::boolean('in_stock')
             ->default(true),
 
         // Array of strings
-        SchemaFactory::array('tags')
-            ->items(SchemaFactory::string())
+        Schema::array('tags')
+            ->items(Schema::string())
             ->maxItems(10)
     );
 ```
@@ -107,23 +107,23 @@ $productSchema = SchemaFactory::object('product')
 Specify which properties are mandatory:
 
 ```php
-$registrationSchema = SchemaFactory::object('registration')
+$registrationSchema = Schema::object('registration')
     ->properties(
-        SchemaFactory::string('username')
+        Schema::string('username')
             ->minLength(3)
             ->required(),
 
-        SchemaFactory::string('email')
+        Schema::string('email')
             ->format(SchemaFormat::Email)
             ->required(),
 
-        SchemaFactory::string('password')
+        Schema::string('password')
             ->minLength(8)
             ->required(),
 
         // Optional fields
-        SchemaFactory::string('full_name'),
-        SchemaFactory::string('phone')
+        Schema::string('full_name'),
+        Schema::string('phone')
     );
 
 // This will fail validation - missing required fields
@@ -139,10 +139,10 @@ Control whether objects can have properties beyond those defined:
 
 ```php
 // Strict object - no additional properties allowed
-$strictSchema = SchemaFactory::object('config')
+$strictSchema = Schema::object('config')
     ->properties(
-        SchemaFactory::string('host')->required(),
-        SchemaFactory::integer('port')->required()
+        Schema::string('host')->required(),
+        Schema::integer('port')->required()
     )
     ->additionalProperties(false);
 
@@ -158,12 +158,12 @@ $strictSchema->isValid([
 ]); // false
 
 // Allow additional properties with validation
-$flexibleSchema = SchemaFactory::object('metadata')
+$flexibleSchema = Schema::object('metadata')
     ->properties(
-        SchemaFactory::string('title')->required()
+        Schema::string('title')->required()
     )
     ->additionalProperties(
-        SchemaFactory::string()->minLength(1)
+        Schema::string()->minLength(1)
     );
 
 $flexibleSchema->isValid([
@@ -183,11 +183,11 @@ $flexibleSchema->isValid([
 Limit the number of properties in an object:
 
 ```php
-$taggedSchema = SchemaFactory::object('tagged_item')
+$taggedSchema = Schema::object('tagged_item')
     ->properties(
-        SchemaFactory::string('name')->required()
+        Schema::string('name')->required()
     )
-    ->additionalProperties(SchemaFactory::string())
+    ->additionalProperties(Schema::string())
     ->minProperties(2)  // At least name + 1 tag
     ->maxProperties(10) // No more than 10 total properties
     ->description('Item with 1-9 tags');
@@ -207,11 +207,11 @@ $taggedSchema->isValid([
 Validate property names against a pattern:
 
 ```php
-$configSchema = SchemaFactory::object('config')
+$configSchema = Schema::object('config')
     ->propertyNames(
-        SchemaFactory::string()->pattern('^[a-zA-Z][a-zA-Z0-9_]*$')
+        Schema::string()->pattern('^[a-zA-Z][a-zA-Z0-9_]*$')
     )
-    ->additionalProperties(SchemaFactory::string())
+    ->additionalProperties(Schema::string())
     ->description('Config with valid identifier names');
 
 $configSchema->isValid([
@@ -230,18 +230,18 @@ $configSchema->isValid([
 Validate properties based on name patterns:
 
 ```php
-$apiResponseSchema = SchemaFactory::object('api_response')
+$apiResponseSchema = Schema::object('api_response')
     // Regular properties
     ->properties(
-        SchemaFactory::string('status')->required(),
-        SchemaFactory::string('message')
+        Schema::string('status')->required(),
+        Schema::string('message')
     )
     // Pattern-based properties
     ->patternProperty('^data_[a-z]+$',
-        SchemaFactory::object()->additionalProperties(true)
+        Schema::object()->additionalProperties(true)
     )
     ->patternProperty('^meta_[a-z]+$',
-        SchemaFactory::string()
+        Schema::string()
     )
     ->additionalProperties(false);
 
@@ -261,11 +261,11 @@ $apiResponseSchema->isValid([
 You can add multiple pattern properties:
 
 ```php
-$schema = SchemaFactory::object('flexible_config')
+$schema = Schema::object('flexible_config')
     ->patternProperties([
-        '^[A-Z][a-z]+$' => SchemaFactory::string(),      // CamelCase = string
-        '^\d+$' => SchemaFactory::number(),              // Numbers = number
-        '^prefix_' => SchemaFactory::boolean(),          // Prefixed = boolean
+        '^[A-Z][a-z]+$' => Schema::string(),      // CamelCase = string
+        '^\d+$' => Schema::number(),              // Numbers = number
+        '^prefix_' => Schema::boolean(),          // Prefixed = boolean
     ])
     ->additionalProperties(false);
 ```
@@ -275,23 +275,23 @@ $schema = SchemaFactory::object('flexible_config')
 Create complex nested object structures:
 
 ```php
-$orderSchema = SchemaFactory::object('order')
+$orderSchema = Schema::object('order')
     ->properties(
-        SchemaFactory::string('id')->required(),
+        Schema::string('id')->required(),
 
         // Nested customer object
-        SchemaFactory::object('customer')
+        Schema::object('customer')
             ->properties(
-                SchemaFactory::string('name')->required(),
-                SchemaFactory::string('email')->required(),
+                Schema::string('name')->required(),
+                Schema::string('email')->required(),
 
                 // Nested address object
-                SchemaFactory::object('address')
+                Schema::object('address')
                     ->properties(
-                        SchemaFactory::string('street')->required(),
-                        SchemaFactory::string('city')->required(),
-                        SchemaFactory::string('postal_code')->required(),
-                        SchemaFactory::string('country')->required()
+                        Schema::string('street')->required(),
+                        Schema::string('city')->required(),
+                        Schema::string('postal_code')->required(),
+                        Schema::string('country')->required()
                     )
                     ->additionalProperties(false)
                     ->required()
@@ -300,16 +300,16 @@ $orderSchema = SchemaFactory::object('order')
             ->required(),
 
         // Array of nested item objects
-        SchemaFactory::array('items')
+        Schema::array('items')
             ->items(
-                SchemaFactory::object('item')
+                Schema::object('item')
                     ->properties(
-                        SchemaFactory::string('sku')->required(),
-                        SchemaFactory::string('name')->required(),
-                        SchemaFactory::integer('quantity')
+                        Schema::string('sku')->required(),
+                        Schema::string('name')->required(),
+                        Schema::integer('quantity')
                             ->minimum(1)
                             ->required(),
-                        SchemaFactory::number('price')
+                        Schema::number('price')
                             ->minimum(0)
                             ->multipleOf(0.01)
                             ->required()
@@ -329,20 +329,20 @@ Here's a comprehensive user profile schema demonstrating various object features
 ```php
 use Cortex\JsonSchema\Enums\SchemaFormat;
 
-$userProfileSchema = SchemaFactory::object('user_profile')
+$userProfileSchema = Schema::object('user_profile')
     ->description('Complete user profile with validation')
 
     // Core required fields
     ->properties(
-        SchemaFactory::string('username')
+        Schema::string('username')
             ->pattern('^[a-zA-Z0-9_]{3,20}$')
             ->required(),
 
-        SchemaFactory::string('email')
+        Schema::string('email')
             ->format(SchemaFormat::Email)
             ->required(),
 
-        SchemaFactory::string('full_name')
+        Schema::string('full_name')
             ->minLength(2)
             ->maxLength(100)
             ->required()
@@ -350,34 +350,34 @@ $userProfileSchema = SchemaFactory::object('user_profile')
 
     // Optional personal information
     ->properties(
-        SchemaFactory::string('bio')
+        Schema::string('bio')
             ->maxLength(500),
 
-        SchemaFactory::string('website')
+        Schema::string('website')
             ->format(SchemaFormat::Uri),
 
-        SchemaFactory::string('location')
+        Schema::string('location')
             ->maxLength(100),
 
         // Nested preferences object
-        SchemaFactory::object('preferences')
+        Schema::object('preferences')
             ->properties(
-                SchemaFactory::string('theme')
+                Schema::string('theme')
                     ->enum(['light', 'dark', 'auto'])
                     ->default('auto'),
 
-                SchemaFactory::string('language')
+                Schema::string('language')
                     ->pattern('^[a-z]{2}(-[A-Z]{2})?$')
                     ->default('en'),
 
-                SchemaFactory::boolean('notifications')
+                Schema::boolean('notifications')
                     ->default(true),
 
-                SchemaFactory::object('privacy')
+                Schema::object('privacy')
                     ->properties(
-                        SchemaFactory::boolean('public_profile')
+                        Schema::boolean('public_profile')
                             ->default(false),
-                        SchemaFactory::boolean('show_email')
+                        Schema::boolean('show_email')
                             ->default(false)
                     )
                     ->additionalProperties(false)
@@ -385,9 +385,9 @@ $userProfileSchema = SchemaFactory::object('user_profile')
             ->additionalProperties(false),
 
         // Social media links with pattern properties
-        SchemaFactory::object('social_links')
+        Schema::object('social_links')
             ->patternProperty('^(twitter|github|linkedin|instagram)$',
-                SchemaFactory::string()
+                Schema::string()
                     ->format(SchemaFormat::Uri)
                     ->pattern('^https?://')
             )
@@ -400,7 +400,7 @@ $userProfileSchema = SchemaFactory::object('user_profile')
 
     // Validate property names
     ->propertyNames(
-        SchemaFactory::string()
+        Schema::string()
             ->pattern('^[a-z][a-z_]*$')
     );
 ```
@@ -413,27 +413,27 @@ Some object features require specific JSON Schema versions:
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // Unevaluated properties (Draft 2019-09+)
-$strictSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$strictSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('name')->required()
+        Schema::string('name')->required()
     )
     ->unevaluatedProperties(false)  // Strict validation
     ->description('No properties beyond those explicitly defined');
 
 // Dependent schemas (Draft 2019-09+)
-$conditionalSchema = SchemaFactory::object('payment', SchemaVersion::Draft_2019_09)
+$conditionalSchema = Schema::object('payment', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('method')->enum(['card', 'paypal']),
-        SchemaFactory::string('card_number'),
-        SchemaFactory::string('paypal_email')
+        Schema::string('method')->enum(['card', 'paypal']),
+        Schema::string('card_number'),
+        Schema::string('paypal_email')
     )
     ->dependentSchema('method',
-        SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::string('method')->const('card')
+        Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::string('method')->const('card')
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('card_number')->required()
+            ->then(Schema::object()->properties(
+                Schema::string('card_number')->required()
             ))
     );
 ```
@@ -441,10 +441,10 @@ $conditionalSchema = SchemaFactory::object('payment', SchemaVersion::Draft_2019_
 ## Validation Examples
 
 ```php
-$schema = SchemaFactory::object('config')
+$schema = Schema::object('config')
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::integer('port')->required()
+        Schema::string('name')->required(),
+        Schema::integer('port')->required()
     )
     ->additionalProperties(false);
 

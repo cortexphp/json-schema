@@ -6,7 +6,7 @@ namespace Cortex\JsonSchema\Contracts;
 
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
-interface Schema
+interface JsonSchema
 {
     /**
      * Set the title

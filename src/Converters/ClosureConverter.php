@@ -10,11 +10,11 @@ use ReflectionEnum;
 use ReflectionFunction;
 use ReflectionNamedType;
 use ReflectionParameter;
-use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
 use Cortex\JsonSchema\Enums\SchemaVersion;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Support\NodeCollection;
 use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
 
@@ -63,23 +63,23 @@ class ClosureConverter implements Converter
     protected function getSchemaFromReflectionParameter(
         ReflectionParameter $reflectionParameter,
         ?NodeCollection $nodeCollection = null,
-    ): Schema {
+    ): JsonSchema {
         $type = $reflectionParameter->getType();
 
         // @phpstan-ignore argument.type
-        $schema = self::getSchemaFromReflectionType($type);
+        $jsonSchema = self::getSchemaFromReflectionType($type);
 
-        $schema->title($reflectionParameter->getName());
+        $jsonSchema->title($reflectionParameter->getName());
 
         $docParam = $nodeCollection?->get($reflectionParameter->getName());
 
         // Add the description to the schema if it exists
         if ($docParam?->description !== null) {
-            $schema->description($docParam->description);
+            $jsonSchema->description($docParam->description);
         }
 
         if ($type === null || $type->allowsNull()) {
-            $schema->nullable();
+            $jsonSchema->nullable();
         }
 
         if ($reflectionParameter->isDefaultValueAvailable() && ! $reflectionParameter->isDefaultValueConstant()) {
@@ -90,11 +90,11 @@ class ClosureConverter implements Converter
                 $defaultValue = $defaultValue->value;
             }
 
-            $schema->default($defaultValue);
+            $jsonSchema->default($defaultValue);
         }
 
         if (! $reflectionParameter->isOptional()) {
-            $schema->required();
+            $jsonSchema->required();
         }
 
         // If it's an enum, add the possible values
@@ -107,12 +107,12 @@ class ClosureConverter implements Converter
                 if ($reflectionEnum->isBacked()) {
                     /** @var non-empty-array<int, string|int> $values */
                     $values = array_column($typeName::cases(), 'value');
-                    $schema->enum($values);
+                    $jsonSchema->enum($values);
                 }
             }
         }
 
-        return $schema;
+        return $jsonSchema;
     }
 
     protected function getDocParser(): ?DocParser

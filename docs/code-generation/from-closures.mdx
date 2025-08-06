@@ -10,7 +10,7 @@ Generate JSON schemas automatically from PHP closures (anonymous functions) and 
 Generate a schema from a simple closure:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
 /**
  * Process user registration data
@@ -24,7 +24,7 @@ $registrationClosure = function (string $name, string $email, int $age): void {
 };
 
 // Generate schema from closure
-$schema = SchemaFactory::fromClosure($registrationClosure);
+$schema = Schema::fromClosure($registrationClosure);
 
 // Convert to JSON Schema
 $jsonSchema = $schema->toJson(JSON_PRETTY_PRINT);
@@ -79,7 +79,7 @@ $createProductClosure = function (
     // Create product...
 };
 
-$schema = SchemaFactory::fromClosure($createProductClosure);
+$schema = Schema::fromClosure($createProductClosure);
 ```
 
 <Accordion title="View Generated JSON Schema">
@@ -142,7 +142,7 @@ $updateUserClosure = function (
     // Update user...
 };
 
-$schema = SchemaFactory::fromClosure($updateUserClosure);
+$schema = Schema::fromClosure($updateUserClosure);
 ```
 
 The generated schema will include nullable types:
@@ -209,7 +209,7 @@ $processPaymentClosure = function (
 };
 
 // Generate with advanced validation rules
-$schema = SchemaFactory::fromClosure($processPaymentClosure);
+$schema = Schema::fromClosure($processPaymentClosure);
 ```
 
 ## Enhanced Docblock Annotations
@@ -247,7 +247,7 @@ $advancedRegistrationClosure = function (
     return true;
 };
 
-$schema = SchemaFactory::fromClosure($advancedRegistrationClosure);
+$schema = Schema::fromClosure($advancedRegistrationClosure);
 ```
 
 <Accordion title="View Enhanced JSON Schema">
@@ -321,7 +321,7 @@ $createOrderClosure = function (
     return 'order_123';
 };
 
-$schema = SchemaFactory::fromClosure($createOrderClosure);
+$schema = Schema::fromClosure($createOrderClosure);
 ```
 
 ## API Endpoint Schema Generation
@@ -383,7 +383,7 @@ $userSearchClosure = function (
     ];
 };
 
-$searchSchema = SchemaFactory::fromClosure($userSearchClosure);
+$searchSchema = Schema::fromClosure($userSearchClosure);
 ```
 
 ## Schema Versioning
@@ -412,7 +412,7 @@ $modernApiClosure = function (
 };
 
 // Generate with Draft 2019-09 for deprecated and contains support
-$modernSchema = SchemaFactory::fromClosure(
+$modernSchema = Schema::fromClosure(
     $modernApiClosure,
     version: SchemaVersion::Draft_2019_09
 );
@@ -452,7 +452,7 @@ $contactFormClosure = function (
 };
 
 // Generate validation schema
-$contactSchema = SchemaFactory::fromClosure($contactFormClosure);
+$contactSchema = Schema::fromClosure($contactFormClosure);
 
 // Validate form data
 $formData = [
@@ -489,7 +489,7 @@ Create a wrapper that automatically validates inputs:
 ```php
 function createValidatedFunction(callable $closure): callable
 {
-    $schema = SchemaFactory::fromClosure($closure);
+    $schema = Schema::fromClosure($closure);
 
     return function (array $data) use ($closure, $schema) {
         // Validate input data
@@ -572,7 +572,7 @@ $orderServiceClosure = function (
     ];
 };
 
-$orderServiceSchema = SchemaFactory::fromClosure(
+$orderServiceSchema = Schema::fromClosure(
     $orderServiceClosure,
     version: SchemaVersion::Draft_2019_09
 );

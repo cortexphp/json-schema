@@ -8,11 +8,11 @@ Array schemas provide comprehensive validation for arrays with support for item 
 ## Basic Array Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$tagsSchema = SchemaFactory::array('tags')
+$tagsSchema = Schema::array('tags')
     ->description('List of product tags')
-    ->items(SchemaFactory::string())
+    ->items(Schema::string())
     ->required();
 
 $tagsSchema->isValid(['electronics', 'mobile', 'phone']); // true
@@ -26,27 +26,27 @@ Define schemas for array items:
 
 ```php
 // Array of strings
-$stringArraySchema = SchemaFactory::array('categories')
-    ->items(SchemaFactory::string()->minLength(1))
+$stringArraySchema = Schema::array('categories')
+    ->items(Schema::string()->minLength(1))
     ->description('Non-empty category names');
 
 // Array of numbers with constraints
-$scoresSchema = SchemaFactory::array('scores')
+$scoresSchema = Schema::array('scores')
     ->items(
-        SchemaFactory::number()
+        Schema::number()
             ->minimum(0)
             ->maximum(100)
     )
     ->description('Test scores between 0-100');
 
 // Array of objects
-$usersSchema = SchemaFactory::array('users')
+$usersSchema = Schema::array('users')
     ->items(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('name')->required(),
-                SchemaFactory::string('email')->required(),
-                SchemaFactory::integer('age')->minimum(0)
+                Schema::string('name')->required(),
+                Schema::string('email')->required(),
+                Schema::integer('age')->minimum(0)
             )
     );
 
@@ -87,8 +87,8 @@ $usersSchema->isValid([
 Control the minimum and maximum number of items:
 
 ```php
-$teamSchema = SchemaFactory::array('team_members')
-    ->items(SchemaFactory::string())
+$teamSchema = Schema::array('team_members')
+    ->items(Schema::string())
     ->minItems(2)   // At least 2 members
     ->maxItems(10)  // No more than 10 members
     ->description('Team must have 2-10 members');
@@ -98,8 +98,8 @@ $teamSchema->isValid(['Alice']);                   // false (too few)
 $teamSchema->isValid(['Alice', 'Bob', /* ...12 more names */]); // false (too many)
 
 // Required non-empty array
-$requiredItemsSchema = SchemaFactory::array('required_list')
-    ->items(SchemaFactory::string())
+$requiredItemsSchema = Schema::array('required_list')
+    ->items(Schema::string())
     ->minItems(1)  // Must have at least one item
     ->required();
 ```
@@ -109,8 +109,8 @@ $requiredItemsSchema = SchemaFactory::array('required_list')
 Ensure all items in the array are unique:
 
 ```php
-$uniqueTagsSchema = SchemaFactory::array('unique_tags')
-    ->items(SchemaFactory::string())
+$uniqueTagsSchema = Schema::array('unique_tags')
+    ->items(Schema::string())
     ->uniqueItems(true)
     ->description('Each tag must be unique');
 
@@ -118,12 +118,12 @@ $uniqueTagsSchema->isValid(['php', 'json', 'schema']); // true
 $uniqueTagsSchema->isValid(['php', 'json', 'php']);    // false (duplicate 'php')
 
 // Unique objects (compared by value)
-$uniqueUsersSchema = SchemaFactory::array('users')
+$uniqueUsersSchema = Schema::array('users')
     ->items(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('id')->required(),
-                SchemaFactory::string('name')->required()
+                Schema::string('id')->required(),
+                Schema::string('name')->required()
             )
     )
     ->uniqueItems(true);
@@ -145,13 +145,13 @@ Validate arrays with specific items at specific positions:
 
 ```php
 // Coordinate pair [latitude, longitude]
-$coordinateSchema = SchemaFactory::array('coordinates')
+$coordinateSchema = Schema::array('coordinates')
     ->items(
-        SchemaFactory::number()
+        Schema::number()
             ->minimum(-180)
             ->maximum(180)
             ->description('latitude'),
-        SchemaFactory::number()
+        Schema::number()
             ->minimum(-180)
             ->maximum(180)
             ->description('longitude')
@@ -165,11 +165,11 @@ $coordinateSchema->isValid([51.5074]);          // false (missing longitude)
 $coordinateSchema->isValid([51.5074, -0.1278, 100]); // false (too many items)
 
 // Mixed type tuple
-$recordSchema = SchemaFactory::array('record')
+$recordSchema = Schema::array('record')
     ->items(
-        SchemaFactory::string()->description('name'),
-        SchemaFactory::integer()->minimum(0)->description('age'),
-        SchemaFactory::boolean()->description('active')
+        Schema::string()->description('name'),
+        Schema::integer()->minimum(0)->description('age'),
+        Schema::boolean()->description('active')
     )
     ->minItems(3)
     ->maxItems(3);
@@ -184,18 +184,18 @@ Validate that an array contains specific items:
 
 ```php
 // Array must contain at least one admin user
-$usersSchema = SchemaFactory::array('users')
+$usersSchema = Schema::array('users')
     ->items(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('name')->required(),
-                SchemaFactory::string('role')->required()
+                Schema::string('name')->required(),
+                Schema::string('role')->required()
             )
     )
     ->contains(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('role')->const('admin')
+                Schema::string('role')->const('admin')
             )
     )
     ->description('Must include at least one admin user');
@@ -220,10 +220,10 @@ Use `minContains` and `maxContains` for more precise control:
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // Array must contain 2-3 numbers between 10-20
-$numbersSchema = SchemaFactory::array('numbers', SchemaVersion::Draft_2019_09)
-    ->items(SchemaFactory::number())
+$numbersSchema = Schema::array('numbers', SchemaVersion::Draft_2019_09)
+    ->items(Schema::number())
     ->contains(
-        SchemaFactory::number()
+        Schema::number()
             ->minimum(10)
             ->maximum(20)
     )
@@ -241,31 +241,31 @@ $numbersSchema->isValid([15, 16, 17, 18, 19]); // false (5 numbers in range)
 ### E-commerce Order Items
 
 ```php
-$orderItemsSchema = SchemaFactory::array('order_items')
+$orderItemsSchema = Schema::array('order_items')
     ->items(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('sku')
+                Schema::string('sku')
                     ->pattern('^[A-Z]{3}-\d{4}$')
                     ->required(),
-                SchemaFactory::string('name')
+                Schema::string('name')
                     ->minLength(1)
                     ->maxLength(200)
                     ->required(),
-                SchemaFactory::integer('quantity')
+                Schema::integer('quantity')
                     ->minimum(1)
                     ->maximum(99)
                     ->required(),
-                SchemaFactory::number('unit_price')
+                Schema::number('unit_price')
                     ->minimum(0.01)
                     ->multipleOf(0.01)
                     ->required(),
-                SchemaFactory::array('options')
+                Schema::array('options')
                     ->items(
-                        SchemaFactory::object()
+                        Schema::object()
                             ->properties(
-                                SchemaFactory::string('name')->required(),
-                                SchemaFactory::string('value')->required()
+                                Schema::string('name')->required(),
+                                Schema::string('value')->required()
                             )
                     )
                     ->maxItems(5)
@@ -281,10 +281,10 @@ $orderItemsSchema = SchemaFactory::array('order_items')
 ### Multi-dimensional Array
 
 ```php
-$matrixSchema = SchemaFactory::array('matrix')
+$matrixSchema = Schema::array('matrix')
     ->items(
-        SchemaFactory::array('row')
-            ->items(SchemaFactory::number())
+        Schema::array('row')
+            ->items(Schema::number())
             ->minItems(3)
             ->maxItems(3)
     )
@@ -308,24 +308,24 @@ $matrixSchema->isValid([
 ### Tagged Array with Metadata
 
 ```php
-$taggedArraySchema = SchemaFactory::array('tagged_items')
+$taggedArraySchema = Schema::array('tagged_items')
     ->items(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('id')->required(),
-                SchemaFactory::string('content')->required(),
-                SchemaFactory::array('tags')
-                    ->items(SchemaFactory::string())
+                Schema::string('id')->required(),
+                Schema::string('content')->required(),
+                Schema::array('tags')
+                    ->items(Schema::string())
                     ->uniqueItems(true)
                     ->maxItems(10)
             )
             ->additionalProperties(false)
     )
     ->contains(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::array('tags')
-                    ->contains(SchemaFactory::string()->const('featured'))
+                Schema::array('tags')
+                    ->contains(Schema::string()->const('featured'))
             )
     )
     ->minItems(1)
@@ -338,26 +338,26 @@ Advanced array features available in newer JSON Schema versions:
 
 ```php
 // Unevaluated items (Draft 2019-09+)
-$strictArraySchema = SchemaFactory::array('strict', SchemaVersion::Draft_2019_09)
-    ->items(SchemaFactory::string())
+$strictArraySchema = Schema::array('strict', SchemaVersion::Draft_2019_09)
+    ->items(Schema::string())
     ->unevaluatedItems(false)  // No additional items beyond schema
     ->description('Strict array validation');
 
 // Prefix items (Draft 2020-12+)
-$prefixArraySchema = SchemaFactory::array('prefixed', SchemaVersion::Draft_2020_12)
+$prefixArraySchema = Schema::array('prefixed', SchemaVersion::Draft_2020_12)
     ->prefixItems([
-        SchemaFactory::string(),   // First item must be string
-        SchemaFactory::integer(),  // Second item must be integer
+        Schema::string(),   // First item must be string
+        Schema::integer(),  // Second item must be integer
     ])
-    ->items(SchemaFactory::boolean())  // Additional items must be boolean
+    ->items(Schema::boolean())  // Additional items must be boolean
     ->description('Array with typed prefix and additional items');
 ```
 
 ## Validation Examples
 
 ```php
-$schema = SchemaFactory::array('scores')
-    ->items(SchemaFactory::integer()->minimum(0)->maximum(100))
+$schema = Schema::array('scores')
+    ->items(Schema::integer()->minimum(0)->maximum(100))
     ->minItems(1)
     ->maxItems(10)
     ->uniqueItems(true);

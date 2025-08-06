@@ -8,9 +8,9 @@ Boolean schemas provide validation for true/false values with support for defaul
 ## Basic Boolean Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$activeSchema = SchemaFactory::boolean('active')
+$activeSchema = Schema::boolean('active')
     ->description('Whether the record is active')
     ->required();
 
@@ -37,21 +37,21 @@ $activeSchema->isValid(null);   // false (null, not boolean)
 Set default boolean values for optional fields:
 
 ```php
-$userPreferencesSchema = SchemaFactory::object('preferences')
+$userPreferencesSchema = Schema::object('preferences')
     ->properties(
-        SchemaFactory::boolean('email_notifications')
+        Schema::boolean('email_notifications')
             ->default(true)
             ->description('Receive email notifications'),
 
-        SchemaFactory::boolean('sms_notifications')
+        Schema::boolean('sms_notifications')
             ->default(false)
             ->description('Receive SMS notifications'),
 
-        SchemaFactory::boolean('marketing_emails')
+        Schema::boolean('marketing_emails')
             ->default(false)
             ->description('Receive marketing emails'),
 
-        SchemaFactory::boolean('dark_mode')
+        Schema::boolean('dark_mode')
             ->default(false)
             ->description('Use dark theme')
     );
@@ -68,21 +68,21 @@ $userPreferencesSchema->isValid([
 Create read-only boolean fields for system-managed states:
 
 ```php
-$accountSchema = SchemaFactory::object('account')
+$accountSchema = Schema::object('account')
     ->properties(
-        SchemaFactory::string('username')->required(),
-        SchemaFactory::string('email')->required(),
+        Schema::string('username')->required(),
+        Schema::string('email')->required(),
 
         // System-managed boolean flags
-        SchemaFactory::boolean('is_verified')
+        Schema::boolean('is_verified')
             ->readOnly()
             ->description('Email verification status'),
 
-        SchemaFactory::boolean('is_suspended')
+        Schema::boolean('is_suspended')
             ->readOnly()
             ->description('Account suspension status'),
 
-        SchemaFactory::boolean('has_premium')
+        Schema::boolean('has_premium')
             ->readOnly()
             ->description('Premium subscription status')
     );
@@ -93,24 +93,24 @@ $accountSchema = SchemaFactory::object('account')
 Use write-only for input-only boolean fields:
 
 ```php
-$registrationSchema = SchemaFactory::object('registration')
+$registrationSchema = Schema::object('registration')
     ->properties(
-        SchemaFactory::string('username')->required(),
-        SchemaFactory::string('email')->required(),
-        SchemaFactory::string('password')->required(),
+        Schema::string('username')->required(),
+        Schema::string('email')->required(),
+        Schema::string('password')->required(),
 
         // Consent checkboxes (write-only)
-        SchemaFactory::boolean('accept_terms')
+        Schema::boolean('accept_terms')
             ->writeOnly()
             ->required()
             ->description('Must accept terms of service'),
 
-        SchemaFactory::boolean('accept_privacy')
+        Schema::boolean('accept_privacy')
             ->writeOnly()
             ->required()
             ->description('Must accept privacy policy'),
 
-        SchemaFactory::boolean('subscribe_newsletter')
+        Schema::boolean('subscribe_newsletter')
             ->writeOnly()
             ->default(false)
             ->description('Subscribe to newsletter (optional)')
@@ -123,7 +123,7 @@ Validate that a boolean has a specific constant value:
 
 ```php
 // Must be true (for consent validation)
-$consentSchema = SchemaFactory::boolean('gdpr_consent')
+$consentSchema = Schema::boolean('gdpr_consent')
     ->const(true)
     ->description('GDPR consent must be explicitly granted');
 
@@ -131,7 +131,7 @@ $consentSchema->isValid(true);  // true
 $consentSchema->isValid(false); // false (must be true)
 
 // Must be false (for security checks)
-$securityFlagSchema = SchemaFactory::boolean('is_compromised')
+$securityFlagSchema = Schema::boolean('is_compromised')
     ->const(false)
     ->description('Account must not be compromised');
 ```
@@ -141,37 +141,37 @@ $securityFlagSchema = SchemaFactory::boolean('is_compromised')
 ### Feature Flags Configuration
 
 ```php
-$featureFlagsSchema = SchemaFactory::object('feature_flags')
+$featureFlagsSchema = Schema::object('feature_flags')
     ->description('Application feature toggles')
     ->properties(
         // Core features
-        SchemaFactory::boolean('new_dashboard')
+        Schema::boolean('new_dashboard')
             ->default(false)
             ->description('Enable new dashboard interface'),
 
-        SchemaFactory::boolean('advanced_search')
+        Schema::boolean('advanced_search')
             ->default(true)
             ->description('Enable advanced search functionality'),
 
-        SchemaFactory::boolean('real_time_notifications')
+        Schema::boolean('real_time_notifications')
             ->default(false)
             ->description('Enable real-time push notifications'),
 
         // Experimental features
-        SchemaFactory::boolean('experimental_ai')
+        Schema::boolean('experimental_ai')
             ->default(false)
             ->description('Enable experimental AI features'),
 
-        SchemaFactory::boolean('beta_mobile_app')
+        Schema::boolean('beta_mobile_app')
             ->default(false)
             ->description('Enable beta mobile app features'),
 
         // System flags (read-only)
-        SchemaFactory::boolean('maintenance_mode')
+        Schema::boolean('maintenance_mode')
             ->readOnly()
             ->description('System maintenance mode status'),
 
-        SchemaFactory::boolean('debug_enabled')
+        Schema::boolean('debug_enabled')
             ->readOnly()
             ->description('Debug mode status')
     )
@@ -181,37 +181,37 @@ $featureFlagsSchema = SchemaFactory::object('feature_flags')
 ### User Permissions Schema
 
 ```php
-$permissionsSchema = SchemaFactory::object('user_permissions')
+$permissionsSchema = Schema::object('user_permissions')
     ->description('User access permissions')
     ->properties(
         // Basic permissions
-        SchemaFactory::boolean('can_read')
+        Schema::boolean('can_read')
             ->default(true)
             ->description('Can view content'),
 
-        SchemaFactory::boolean('can_write')
+        Schema::boolean('can_write')
             ->default(false)
             ->description('Can create/edit content'),
 
-        SchemaFactory::boolean('can_delete')
+        Schema::boolean('can_delete')
             ->default(false)
             ->description('Can delete content'),
 
         // Admin permissions
-        SchemaFactory::boolean('can_manage_users')
+        Schema::boolean('can_manage_users')
             ->default(false)
             ->description('Can manage other users'),
 
-        SchemaFactory::boolean('can_access_admin')
+        Schema::boolean('can_access_admin')
             ->default(false)
             ->description('Can access admin panel'),
 
         // System permissions (read-only)
-        SchemaFactory::boolean('is_admin')
+        Schema::boolean('is_admin')
             ->readOnly()
             ->description('Has administrator privileges'),
 
-        SchemaFactory::boolean('is_owner')
+        Schema::boolean('is_owner')
             ->readOnly()
             ->description('Is account owner')
     )
@@ -221,37 +221,37 @@ $permissionsSchema = SchemaFactory::object('user_permissions')
 ### Privacy Settings
 
 ```php
-$privacySchema = SchemaFactory::object('privacy_settings')
+$privacySchema = Schema::object('privacy_settings')
     ->description('User privacy preferences')
     ->properties(
         // Profile visibility
-        SchemaFactory::boolean('public_profile')
+        Schema::boolean('public_profile')
             ->default(false)
             ->description('Make profile publicly visible'),
 
-        SchemaFactory::boolean('searchable')
+        Schema::boolean('searchable')
             ->default(true)
             ->description('Allow profile to appear in search results'),
 
-        SchemaFactory::boolean('show_online_status')
+        Schema::boolean('show_online_status')
             ->default(true)
             ->description('Show when user is online'),
 
         // Contact preferences
-        SchemaFactory::boolean('allow_friend_requests')
+        Schema::boolean('allow_friend_requests')
             ->default(true)
             ->description('Allow others to send friend requests'),
 
-        SchemaFactory::boolean('allow_messages')
+        Schema::boolean('allow_messages')
             ->default(true)
             ->description('Allow direct messages from others'),
 
         // Data usage
-        SchemaFactory::boolean('analytics_consent')
+        Schema::boolean('analytics_consent')
             ->default(false)
             ->description('Consent to usage analytics'),
 
-        SchemaFactory::boolean('personalization_consent')
+        Schema::boolean('personalization_consent')
             ->default(false)
             ->description('Consent to content personalization')
     )
@@ -263,27 +263,27 @@ $privacySchema = SchemaFactory::object('privacy_settings')
 Use booleans in conditional schemas:
 
 ```php
-$orderSchema = SchemaFactory::object('order')
+$orderSchema = Schema::object('order')
     ->properties(
-        SchemaFactory::number('total')->required(),
-        SchemaFactory::boolean('is_gift'),
-        SchemaFactory::string('gift_message'),
-        SchemaFactory::string('gift_recipient_email')
+        Schema::number('total')->required(),
+        Schema::boolean('is_gift'),
+        Schema::string('gift_message'),
+        Schema::string('gift_recipient_email')
     )
     // If is_gift is true, require gift fields
     ->if(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::boolean('is_gift')->const(true)
+                Schema::boolean('is_gift')->const(true)
             )
     )
     ->then(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('gift_message')
+                Schema::string('gift_message')
                     ->minLength(1)
                     ->required(),
-                SchemaFactory::string('gift_recipient_email')
+                Schema::string('gift_recipient_email')
                     ->format(SchemaFormat::Email)
                     ->required()
             )
@@ -295,20 +295,20 @@ $orderSchema = SchemaFactory::object('order')
 Arrays of boolean values:
 
 ```php
-$checklistSchema = SchemaFactory::array('checklist')
-    ->items(SchemaFactory::boolean())
+$checklistSchema = Schema::array('checklist')
+    ->items(Schema::boolean())
     ->description('Checklist completion status');
 
 $checklistSchema->isValid([true, false, true, true]); // true
 $checklistSchema->isValid([true, 'false', true]);     // false (contains string)
 
 // Named checklist items
-$namedChecklistSchema = SchemaFactory::object('task_completion')
+$namedChecklistSchema = Schema::object('task_completion')
     ->properties(
-        SchemaFactory::boolean('task_1_completed')->default(false),
-        SchemaFactory::boolean('task_2_completed')->default(false),
-        SchemaFactory::boolean('task_3_completed')->default(false),
-        SchemaFactory::boolean('all_tasks_reviewed')->default(false)
+        Schema::boolean('task_1_completed')->default(false),
+        Schema::boolean('task_2_completed')->default(false),
+        Schema::boolean('task_3_completed')->default(false),
+        Schema::boolean('all_tasks_reviewed')->default(false)
     );
 ```
 
@@ -320,7 +320,7 @@ Boolean schemas work consistently across all JSON Schema versions:
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // Deprecated boolean (Draft 2019-09+)
-$legacyFeatureSchema = SchemaFactory::boolean('old_feature', SchemaVersion::Draft_2019_09)
+$legacyFeatureSchema = Schema::boolean('old_feature', SchemaVersion::Draft_2019_09)
     ->deprecated()
     ->default(false)
     ->comment('Use new_feature instead');
@@ -329,7 +329,7 @@ $legacyFeatureSchema = SchemaFactory::boolean('old_feature', SchemaVersion::Draf
 ## Validation Examples
 
 ```php
-$schema = SchemaFactory::boolean('enabled');
+$schema = Schema::boolean('enabled');
 
 // Valid values
 $schema->isValid(true);   // true
@@ -369,7 +369,7 @@ Be careful with truthy/falsy values. JSON Schema boolean validation is strict an
 </Warning>
 
 ```php
-$booleanSchema = SchemaFactory::boolean('flag');
+$booleanSchema = Schema::boolean('flag');
 
 // JavaScript-style truthy/falsy values are NOT valid
 $booleanSchema->isValid(1);        // false (not boolean)

@@ -8,9 +8,9 @@ Number schemas handle validation for floating-point numbers with support for ran
 ## Basic Number Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$priceSchema = SchemaFactory::number('price')
+$priceSchema = Schema::number('price')
     ->description('Product price in USD')
     ->required();
 
@@ -26,7 +26,7 @@ Set minimum and maximum values for numbers:
 
 ```php
 // Product price between 0 and 1000
-$priceSchema = SchemaFactory::number('price')
+$priceSchema = Schema::number('price')
     ->minimum(0)
     ->maximum(1000)
     ->description('Price must be between $0 and $1000');
@@ -37,7 +37,7 @@ $priceSchema->isValid(-1);      // false (below minimum)
 $priceSchema->isValid(1000.01); // false (above maximum)
 
 // Temperature with wider range
-$temperatureSchema = SchemaFactory::number('temperature')
+$temperatureSchema = Schema::number('temperature')
     ->minimum(-273.15)  // Absolute zero
     ->maximum(1000)
     ->description('Temperature in Celsius');
@@ -62,7 +62,7 @@ Use exclusive minimum and maximum for strict range validation:
 
 ```php
 // Percentage between 0 and 100 (exclusive)
-$percentageSchema = SchemaFactory::number('percentage')
+$percentageSchema = Schema::number('percentage')
     ->exclusiveMinimum(0)    // Greater than 0
     ->exclusiveMaximum(100)  // Less than 100
     ->description('Percentage value (0-100 exclusive)');
@@ -74,7 +74,7 @@ $percentageSchema->isValid(0);     // false (not exclusive)
 $percentageSchema->isValid(100);   // false (not exclusive)
 
 // Positive numbers only
-$positiveSchema = SchemaFactory::number('value')
+$positiveSchema = Schema::number('value')
     ->exclusiveMinimum(0)
     ->description('Must be a positive number');
 ```
@@ -85,7 +85,7 @@ Ensure numbers are multiples of a specific value:
 
 ```php
 // Price in cents (multiples of 0.01)
-$priceSchema = SchemaFactory::number('price')
+$priceSchema = Schema::number('price')
     ->minimum(0)
     ->multipleOf(0.01)
     ->description('Price with cent precision');
@@ -95,7 +95,7 @@ $priceSchema->isValid(10.00);  // true
 $priceSchema->isValid(9.999);  // false (not multiple of 0.01)
 
 // Ratings in half-star increments
-$ratingSchema = SchemaFactory::number('rating')
+$ratingSchema = Schema::number('rating')
     ->minimum(0)
     ->maximum(5)
     ->multipleOf(0.5)
@@ -112,7 +112,7 @@ Combine multiple validation rules for comprehensive number validation:
 
 ```php
 // Discount percentage
-$discountSchema = SchemaFactory::number('discount')
+$discountSchema = Schema::number('discount')
     ->minimum(0)
     ->maximum(100)
     ->multipleOf(0.01)  // Penny precision
@@ -124,7 +124,7 @@ $discountSchema->isValid(-5);     // false (below minimum)
 $discountSchema->isValid(15.255); // false (not penny precision)
 
 // Weight with constraints
-$weightSchema = SchemaFactory::number('weight')
+$weightSchema = Schema::number('weight')
     ->exclusiveMinimum(0)    // Must be positive
     ->maximum(1000)          // Max 1000 kg
     ->multipleOf(0.1)        // 100g precision
@@ -136,15 +136,15 @@ $weightSchema = SchemaFactory::number('weight')
 Set default values for optional number fields:
 
 ```php
-$configSchema = SchemaFactory::object('config')
+$configSchema = Schema::object('config')
     ->properties(
-        SchemaFactory::number('timeout')
+        Schema::number('timeout')
             ->minimum(0.1)
             ->maximum(30)
             ->default(5.0)
             ->description('Request timeout in seconds'),
 
-        SchemaFactory::number('retry_delay')
+        Schema::number('retry_delay')
             ->minimum(0)
             ->default(1.0)
             ->description('Delay between retries in seconds')
@@ -156,21 +156,21 @@ $configSchema = SchemaFactory::object('config')
 Create read-only number fields for calculated or system-generated values:
 
 ```php
-$orderSchema = SchemaFactory::object('order')
+$orderSchema = Schema::object('order')
     ->properties(
-        SchemaFactory::number('subtotal')
+        Schema::number('subtotal')
             ->minimum(0)
             ->multipleOf(0.01)
             ->required(),
 
-        SchemaFactory::number('tax_rate')
+        Schema::number('tax_rate')
             ->minimum(0)
             ->maximum(1)
             ->multipleOf(0.0001)
             ->required(),
 
         // Calculated field
-        SchemaFactory::number('total')
+        Schema::number('total')
             ->minimum(0)
             ->multipleOf(0.01)
             ->readOnly()
@@ -183,10 +183,10 @@ $orderSchema = SchemaFactory::object('order')
 Here's a comprehensive example for an e-commerce product:
 
 ```php
-$productSchema = SchemaFactory::object('product')
+$productSchema = Schema::object('product')
     ->properties(
         // Base price
-        SchemaFactory::number('price')
+        Schema::number('price')
             ->minimum(0.01)
             ->maximum(999999.99)
             ->multipleOf(0.01)
@@ -194,31 +194,31 @@ $productSchema = SchemaFactory::object('product')
             ->description('Product price in USD'),
 
         // Weight for shipping
-        SchemaFactory::number('weight')
+        Schema::number('weight')
             ->exclusiveMinimum(0)
             ->maximum(1000)
             ->multipleOf(0.001)  // Gram precision
             ->description('Product weight in kilograms'),
 
         // Dimensions
-        SchemaFactory::number('length')
+        Schema::number('length')
             ->exclusiveMinimum(0)
             ->maximum(500)
             ->multipleOf(0.1)
             ->description('Length in centimeters'),
 
-        SchemaFactory::number('width')
+        Schema::number('width')
             ->exclusiveMinimum(0)
             ->maximum(500)
             ->multipleOf(0.1),
 
-        SchemaFactory::number('height')
+        Schema::number('height')
             ->exclusiveMinimum(0)
             ->maximum(500)
             ->multipleOf(0.1),
 
         // Rating
-        SchemaFactory::number('average_rating')
+        Schema::number('average_rating')
             ->minimum(0)
             ->maximum(5)
             ->multipleOf(0.01)
@@ -226,7 +226,7 @@ $productSchema = SchemaFactory::object('product')
             ->description('Average customer rating'),
 
         // Discount
-        SchemaFactory::number('discount_percentage')
+        Schema::number('discount_percentage')
             ->minimum(0)
             ->exclusiveMaximum(100)
             ->multipleOf(0.01)
@@ -241,11 +241,11 @@ Handle special floating-point values:
 
 ```php
 // Allow infinite values (not recommended for most use cases)
-$scientificSchema = SchemaFactory::number('measurement')
+$scientificSchema = Schema::number('measurement')
     ->description('Scientific measurement (may include infinity)');
 
 // Most practical schemas should have bounds
-$practicalSchema = SchemaFactory::number('practical_value')
+$practicalSchema = Schema::number('practical_value')
     ->minimum(-1e6)
     ->maximum(1e6)
     ->description('Practical number with reasonable bounds');
@@ -254,7 +254,7 @@ $practicalSchema = SchemaFactory::number('practical_value')
 ## Validation Examples
 
 ```php
-$schema = SchemaFactory::number('price')
+$schema = Schema::number('price')
     ->minimum(0)
     ->maximum(1000)
     ->multipleOf(0.01);
@@ -299,13 +299,13 @@ Numbers can be integers or floating-point values. If you specifically need integ
 
 ```php
 // This accepts both integers and floats
-$numberSchema = SchemaFactory::number('value');
+$numberSchema = Schema::number('value');
 $numberSchema->isValid(42);    // true (integer)
 $numberSchema->isValid(42.0);  // true (float)
 $numberSchema->isValid(42.5);  // true (float)
 
 // This only accepts integers
-$integerSchema = SchemaFactory::integer('count');
+$integerSchema = Schema::integer('count');
 $integerSchema->isValid(42);    // true
 $integerSchema->isValid(42.0);  // true (whole number)
 $integerSchema->isValid(42.5);  // false (not whole number)

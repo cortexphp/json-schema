@@ -93,21 +93,21 @@ This PHP package provides a fluent, type-safe way to build and validate JSON Sch
 Here's how to create and validate a JSON Schema:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 
 // Create a user schema
-$schema = SchemaFactory::object('user')
+$schema = Schema::object('user')
     ->description('User schema')
     ->properties(
-        SchemaFactory::string('name')
+        Schema::string('name')
             ->minLength(2)
             ->maxLength(100)
             ->required(),
-        SchemaFactory::string('email')
+        Schema::string('email')
             ->format(SchemaFormat::Email)
             ->required(),
-        SchemaFactory::integer('age')
+        Schema::integer('age')
             ->minimum(18)
             ->maximum(150)
     );

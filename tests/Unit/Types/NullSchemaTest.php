@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
 use stdClass;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\NullSchema;
-use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 covers(NullSchema::class);

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 it('can set unevaluatedProperties to false', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::string('email')->required(),
+            Schema::string('name')->required(),
+            Schema::string('email')->required(),
         )
         ->unevaluatedProperties(false);
 
@@ -32,9 +32,9 @@ it('can set unevaluatedProperties to false', function (): void {
 });
 
 it('can set unevaluatedProperties to true', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         )
         ->unevaluatedProperties(true);
 
@@ -52,12 +52,12 @@ it('can set unevaluatedProperties to true', function (): void {
 });
 
 it('can set unevaluatedProperties to a schema', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         )
         ->unevaluatedProperties(
-            SchemaFactory::string()->minLength(3),
+            Schema::string()->minLength(3),
         );
 
     $schemaArray = $objectSchema->toArray();
@@ -79,7 +79,7 @@ it('can set unevaluatedProperties to a schema', function (): void {
 
 it('throws exception when using unevaluatedProperties with Draft 07', function (): void {
     expect(
-        fn(): ObjectSchema => SchemaFactory::object('user', SchemaVersion::Draft_07)
+        fn(): ObjectSchema => Schema::object('user', SchemaVersion::Draft_07)
             ->unevaluatedProperties(false),
     )->toThrow(
         SchemaException::class,
@@ -88,9 +88,9 @@ it('throws exception when using unevaluatedProperties with Draft 07', function (
 });
 
 it('works with Draft 2019-09', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         )
         ->unevaluatedProperties(false);
 
@@ -99,9 +99,9 @@ it('works with Draft 2019-09', function (): void {
 });
 
 it('works with Draft 2020-12', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2020_12)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2020_12)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         )
         ->unevaluatedProperties(false);
 
@@ -110,9 +110,9 @@ it('works with Draft 2020-12', function (): void {
 });
 
 it('detects unevaluatedProperties feature correctly', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         )
         ->unevaluatedProperties(false);
 
@@ -128,9 +128,9 @@ it('detects unevaluatedProperties feature correctly', function (): void {
 });
 
 it('does not include unevaluatedProperties feature when not used', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         );
 
     // Access the protected method via reflection to test feature detection
@@ -145,10 +145,10 @@ it('does not include unevaluatedProperties feature when not used', function (): 
 });
 
 it('can combine with other object properties', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::string('email')->required(),
+            Schema::string('name')->required(),
+            Schema::string('email')->required(),
         )
         ->additionalProperties(true)
         ->unevaluatedProperties(false)
@@ -167,9 +167,9 @@ it('can combine with other object properties', function (): void {
 
 it('validates version during schema output', function (): void {
     // Create schema with Draft 2019-09
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         )
         ->unevaluatedProperties(false);
 
@@ -186,13 +186,13 @@ it('validates version during schema output', function (): void {
 
 it('generates correct schema structure for complex scenarios', function (): void {
     // Schema with both regular properties and unevaluatedProperties
-    $objectSchema = SchemaFactory::object('complex', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('complex', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::integer('age')->minimum(0),
+            Schema::string('name')->required(),
+            Schema::integer('age')->minimum(0),
         )
         ->additionalProperties(true)
-        ->unevaluatedProperties(SchemaFactory::string()->minLength(2));
+        ->unevaluatedProperties(Schema::string()->minLength(2));
 
     $schemaArray = $objectSchema->toArray();
 

@@ -10,7 +10,7 @@ Import existing JSON Schema definitions and convert them into schema objects for
 Import a schema from a JSON string:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // JSON Schema as string
@@ -37,7 +37,7 @@ $jsonString = '{
 }';
 
 // Import JSON Schema
-$schema = SchemaFactory::fromJson($jsonString);
+$schema = Schema::fromJson($jsonString);
 
 // Use the imported schema for validation
 $userData = [
@@ -92,7 +92,7 @@ $schemaArray = [
 ];
 
 // Import from array
-$productSchema = SchemaFactory::fromJson($schemaArray);
+$productSchema = Schema::fromJson($schemaArray);
 ```
 
 <Accordion title="Imported Schema Usage">
@@ -150,10 +150,10 @@ $modern_schema_json = '{
 }';
 
 // Import with automatic version detection
-$modernSchema = SchemaFactory::fromJson($modern_schema_json);
+$modernSchema = Schema::fromJson($modern_schema_json);
 
 // Or specify version explicitly
-$explicitSchema = SchemaFactory::fromJson(
+$explicitSchema = Schema::fromJson(
     $modern_schema_json,
     SchemaVersion::Draft_2019_09
 );
@@ -216,7 +216,7 @@ $complex_api_schema = [
     'required' => ['success']
 ];
 
-$apiSchema = SchemaFactory::fromJson($complex_api_schema);
+$apiSchema = Schema::fromJson($complex_api_schema);
 
 // Validate API responses
 $singleUserResponse = [
@@ -257,7 +257,7 @@ function loadSchemaFromFile(string $filepath): Schema
         throw new InvalidArgumentException("Invalid JSON in schema file: " . json_last_error_msg());
     }
 
-    return SchemaFactory::fromJson($schemaData);
+    return Schema::fromJson($schemaData);
 }
 
 // Usage
@@ -282,7 +282,7 @@ class SchemaRegistry
 
     public function registerFromJson(string $name, string $jsonString): void
     {
-        $this->schemas[$name] = SchemaFactory::fromJson($jsonString);
+        $this->schemas[$name] = Schema::fromJson($jsonString);
     }
 
     public function get(string $name): Schema
@@ -353,7 +353,7 @@ function extractOpenApiSchema(array $openApiSpec, string $componentName): Schema
         $jsonSchema['examples'] = [$componentSchema['example']];
     }
 
-    return SchemaFactory::fromJson($jsonSchema);
+    return Schema::fromJson($jsonSchema);
 }
 
 // Example OpenAPI specification
@@ -452,7 +452,7 @@ $oldSchema = [
 ];
 
 $newSchema = migrateToDraft201909($oldSchema);
-$modernSchema = SchemaFactory::fromJson($newSchema, SchemaVersion::Draft_2019_09);
+$modernSchema = Schema::fromJson($newSchema, SchemaVersion::Draft_2019_09);
 ```
 
 ## Configuration-Driven Validation
@@ -617,7 +617,7 @@ function composeSchemas(array $schemaFiles, string $mainSchemaName): Schema
         '$ref' => "#/definitions/{$mainSchemaName}"
     ];
 
-    return SchemaFactory::fromJson($composedSchema);
+    return Schema::fromJson($composedSchema);
 }
 
 // Usage
@@ -650,7 +650,7 @@ function safeJsonImport(string $jsonString): Schema
         throw new InvalidArgumentException("Schema must have a 'type' property");
     }
 
-    return SchemaFactory::fromJson($data);
+    return Schema::fromJson($data);
 }
 ```
 

@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 it('can set a single dependent schema', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::string('credit_card'),
+            Schema::string('name')->required(),
+            Schema::string('credit_card'),
         )
         ->dependentSchema(
             'credit_card',
-            SchemaFactory::object()->properties(
-                SchemaFactory::string('billing_address')->required(),
+            Schema::object()->properties(
+                Schema::string('billing_address')->required(),
             ),
         );
 
@@ -45,18 +45,18 @@ it('can set a single dependent schema', function (): void {
 });
 
 it('can set multiple dependent schemas at once', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::string('credit_card'),
-            SchemaFactory::string('phone'),
+            Schema::string('name')->required(),
+            Schema::string('credit_card'),
+            Schema::string('phone'),
         )
         ->dependentSchemas([
-            'credit_card' => SchemaFactory::object()->properties(
-                SchemaFactory::string('billing_address')->required(),
+            'credit_card' => Schema::object()->properties(
+                Schema::string('billing_address')->required(),
             ),
-            'phone' => SchemaFactory::object()->properties(
-                SchemaFactory::string('phone_verified')->enum(['yes', 'no'])->required(),
+            'phone' => Schema::object()->properties(
+                Schema::string('phone_verified')->enum(['yes', 'no'])->required(),
             ),
         ]);
 
@@ -89,20 +89,20 @@ it('can set multiple dependent schemas at once', function (): void {
 });
 
 it('can add dependent schemas one by one', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         )
         ->dependentSchema(
             'credit_card',
-            SchemaFactory::object()->properties(
-                SchemaFactory::string('billing_address')->required(),
+            Schema::object()->properties(
+                Schema::string('billing_address')->required(),
             ),
         )
         ->dependentSchema(
             'shipping_address',
-            SchemaFactory::object()->properties(
-                SchemaFactory::string('shipping_method')->required(),
+            Schema::object()->properties(
+                Schema::string('shipping_method')->required(),
             ),
         );
 
@@ -114,8 +114,8 @@ it('can add dependent schemas one by one', function (): void {
 
 it('throws exception when using dependentSchemas with Draft 07', function (): void {
     expect(
-        fn(): ObjectSchema => SchemaFactory::object('user', SchemaVersion::Draft_07)
-            ->dependentSchema('credit_card', SchemaFactory::object()),
+        fn(): ObjectSchema => Schema::object('user', SchemaVersion::Draft_07)
+            ->dependentSchema('credit_card', Schema::object()),
     )->toThrow(
         SchemaException::class,
         'Feature "Dependent schemas (split from dependencies)" is not supported in Draft 7. Minimum version required: Draft 2019-09.',
@@ -123,33 +123,33 @@ it('throws exception when using dependentSchemas with Draft 07', function (): vo
 });
 
 it('works with Draft 2019-09', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         )
-        ->dependentSchema('credit_card', SchemaFactory::object());
+        ->dependentSchema('credit_card', Schema::object());
 
     expect($objectSchema->toArray())->toHaveKey('dependentSchemas');
     expect($objectSchema->toArray())->toHaveKey('$schema', 'https://json-schema.org/draft/2019-09/schema');
 });
 
 it('works with Draft 2020-12', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2020_12)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2020_12)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         )
-        ->dependentSchema('credit_card', SchemaFactory::object());
+        ->dependentSchema('credit_card', Schema::object());
 
     expect($objectSchema->toArray())->toHaveKey('dependentSchemas');
     expect($objectSchema->toArray())->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
 });
 
 it('detects dependentSchemas feature correctly', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         )
-        ->dependentSchema('credit_card', SchemaFactory::object());
+        ->dependentSchema('credit_card', Schema::object());
 
     // Access the protected method via reflection to test feature detection
     $reflection = new ReflectionClass($objectSchema);
@@ -163,9 +163,9 @@ it('detects dependentSchemas feature correctly', function (): void {
 });
 
 it('does not include dependentSchemas feature when not used', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         );
 
     // Access the protected method via reflection to test feature detection
@@ -180,17 +180,17 @@ it('does not include dependentSchemas feature when not used', function (): void 
 });
 
 it('can combine with other object properties', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::string('email')->required(),
-            SchemaFactory::string('credit_card'),
+            Schema::string('name')->required(),
+            Schema::string('email')->required(),
+            Schema::string('credit_card'),
         )
         ->additionalProperties(false)
         ->dependentSchema(
             'credit_card',
-            SchemaFactory::object()->properties(
-                SchemaFactory::string('billing_address')->required(),
+            Schema::object()->properties(
+                Schema::string('billing_address')->required(),
             ),
         )
         ->minProperties(2)
@@ -208,11 +208,11 @@ it('can combine with other object properties', function (): void {
 
 it('validates version during schema output', function (): void {
     // Create schema with Draft 2019-09
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
+            Schema::string('name')->required(),
         )
-        ->dependentSchema('credit_card', SchemaFactory::object());
+        ->dependentSchema('credit_card', Schema::object());
 
     // Change version to Draft 07 after setting dependentSchemas
     $objectSchema->version(SchemaVersion::Draft_07);
@@ -227,28 +227,28 @@ it('validates version during schema output', function (): void {
 
 it('generates correct schema structure for complex scenarios', function (): void {
     // Complex schema with multiple dependent schemas
-    $objectSchema = SchemaFactory::object('registration', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('registration', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::string('email')->required(),
-            SchemaFactory::string('payment_method')->enum(['credit_card', 'paypal', 'bank_transfer']),
-            SchemaFactory::boolean('is_premium'),
+            Schema::string('name')->required(),
+            Schema::string('email')->required(),
+            Schema::string('payment_method')->enum(['credit_card', 'paypal', 'bank_transfer']),
+            Schema::boolean('is_premium'),
         )
         ->dependentSchemas([
-            'payment_method' => SchemaFactory::object()
-                ->if(SchemaFactory::object()->properties(
-                    SchemaFactory::string('payment_method')->const('credit_card'),
+            'payment_method' => Schema::object()
+                ->if(Schema::object()->properties(
+                    Schema::string('payment_method')->const('credit_card'),
                 ))
-                ->then(SchemaFactory::object()->properties(
-                    SchemaFactory::string('card_number')->required(),
-                    SchemaFactory::string('cvv')->required(),
+                ->then(Schema::object()->properties(
+                    Schema::string('card_number')->required(),
+                    Schema::string('cvv')->required(),
                 )),
-            'is_premium' => SchemaFactory::object()
-                ->if(SchemaFactory::object()->properties(
-                    SchemaFactory::boolean('is_premium')->const(true),
+            'is_premium' => Schema::object()
+                ->if(Schema::object()->properties(
+                    Schema::boolean('is_premium')->const(true),
                 ))
-                ->then(SchemaFactory::object()->properties(
-                    SchemaFactory::string('premium_tier')->enum(['gold', 'platinum'])->required(),
+                ->then(Schema::object()->properties(
+                    Schema::string('premium_tier')->enum(['gold', 'platinum'])->required(),
                 )),
         ]);
 
@@ -277,16 +277,16 @@ it('generates correct schema structure for complex scenarios', function (): void
 });
 
 it('generates correct dependent schema JSON output', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::string('credit_card'),
-            SchemaFactory::string('billing_address'),
+            Schema::string('name')->required(),
+            Schema::string('credit_card'),
+            Schema::string('billing_address'),
         )
         ->dependentSchema(
             'credit_card',
-            SchemaFactory::object()->properties(
-                SchemaFactory::string('billing_address')->required(),
+            Schema::object()->properties(
+                Schema::string('billing_address')->required(),
             ),
         );
 
@@ -328,19 +328,19 @@ it('generates correct dependent schema JSON output', function (): void {
 });
 
 it('validates multiple dependent schemas independently', function (): void {
-    $objectSchema = SchemaFactory::object('registration', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('registration', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::string('email')->required(),
-            SchemaFactory::string('credit_card'),
-            SchemaFactory::string('shipping_address'),
+            Schema::string('name')->required(),
+            Schema::string('email')->required(),
+            Schema::string('credit_card'),
+            Schema::string('shipping_address'),
         )
         ->dependentSchemas([
-            'credit_card' => SchemaFactory::object()->properties(
-                SchemaFactory::string('billing_address')->required(),
+            'credit_card' => Schema::object()->properties(
+                Schema::string('billing_address')->required(),
             ),
-            'shipping_address' => SchemaFactory::object()->properties(
-                SchemaFactory::string('shipping_method')->required(),
+            'shipping_address' => Schema::object()->properties(
+                Schema::string('shipping_method')->required(),
             ),
         ]);
 
@@ -378,23 +378,23 @@ it('validates multiple dependent schemas independently', function (): void {
 });
 
 it('validates conditional dependent schemas with if-then-else', function (): void {
-    $objectSchema = SchemaFactory::object('payment', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('payment', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::string('payment_method')->enum(['credit_card', 'paypal', 'bank_transfer']),
+            Schema::string('name')->required(),
+            Schema::string('payment_method')->enum(['credit_card', 'paypal', 'bank_transfer']),
         )
         ->dependentSchema(
             'payment_method',
-            SchemaFactory::object()
-                ->if(SchemaFactory::object()->properties(
-                    SchemaFactory::string('payment_method')->const('credit_card'),
+            Schema::object()
+                ->if(Schema::object()->properties(
+                    Schema::string('payment_method')->const('credit_card'),
                 ))
-                ->then(SchemaFactory::object()->properties(
-                    SchemaFactory::string('card_number')->pattern('^\d{4}-\d{4}-\d{4}-\d{4}$')->required(),
-                    SchemaFactory::string('cvv')->pattern('^\d{3}$')->required(),
+                ->then(Schema::object()->properties(
+                    Schema::string('card_number')->pattern('^\d{4}-\d{4}-\d{4}-\d{4}$')->required(),
+                    Schema::string('cvv')->pattern('^\d{3}$')->required(),
                 ))
-                ->else(SchemaFactory::object()->properties(
-                    SchemaFactory::string('account_info')->required(),
+                ->else(Schema::object()->properties(
+                    Schema::string('account_info')->required(),
                 )),
         );
 
@@ -436,24 +436,24 @@ it('validates conditional dependent schemas with if-then-else', function (): voi
 });
 
 it('validates nested dependent schemas with complex conditions', function (): void {
-    $objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('name')->required(),
-            SchemaFactory::string('email')->required(),
-            SchemaFactory::boolean('is_premium'),
-            SchemaFactory::string('subscription_type')->enum(['monthly', 'yearly']),
+            Schema::string('name')->required(),
+            Schema::string('email')->required(),
+            Schema::boolean('is_premium'),
+            Schema::string('subscription_type')->enum(['monthly', 'yearly']),
         )
         ->dependentSchemas([
-            'is_premium' => SchemaFactory::object()
-                ->if(SchemaFactory::object()->properties(
-                    SchemaFactory::boolean('is_premium')->const(true),
+            'is_premium' => Schema::object()
+                ->if(Schema::object()->properties(
+                    Schema::boolean('is_premium')->const(true),
                 ))
-                ->then(SchemaFactory::object()->properties(
-                    SchemaFactory::string('subscription_type')->required(),
-                    SchemaFactory::string('premium_tier')->enum(['gold', 'platinum'])->required(),
+                ->then(Schema::object()->properties(
+                    Schema::string('subscription_type')->required(),
+                    Schema::string('premium_tier')->enum(['gold', 'platinum'])->required(),
                 )),
-            'subscription_type' => SchemaFactory::object()->properties(
-                SchemaFactory::integer('billing_cycle_day')->minimum(1)->maximum(31)->required(),
+            'subscription_type' => Schema::object()->properties(
+                Schema::integer('billing_cycle_day')->minimum(1)->maximum(31)->required(),
             ),
         ]);
 
@@ -498,34 +498,34 @@ it('validates nested dependent schemas with complex conditions', function (): vo
 });
 
 it('validates dependent schemas combined with other validation rules', function (): void {
-    $objectSchema = SchemaFactory::object('order', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('order', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('order_id')->required(),
-            SchemaFactory::string('customer_email')->format(SchemaFormat::Email)->required(),
-            SchemaFactory::number('amount')->minimum(0.01)->required(),
-            SchemaFactory::boolean('requires_shipping'),
-            SchemaFactory::boolean('express_delivery'),
+            Schema::string('order_id')->required(),
+            Schema::string('customer_email')->format(SchemaFormat::Email)->required(),
+            Schema::number('amount')->minimum(0.01)->required(),
+            Schema::boolean('requires_shipping'),
+            Schema::boolean('express_delivery'),
             // Include dependent properties in main schema for additionalProperties: false to work
-            SchemaFactory::string('shipping_address'),
-            SchemaFactory::string('shipping_method'),
-            SchemaFactory::number('express_fee'),
+            Schema::string('shipping_address'),
+            Schema::string('shipping_method'),
+            Schema::number('express_fee'),
         )
         ->minProperties(3)
         ->dependentSchemas([
-            'requires_shipping' => SchemaFactory::object()
-                ->if(SchemaFactory::object()->properties(
-                    SchemaFactory::boolean('requires_shipping')->const(true),
+            'requires_shipping' => Schema::object()
+                ->if(Schema::object()->properties(
+                    Schema::boolean('requires_shipping')->const(true),
                 ))
-                ->then(SchemaFactory::object()->properties(
-                    SchemaFactory::string('shipping_address')->minLength(10)->required(),
-                    SchemaFactory::string('shipping_method')->enum(['standard', 'express'])->required(),
+                ->then(Schema::object()->properties(
+                    Schema::string('shipping_address')->minLength(10)->required(),
+                    Schema::string('shipping_method')->enum(['standard', 'express'])->required(),
                 )),
-            'express_delivery' => SchemaFactory::object()
-                ->if(SchemaFactory::object()->properties(
-                    SchemaFactory::boolean('express_delivery')->const(true),
+            'express_delivery' => Schema::object()
+                ->if(Schema::object()->properties(
+                    Schema::boolean('express_delivery')->const(true),
                 ))
-                ->then(SchemaFactory::object()->properties(
-                    SchemaFactory::number('express_fee')->minimum(5.00)->required(),
+                ->then(Schema::object()->properties(
+                    Schema::number('express_fee')->minimum(5.00)->required(),
                 )),
         ]);
 
@@ -590,16 +590,16 @@ it('validates dependent schemas combined with other validation rules', function 
 });
 
 it('throws validation exceptions with detailed messages for dependent schema violations', function (): void {
-    $objectSchema = SchemaFactory::object('registration', SchemaVersion::Draft_2019_09)
+    $objectSchema = Schema::object('registration', SchemaVersion::Draft_2019_09)
         ->properties(
-            SchemaFactory::string('username')->minLength(3)->required(),
-            SchemaFactory::string('password')->minLength(8)->required(),
-            SchemaFactory::string('payment_method')->enum(['credit_card', 'paypal']),
+            Schema::string('username')->minLength(3)->required(),
+            Schema::string('password')->minLength(8)->required(),
+            Schema::string('payment_method')->enum(['credit_card', 'paypal']),
         )
         ->dependentSchema(
             'payment_method',
-            SchemaFactory::object()->properties(
-                SchemaFactory::string('billing_email')->format(SchemaFormat::Email)->required(),
+            Schema::object()->properties(
+                Schema::string('billing_email')->format(SchemaFormat::Email)->required(),
             ),
         );
 

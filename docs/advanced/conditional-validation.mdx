@@ -10,38 +10,38 @@ Conditional validation allows you to create complex validation rules that apply 
 The most intuitive conditional validation uses `if`/`then`/`else` logic:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 
-$userSchema = SchemaFactory::object('user')
+$userSchema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('type')->enum(['personal', 'business']),
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('company_name'),
-        SchemaFactory::string('tax_id')
+        Schema::string('type')->enum(['personal', 'business']),
+        Schema::string('name')->required(),
+        Schema::string('company_name'),
+        Schema::string('tax_id')
     )
     // If user type is 'business'
     ->if(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('type')->const('business')
+        Schema::object()->properties(
+            Schema::string('type')->const('business')
         )
     )
     // Then require business fields
     ->then(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('company_name')
+        Schema::object()->properties(
+            Schema::string('company_name')
                 ->minLength(1)
                 ->required(),
-            SchemaFactory::string('tax_id')
+            Schema::string('tax_id')
                 ->pattern('^\d{2}-\d{7}$')
                 ->required()
         )
     )
     // Else (personal account) these fields should be null
     ->else(
-        SchemaFactory::object()->properties(
-            SchemaFactory::null('company_name'),
-            SchemaFactory::null('tax_id')
+        Schema::object()->properties(
+            Schema::null('company_name'),
+            Schema::null('tax_id')
         )
     );
 
@@ -125,32 +125,32 @@ $userSchema->isValid([
 Use `allOf` when data must satisfy multiple schemas simultaneously:
 
 ```php
-$employeeSchema = SchemaFactory::object('employee')
+$employeeSchema = Schema::object('employee')
     ->allOf(
         // Must have basic person properties
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('name')->required(),
-                SchemaFactory::string('email')
+                Schema::string('name')->required(),
+                Schema::string('email')
                     ->format(SchemaFormat::Email)
                     ->required()
             ),
 
         // Must have employee-specific properties
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('employee_id')
+                Schema::string('employee_id')
                     ->pattern('^EMP-\d{6}$')
                     ->required(),
-                SchemaFactory::integer('department_id')
+                Schema::integer('department_id')
                     ->minimum(1)
                     ->required()
             ),
 
         // Must meet age requirement
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::integer('age')
+                Schema::integer('age')
                     ->minimum(18)
                     ->maximum(67)
                     ->required()
@@ -179,34 +179,34 @@ $employeeSchema->isValid([
 Use `anyOf` when data must satisfy at least one of several schemas:
 
 ```php
-$contactSchema = SchemaFactory::object('contact')
+$contactSchema = Schema::object('contact')
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email'),
-        SchemaFactory::string('phone'),
-        SchemaFactory::string('address')
+        Schema::string('name')->required(),
+        Schema::string('email'),
+        Schema::string('phone'),
+        Schema::string('address')
     )
     ->anyOf(
         // Must have email
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('email')
+                Schema::string('email')
                     ->format(SchemaFormat::Email)
                     ->required()
             ),
 
         // OR must have phone
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('phone')
+                Schema::string('phone')
                     ->pattern('^\+\d{1,3}-\d{3,4}-\d{6,8}$')
                     ->required()
             ),
 
         // OR must have address
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('address')
+                Schema::string('address')
                     ->minLength(10)
                     ->required()
             )
@@ -237,38 +237,38 @@ $contactSchema->isValid([
 Use `oneOf` for mutually exclusive validation:
 
 ```php
-$paymentSchema = SchemaFactory::object('payment')
+$paymentSchema = Schema::object('payment')
     ->properties(
-        SchemaFactory::number('amount')->required(),
-        SchemaFactory::string('method')->required(),
-        SchemaFactory::string('card_number'),
-        SchemaFactory::string('bank_account'),
-        SchemaFactory::string('crypto_wallet')
+        Schema::number('amount')->required(),
+        Schema::string('method')->required(),
+        Schema::string('card_number'),
+        Schema::string('bank_account'),
+        Schema::string('crypto_wallet')
     )
     ->oneOf(
         // Credit card payment
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('method')->const('credit_card'),
-                SchemaFactory::string('card_number')
+                Schema::string('method')->const('credit_card'),
+                Schema::string('card_number')
                     ->pattern('^\d{16}$')
                     ->required()
             ),
 
         // Bank transfer
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('method')->const('bank_transfer'),
-                SchemaFactory::string('bank_account')
+                Schema::string('method')->const('bank_transfer'),
+                Schema::string('bank_account')
                     ->pattern('^\d{8,20}$')
                     ->required()
             ),
 
         // Cryptocurrency
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('method')->const('crypto'),
-                SchemaFactory::string('crypto_wallet')
+                Schema::string('method')->const('crypto'),
+                Schema::string('crypto_wallet')
                     ->pattern('^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$')
                     ->required()
             )
@@ -296,12 +296,12 @@ $paymentSchema->isValid([
 Use `not` to exclude certain patterns or values:
 
 ```php
-$usernameSchema = SchemaFactory::string('username')
+$usernameSchema = Schema::string('username')
     ->minLength(3)
     ->maxLength(20)
     ->pattern('^[a-zA-Z0-9_]+$')
     ->not(
-        SchemaFactory::string()
+        Schema::string()
             ->enum(['admin', 'root', 'administrator', 'system', 'null'])
     )
     ->description('Username cannot be a reserved word');
@@ -312,15 +312,15 @@ $usernameSchema->isValid('admin');        // false (reserved word)
 $usernameSchema->isValid('root');         // false (reserved word)
 
 // More complex not condition
-$securePasswordSchema = SchemaFactory::string('password')
+$securePasswordSchema = Schema::string('password')
     ->minLength(8)
     ->not(
-        SchemaFactory::string()
+        Schema::string()
             ->anyOf(
-                SchemaFactory::string()->pattern('^[a-z]+$'),      // All lowercase
-                SchemaFactory::string()->pattern('^[A-Z]+$'),      // All uppercase
-                SchemaFactory::string()->pattern('^\d+$'),         // All digits
-                SchemaFactory::string()->enum(['password', '12345678', 'qwerty'])
+                Schema::string()->pattern('^[a-z]+$'),      // All lowercase
+                Schema::string()->pattern('^[A-Z]+$'),      // All uppercase
+                Schema::string()->pattern('^\d+$'),         // All digits
+                Schema::string()->enum(['password', '12345678', 'qwerty'])
             )
     )
     ->description('Password must be complex and not common');
@@ -331,50 +331,50 @@ $securePasswordSchema = SchemaFactory::string('password')
 Combine multiple conditional operators for complex validation:
 
 ```php
-$orderSchema = SchemaFactory::object('order')
+$orderSchema = Schema::object('order')
     ->properties(
-        SchemaFactory::string('type')->enum(['physical', 'digital']),
-        SchemaFactory::boolean('is_gift'),
-        SchemaFactory::string('shipping_address'),
-        SchemaFactory::string('gift_message'),
-        SchemaFactory::string('download_link')
+        Schema::string('type')->enum(['physical', 'digital']),
+        Schema::boolean('is_gift'),
+        Schema::string('shipping_address'),
+        Schema::string('gift_message'),
+        Schema::string('download_link')
     )
     ->allOf(
         // Base order requirements
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('type')->required(),
-                SchemaFactory::boolean('is_gift')->required()
+                Schema::string('type')->required(),
+                Schema::boolean('is_gift')->required()
             ),
 
         // Type-specific requirements
-        SchemaFactory::object()
+        Schema::object()
             ->anyOf(
                 // Physical order requirements
-                SchemaFactory::object()
+                Schema::object()
                     ->if(
-                        SchemaFactory::object()->properties(
-                            SchemaFactory::string('type')->const('physical')
+                        Schema::object()->properties(
+                            Schema::string('type')->const('physical')
                         )
                     )
                     ->then(
-                        SchemaFactory::object()->properties(
-                            SchemaFactory::string('shipping_address')
+                        Schema::object()->properties(
+                            Schema::string('shipping_address')
                                 ->minLength(10)
                                 ->required()
                         )
                     ),
 
                 // Digital order requirements
-                SchemaFactory::object()
+                Schema::object()
                     ->if(
-                        SchemaFactory::object()->properties(
-                            SchemaFactory::string('type')->const('digital')
+                        Schema::object()->properties(
+                            Schema::string('type')->const('digital')
                         )
                     )
                     ->then(
-                        SchemaFactory::object()->properties(
-                            SchemaFactory::string('download_link')
+                        Schema::object()->properties(
+                            Schema::string('download_link')
                                 ->format(SchemaFormat::Uri)
                                 ->required()
                         )
@@ -382,15 +382,15 @@ $orderSchema = SchemaFactory::object('order')
             ),
 
         // Gift-specific requirements
-        SchemaFactory::object()
+        Schema::object()
             ->if(
-                SchemaFactory::object()->properties(
-                    SchemaFactory::boolean('is_gift')->const(true)
+                Schema::object()->properties(
+                    Schema::boolean('is_gift')->const(true)
                 )
             )
             ->then(
-                SchemaFactory::object()->properties(
-                    SchemaFactory::string('gift_message')
+                Schema::object()->properties(
+                    Schema::string('gift_message')
                         ->minLength(1)
                         ->maxLength(500)
                         ->required()
@@ -404,28 +404,28 @@ $orderSchema = SchemaFactory::object('order')
 ### Multi-Step Conditional Validation
 
 ```php
-$loanApplicationSchema = SchemaFactory::object('loan_application')
+$loanApplicationSchema = Schema::object('loan_application')
     ->properties(
-        SchemaFactory::integer('credit_score'),
-        SchemaFactory::number('income'),
-        SchemaFactory::number('requested_amount'),
-        SchemaFactory::boolean('has_collateral'),
-        SchemaFactory::string('collateral_type'),
-        SchemaFactory::number('collateral_value')
+        Schema::integer('credit_score'),
+        Schema::number('income'),
+        Schema::number('requested_amount'),
+        Schema::boolean('has_collateral'),
+        Schema::string('collateral_type'),
+        Schema::number('collateral_value')
     )
     // Step 1: High credit score path
     ->if(
-        SchemaFactory::object()->properties(
-            SchemaFactory::integer('credit_score')->minimum(750)
+        Schema::object()->properties(
+            Schema::integer('credit_score')->minimum(750)
         )
     )
     ->then(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::number('income')
+                Schema::number('income')
                     ->minimum(50000)
                     ->required(),
-                SchemaFactory::number('requested_amount')
+                Schema::number('requested_amount')
                     ->maximum(500000)
                     ->required()
             )
@@ -433,39 +433,39 @@ $loanApplicationSchema = SchemaFactory::object('loan_application')
     )
     // Step 2: Medium credit score path
     ->else(
-        SchemaFactory::object()
+        Schema::object()
             ->if(
-                SchemaFactory::object()->properties(
-                    SchemaFactory::integer('credit_score')
+                Schema::object()->properties(
+                    Schema::integer('credit_score')
                         ->minimum(650)
                         ->maximum(749)
                 )
             )
             ->then(
-                SchemaFactory::object()
+                Schema::object()
                     ->properties(
-                        SchemaFactory::number('income')
+                        Schema::number('income')
                             ->minimum(75000)
                             ->required(),
-                        SchemaFactory::number('requested_amount')
+                        Schema::number('requested_amount')
                             ->maximum(250000)
                             ->required(),
-                        SchemaFactory::boolean('has_collateral')
+                        Schema::boolean('has_collateral')
                             ->const(true)
                             ->required()
                     )
                     // Nested condition for collateral
                     ->if(
-                        SchemaFactory::object()->properties(
-                            SchemaFactory::boolean('has_collateral')->const(true)
+                        Schema::object()->properties(
+                            Schema::boolean('has_collateral')->const(true)
                         )
                     )
                     ->then(
-                        SchemaFactory::object()->properties(
-                            SchemaFactory::string('collateral_type')
+                        Schema::object()->properties(
+                            Schema::string('collateral_type')
                                 ->enum(['property', 'vehicle', 'securities'])
                                 ->required(),
-                            SchemaFactory::number('collateral_value')
+                            Schema::number('collateral_value')
                                 ->minimum(100000)
                                 ->required()
                         )
@@ -477,60 +477,60 @@ $loanApplicationSchema = SchemaFactory::object('loan_application')
 ### Dynamic Property Requirements
 
 ```php
-$dynamicFormSchema = SchemaFactory::object('dynamic_form')
+$dynamicFormSchema = Schema::object('dynamic_form')
     ->properties(
-        SchemaFactory::array('enabled_fields')
-            ->items(SchemaFactory::string())
+        Schema::array('enabled_fields')
+            ->items(Schema::string())
             ->required(),
-        SchemaFactory::string('name'),
-        SchemaFactory::string('email'),
-        SchemaFactory::string('phone'),
-        SchemaFactory::string('address')
+        Schema::string('name'),
+        Schema::string('email'),
+        Schema::string('phone'),
+        Schema::string('address')
     )
     ->allOf(
         // If 'name' is enabled, it's required
-        SchemaFactory::object()
+        Schema::object()
             ->if(
-                SchemaFactory::object()->properties(
-                    SchemaFactory::array('enabled_fields')
-                        ->contains(SchemaFactory::string()->const('name'))
+                Schema::object()->properties(
+                    Schema::array('enabled_fields')
+                        ->contains(Schema::string()->const('name'))
                 )
             )
             ->then(
-                SchemaFactory::object()->properties(
-                    SchemaFactory::string('name')
+                Schema::object()->properties(
+                    Schema::string('name')
                         ->minLength(1)
                         ->required()
                 )
             ),
 
         // If 'email' is enabled, it's required and validated
-        SchemaFactory::object()
+        Schema::object()
             ->if(
-                SchemaFactory::object()->properties(
-                    SchemaFactory::array('enabled_fields')
-                        ->contains(SchemaFactory::string()->const('email'))
+                Schema::object()->properties(
+                    Schema::array('enabled_fields')
+                        ->contains(Schema::string()->const('email'))
                 )
             )
             ->then(
-                SchemaFactory::object()->properties(
-                    SchemaFactory::string('email')
+                Schema::object()->properties(
+                    Schema::string('email')
                         ->format(SchemaFormat::Email)
                         ->required()
                 )
             ),
 
         // If 'phone' is enabled, it's required and validated
-        SchemaFactory::object()
+        Schema::object()
             ->if(
-                SchemaFactory::object()->properties(
-                    SchemaFactory::array('enabled_fields')
-                        ->contains(SchemaFactory::string()->const('phone'))
+                Schema::object()->properties(
+                    Schema::array('enabled_fields')
+                        ->contains(Schema::string()->const('phone'))
                 )
             )
             ->then(
-                SchemaFactory::object()->properties(
-                    SchemaFactory::string('phone')
+                Schema::object()->properties(
+                    Schema::string('phone')
                         ->pattern('^\+\d{1,3}-\d{3,4}-\d{6,8}$')
                         ->required()
                 )
@@ -577,12 +577,12 @@ try {
 
 ```php
 // Good: Clear condition
-$simpleCondition = SchemaFactory::object()
-    ->if(SchemaFactory::object()->properties(
-        SchemaFactory::string('type')->const('premium')
+$simpleCondition = Schema::object()
+    ->if(Schema::object()->properties(
+        Schema::string('type')->const('premium')
     ))
-    ->then(SchemaFactory::object()->properties(
-        SchemaFactory::number('limit')->minimum(1000)
+    ->then(Schema::object()->properties(
+        Schema::number('limit')->minimum(1000)
     ));
 
 // Avoid: Overly complex nested conditions
@@ -592,9 +592,9 @@ $simpleCondition = SchemaFactory::object()
 
 ```php
 // Good: Clear discriminator field
-$schema = SchemaFactory::object()
+$schema = Schema::object()
     ->properties(
-        SchemaFactory::string('account_type')->enum(['basic', 'premium']),
+        Schema::string('account_type')->enum(['basic', 'premium']),
         // ... other properties
     );
 
@@ -604,7 +604,7 @@ $schema = SchemaFactory::object()
 ### 3. Document Complex Logic
 
 ```php
-$complexSchema = SchemaFactory::object('complex_validation')
+$complexSchema = Schema::object('complex_validation')
     ->description('Multi-tier validation based on user level and region')
     ->if(/* condition */)
     ->then(/* schema */)

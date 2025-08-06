@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Types;
 
 use Override;
-use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Types\Concerns\HasItems;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -16,13 +16,13 @@ final class ArraySchema extends AbstractSchema
 {
     use HasItems;
 
-    protected ?Schema $contains = null;
+    protected ?JsonSchema $contains = null;
 
     protected ?int $minContains = null;
 
     protected ?int $maxContains = null;
 
-    protected Schema|bool|null $unevaluatedItems = null;
+    protected JsonSchema|bool|null $unevaluatedItems = null;
 
     public function __construct(?string $title = null, ?SchemaVersion $schemaVersion = null)
     {
@@ -32,9 +32,9 @@ final class ArraySchema extends AbstractSchema
     /**
      * Set the schema that array items must contain
      */
-    public function contains(Schema $schema): static
+    public function contains(JsonSchema $jsonSchema): static
     {
-        $this->contains = $schema;
+        $this->contains = $jsonSchema;
 
         return $this;
     }
@@ -85,11 +85,11 @@ final class ArraySchema extends AbstractSchema
      * Set whether unevaluated items are allowed and optionally their schema.
      * This feature is only available in Draft 2019-09 and later.
      *
-     * @param bool|\Cortex\JsonSchema\Contracts\Schema $allowed Whether unevaluated items are allowed, or a schema they must match
+     * @param bool|\Cortex\JsonSchema\Contracts\JsonSchema $allowed Whether unevaluated items are allowed, or a schema they must match
      *
      * @throws \Cortex\JsonSchema\Exceptions\SchemaException
      */
-    public function unevaluatedItems(bool|Schema $allowed): static
+    public function unevaluatedItems(bool|JsonSchema $allowed): static
     {
         $this->validateFeatureSupport(SchemaFeature::UnevaluatedItems);
 
@@ -110,7 +110,7 @@ final class ArraySchema extends AbstractSchema
 
         $schema = $this->addItemsToSchema($schema);
 
-        if ($this->contains instanceof Schema) {
+        if ($this->contains instanceof JsonSchema) {
             $schema['contains'] = $this->contains->toArray();
         }
 
@@ -123,7 +123,7 @@ final class ArraySchema extends AbstractSchema
         }
 
         if ($this->unevaluatedItems !== null) {
-            $schema['unevaluatedItems'] = $this->unevaluatedItems instanceof Schema
+            $schema['unevaluatedItems'] = $this->unevaluatedItems instanceof JsonSchema
                 ? $this->unevaluatedItems->toArray(includeSchemaRef: false, includeTitle: false)
                 : $this->unevaluatedItems;
         }

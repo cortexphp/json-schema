@@ -24,11 +24,11 @@ This package supports multiple JSON Schema specification versions with automatic
 ### Specify Version on Creation
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // Create schema with specific version
-$schema = SchemaFactory::string('name', SchemaVersion::Draft_2020_12);
+$schema = Schema::string('name', SchemaVersion::Draft_2020_12);
 
 // Or use the enum directly with schema classes
 $schema = new StringSchema('email', SchemaVersion::Draft_2019_09);
@@ -38,18 +38,18 @@ $schema = new StringSchema('email', SchemaVersion::Draft_2019_09);
 
 ```php
 // Set global default for all new schemas
-SchemaFactory::setDefaultVersion(SchemaVersion::Draft_2019_09);
+Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
 
 // All subsequent schemas will use Draft 2019-09 by default
-$schema1 = SchemaFactory::string('field1'); // Uses Draft 2019-09
-$schema2 = SchemaFactory::object('user');   // Uses Draft 2019-09
+$schema1 = Schema::string('field1'); // Uses Draft 2019-09
+$schema2 = Schema::object('user');   // Uses Draft 2019-09
 ```
 
 ### Change Version on Existing Schema
 
 ```php
 // Change version on existing schema
-$schema = SchemaFactory::string('name');
+$schema = Schema::string('name');
 $schema->version(SchemaVersion::Draft_2020_12);
 ```
 
@@ -61,18 +61,18 @@ The package automatically validates that features are only used with compatible 
 
 ```php
 // deprecated is supported in Draft 2019-09+
-$schema = SchemaFactory::string('oldField', SchemaVersion::Draft_2019_09)
+$schema = Schema::string('oldField', SchemaVersion::Draft_2019_09)
     ->deprecated()
     ->comment('Use newField instead');
 
 // minContains/maxContains work in Draft 2019-09+
-$arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2019_09)
-    ->items(SchemaFactory::string())
+$arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
+    ->items(Schema::string())
     ->minContains(2)
     ->maxContains(5);
 
 // New format types in Draft 2019-09+
-$schema = SchemaFactory::string('duration', SchemaVersion::Draft_2019_09)
+$schema = Schema::string('duration', SchemaVersion::Draft_2019_09)
     ->format(SchemaFormat::Duration); // ISO 8601 duration
 ```
 
@@ -84,11 +84,11 @@ These examples will throw a `SchemaException` because the features require newer
 
 ```php
 // This throws an exception - deprecated requires Draft 2019-09+
-$schema = SchemaFactory::string('oldField', SchemaVersion::Draft_07)
+$schema = Schema::string('oldField', SchemaVersion::Draft_07)
     ->deprecated(); // ❌ SchemaException
 
 // This throws an exception - minContains requires Draft 2019-09+
-$arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_07)
+$arraySchema = Schema::array('items', SchemaVersion::Draft_07)
     ->minContains(2); // ❌ SchemaException
 ```
 
