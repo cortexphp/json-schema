@@ -1,13 +1,10 @@
 ---
 title: Installation
 description: 'Install and set up the JSON Schema Builder package'
+icon: 'terminal'
 ---
 
 ## Requirements
-
-<Note>
-This package requires **PHP 8.3 or higher** and uses modern PHP features for optimal performance and developer experience.
-</Note>
 
 - PHP 8.3+
 - Composer for dependency management
@@ -68,19 +65,6 @@ This package requires **PHP 8.3 or higher** and uses modern PHP features for opt
 </Step>
 </Steps>
 
-## Basic Setup
-
-### Import Common Classes
-
-For most use cases, you'll want to import these classes:
-
-```php
-use Cortex\JsonSchema\SchemaFactory;
-use Cortex\JsonSchema\Enums\SchemaFormat;
-use Cortex\JsonSchema\Enums\SchemaVersion;
-use Cortex\JsonSchema\Enums\SchemaType;
-```
-
 ### Set Default Version (Optional)
 
 If you want to use a specific JSON Schema version for all schemas by default:
@@ -116,77 +100,12 @@ If you're contributing to the package or want to run tests:
     composer test
     ```
   </Step>
-  <Step title="Run Code Quality Tools">
+  <Step title="Run Tests and Code Quality Tools">
     ```bash
-    composer analyse     # PHPStan analysis
-    composer format      # Code formatting
+    composer check
     ```
   </Step>
 </Steps>
-
-### IDE Support
-
-For the best development experience, consider using an IDE with PHP 8.3+ support:
-
-- **PhpStorm** - Excellent PHP support with type hints and autocompletion
-- **VS Code** - With PHP extensions for modern PHP development
-- **Vim/Neovim** - With LSP support for PHP
-
-## Troubleshooting
-
-### Common Issues
-
-<AccordionGroup>
-  <Accordion title="PHP Version Compatibility">
-    **Error**: `Your PHP version (8.2.x) does not satisfy requirement php>=8.3`
-
-    **Solution**: Upgrade to PHP 8.3 or higher. The package uses PHP 8.3+ features for better type safety and performance.
-  </Accordion>
-
-  <Accordion title="Autoloader Issues">
-    **Error**: `Class 'Cortex\JsonSchema\SchemaFactory' not found`
-
-    **Solution**: Make sure you've included the Composer autoloader:
-    ```php
-    require_once 'vendor/autoload.php';
-    ```
-  </Accordion>
-
-  <Accordion title="Memory Limits">
-    **Error**: Memory limit exceeded when generating complex schemas
-
-    **Solution**: Increase PHP memory limit or optimize schema complexity:
-    ```php
-    ini_set('memory_limit', '256M');
-    ```
-  </Accordion>
-</AccordionGroup>
-
-### Getting Help
-
-If you encounter issues:
-
-1. **Check the documentation** - Most common use cases are covered
-2. **Search existing issues** on GitHub
-3. **Create a new issue** with reproduction steps
-4. **Join the community** for support and discussions
-
-<CardGroup cols={2}>
-  <Card
-    title="GitHub Issues"
-    icon="github"
-    href="https://github.com/cortexphp/json-schema/issues"
-  >
-    Report bugs and request features
-  </Card>
-  <Card
-    title="Quick Start"
-    icon="rocket"
-    href="/quickstart"
-  >
-    Start building your first schema
-  </Card>
-</CardGroup>
 
 ## Next Steps
 

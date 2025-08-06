@@ -25,14 +25,14 @@
           {
             "group": "Schema Types",
             "pages": [
+              "schema-types/object",
+              "schema-types/array",
               "schema-types/string",
               "schema-types/number",
               "schema-types/integer",
               "schema-types/boolean",
-              "schema-types/null",
-              "schema-types/array",
-              "schema-types/object",
-              "schema-types/union"
+              "schema-types/union",
+              "schema-types/null"
             ]
           },
           {
