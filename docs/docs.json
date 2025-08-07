@@ -1,66 +1,66 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "JSON Schema Builder",
+  "theme": "willow",
+  "name": "CortexPHP",
   "colors": {
-    "primary": "#22C55E",
-    "light": "#22C55E",
-    "dark": "#22C55E"
+    "primary": "#1F3CAA",
+    "light": "#1F3CAA",
+    "dark": "#1F3CAA"
   },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
       {
-        "tab": "Documentation",
+        "tab": "JSON Schema",
         "groups": [
           {
             "group": "Get Started",
             "pages": [
-              "introduction",
-              "installation",
-              "quickstart",
-              "versions"
+              "json-schema/introduction",
+              "json-schema/installation",
+              "json-schema/quickstart",
+              "json-schema/versions"
             ]
           },
           {
             "group": "Schema Types",
             "pages": [
-              "schema-types/object",
-              "schema-types/array",
-              "schema-types/string",
-              "schema-types/number",
-              "schema-types/integer",
-              "schema-types/boolean",
-              "schema-types/union",
-              "schema-types/null"
+              "json-schema/schema-types/object",
+              "json-schema/schema-types/array",
+              "json-schema/schema-types/string",
+              "json-schema/schema-types/number",
+              "json-schema/schema-types/integer",
+              "json-schema/schema-types/boolean",
+              "json-schema/schema-types/union",
+              "json-schema/schema-types/null"
             ]
           },
           {
             "group": "Advanced Features",
             "pages": [
-              "advanced/conditional-validation",
-              "advanced/string-formats",
-              "advanced/definitions-refs",
-              "advanced/unevaluated-properties",
-              "advanced/dependent-schemas",
-              "advanced/pattern-properties"
+              "json-schema/advanced/conditional-validation",
+              "json-schema/advanced/string-formats",
+              "json-schema/advanced/definitions-refs",
+              "json-schema/advanced/unevaluated-properties",
+              "json-schema/advanced/dependent-schemas",
+              "json-schema/advanced/pattern-properties"
             ]
           },
           {
             "group": "Code Generation",
             "pages": [
-              "code-generation/from-classes",
-              "code-generation/from-closures",
-              "code-generation/from-enums",
-              "code-generation/from-json"
+              "json-schema/code-generation/from-classes",
+              "json-schema/code-generation/from-closures",
+              "json-schema/code-generation/from-enums",
+              "json-schema/code-generation/from-json"
             ]
           },
           {
             "group": "Validation",
             "pages": [
-              "validation/data-validation",
-              "validation/error-handling",
-              "validation/version-features"
+              "json-schema/validation/data-validation",
+              "json-schema/validation/error-handling",
+              "json-schema/validation/version-features"
             ]
           }
         ]
