@@ -18,7 +18,7 @@ it('can create a basic integer schema', function (): void {
 
     $schemaArray = $integerSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'integer');
     expect($schemaArray)->toHaveKey('title', 'age');
     expect($schemaArray)->toHaveKey('description', 'User age');

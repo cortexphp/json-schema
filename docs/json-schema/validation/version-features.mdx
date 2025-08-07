@@ -479,12 +479,12 @@ class EnvironmentAwareValidator
         // - Test feature support
 
         // For demo, assume based on PHP version or configuration
-        $configVersion = $_ENV['JSON_SCHEMA_VERSION'] ?? 'draft-07';
+        $configVersion = $_ENV['JSON_SCHEMA_VERSION'] ?? 'draft-2020-12';
 
         return match($configVersion) {
-            'draft-2020-12' => SchemaVersion::Draft_2020_12,
+            'draft-07' => SchemaVersion::Draft_07,
             'draft-2019-09' => SchemaVersion::Draft_2019_09,
-            default => SchemaVersion::Draft_07
+            default => SchemaVersion::Draft_2020_12
         };
     }
 

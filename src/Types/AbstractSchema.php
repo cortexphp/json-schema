@@ -37,7 +37,7 @@ abstract class AbstractSchema implements JsonSchema
     use HasDefinitions;
     use ValidatesVersionFeatures;
 
-    protected SchemaVersion $schemaVersion = SchemaVersion::Draft_07;
+    protected SchemaVersion $schemaVersion = SchemaVersion::Draft_2020_12;
 
     /**
      * @param \Cortex\JsonSchema\Enums\SchemaType|array<array-key, \Cortex\JsonSchema\Enums\SchemaType> $type

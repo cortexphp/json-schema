@@ -22,9 +22,9 @@ it('can add a single definition to a schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('definitions.address');
-    expect($schemaArray['definitions']['address'])->toHaveKey('type', 'object');
-    expect($schemaArray['definitions']['address'])->toHaveKey('required', ['street', 'city', 'country']);
+    expect($schemaArray)->toHaveKey('$defs.address');
+    expect($schemaArray['$defs']['address'])->toHaveKey('type', 'object');
+    expect($schemaArray['$defs']['address'])->toHaveKey('required', ['street', 'city', 'country']);
 });
 
 it('can add multiple definitions to a schema', function (): void {
@@ -46,10 +46,10 @@ it('can add multiple definitions to a schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('definitions.address');
-    expect($schemaArray)->toHaveKey('definitions.contact');
-    expect($schemaArray['definitions']['address'])->toHaveKey('required', ['street', 'city']);
-    expect($schemaArray['definitions']['contact'])->toHaveKey('required', ['email']);
+    expect($schemaArray)->toHaveKey('$defs.address');
+    expect($schemaArray)->toHaveKey('$defs.contact');
+    expect($schemaArray['$defs']['address'])->toHaveKey('required', ['street', 'city']);
+    expect($schemaArray['$defs']['contact'])->toHaveKey('required', ['email']);
 });
 
 it('can reference a definition in a schema property', function (): void {
@@ -65,16 +65,16 @@ it('can reference a definition in a schema property', function (): void {
         ->properties(
             Schema::string('name')->required(),
             Schema::object('billing_address')
-                ->ref('#/definitions/address'),
+                ->ref('#/$defs/address'),
             Schema::object('shipping_address')
-                ->ref('#/definitions/address'),
+                ->ref('#/$defs/address'),
         );
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('definitions.address');
-    expect($schemaArray)->toHaveKey('properties.billing_address.$ref', '#/definitions/address');
-    expect($schemaArray)->toHaveKey('properties.shipping_address.$ref', '#/definitions/address');
+    expect($schemaArray)->toHaveKey('$defs.address');
+    expect($schemaArray)->toHaveKey('properties.billing_address.$ref', '#/$defs/address');
+    expect($schemaArray)->toHaveKey('properties.shipping_address.$ref', '#/$defs/address');
 });
 
 it('validates data against a schema with referenced definitions', function (): void {
@@ -90,10 +90,10 @@ it('validates data against a schema with referenced definitions', function (): v
         ->properties(
             Schema::string('name')->required(),
             Schema::object('billing_address')
-                ->ref('#/definitions/address')
+                ->ref('#/$defs/address')
                 ->required(),
             Schema::object('shipping_address')
-                ->ref('#/definitions/address')
+                ->ref('#/$defs/address')
                 ->required(),
         );
 
@@ -166,10 +166,10 @@ it('validates data against a schema with multiple referenced definitions', funct
         ->properties(
             Schema::string('name')->required(),
             Schema::object('primary_contact')
-                ->ref('#/definitions/contact')
+                ->ref('#/$defs/contact')
                 ->required(),
             Schema::object('address')
-                ->ref('#/definitions/address')
+                ->ref('#/$defs/address')
                 ->required(),
         );
 

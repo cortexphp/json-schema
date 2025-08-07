@@ -20,7 +20,7 @@ it('can create a string schema with length constraints', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'string');
     expect($schemaArray)->toHaveKey('title', 'username');
     expect($schemaArray)->toHaveKey('description', 'Username for the account');

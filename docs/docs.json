@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "willow",
+  "theme": "aspen",
   "name": "CortexPHP",
   "colors": {
-    "primary": "#1F3CAA",
-    "light": "#1F3CAA",
-    "dark": "#1F3CAA"
+    "primary": "#1C85FE",
+    "light": "#1C85FE",
+    "dark": "#1C85FE"
   },
   "favicon": "/favicon.svg",
   "navigation": {

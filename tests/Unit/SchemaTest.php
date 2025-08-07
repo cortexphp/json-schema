@@ -58,7 +58,7 @@ it('can create schemas with default metadata', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('title', 'title');
     expect($schemaArray)->toHaveKey('description', 'Description');
     expect($schemaArray)->toHaveKey('readOnly', true);
@@ -72,7 +72,7 @@ it('can create a schema from a closure', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'name' => [
                 'type' => 'string',
@@ -115,7 +115,7 @@ it('can create a schema from a class', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'description' => 'This is the description of the class',
         'properties' => [
             'name' => [
@@ -150,7 +150,7 @@ it('can create a schema from an enum', function (): void {
     expect($schema)->toBeInstanceOf(StringSchema::class);
     expect($schema->toArray())->toBe([
         'type' => 'string',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'title' => 'UserRole',
         'description' => 'This is a custom enum for testing',
         'enum' => ['admin', 'editor', 'viewer', 'guest'],
@@ -274,7 +274,7 @@ it('tests version parameter handling in conversion methods', function (): void {
 
 it('tests default version handling', function (): void {
     // Test default version behavior
-    expect(Schema::getDefaultVersion())->toBe(SchemaVersion::Draft_07);
+    expect(Schema::getDefaultVersion())->toBe(SchemaVersion::Draft_2020_12);
 
     // Test setting custom default
     Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
@@ -286,7 +286,7 @@ it('tests default version handling', function (): void {
 
     // Reset to original default
     Schema::resetDefaultVersion();
-    expect(Schema::getDefaultVersion())->toBe(SchemaVersion::Draft_07);
+    expect(Schema::getDefaultVersion())->toBe(SchemaVersion::Draft_2020_12);
 });
 
 it('tests specific enum boolean logic edge case', function (): void {

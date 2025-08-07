@@ -17,7 +17,7 @@ it('can create a schema from a closure', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'name' => [
                 'type' => 'string',
@@ -53,7 +53,7 @@ it('can create a schema from a closure with a string backed enum', function (): 
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'myEnum' => [
                 'type' => 'string',
@@ -93,7 +93,7 @@ it('can create a schema from a closure with an integer backed enum', function ()
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'description' => 'Do something with the status',
         'properties' => [
             'status' => [
@@ -134,7 +134,7 @@ it('can create a schema from a closure with a union type', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'foo' => [
                 'type' => [
@@ -156,7 +156,7 @@ it('can create a schema from a closure with a nullable union type', function ():
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'foo' => [
                 'type' => [
@@ -179,7 +179,7 @@ it('can create a schema from a closure with array type hints', function (): void
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'items' => [
                 'type' => 'array',
@@ -202,7 +202,7 @@ it('can create a schema from a closure with mixed type', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'data' => [
                 'type' => [
@@ -229,7 +229,7 @@ it('can create a schema from a closure with object type', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'data' => [
                 'type' => 'object',
@@ -248,7 +248,7 @@ it('can create a schema from a closure with float type', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'amount' => [
                 'type' => 'number',
@@ -272,7 +272,7 @@ it('can create a schema from a closure with default values', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'name' => [
                 'type' => 'string',
@@ -310,7 +310,7 @@ it('can create a schema from a closure with array type', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'items' => [
                 'type' => 'array',

@@ -16,7 +16,7 @@ it('can create a boolean schema', function (): void {
 
     $schemaArray = $booleanSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'boolean');
     expect($schemaArray)->toHaveKey('title', 'is_active');
     expect($schemaArray)->toHaveKey('description', 'User active status');

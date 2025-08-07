@@ -121,7 +121,7 @@ echo $prettyJson;
 
 ```json Generated Output
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "title": "user",
     "description": "User registration schema",
@@ -252,13 +252,13 @@ Specify JSON Schema versions for advanced features:
 ```php
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
-// Use Draft 2019-09 for advanced features
-$modernSchema = Schema::string('field', SchemaVersion::Draft_2019_09)
-    ->deprecated()  // Only available in Draft 2019-09+
+// Schemas use Draft 2020-12 by default (latest features)
+$modernSchema = Schema::string('field')
+    ->deprecated()  // Available in Draft 2019-09+, included by default
     ->comment('Use newField instead');
 
-// Set default version for all schemas
-Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
+// Override default version if needed
+Schema::setDefaultVersion(SchemaVersion::Draft_07); // For maximum compatibility
 ```
 
 ## Common Validation Patterns
@@ -315,12 +315,13 @@ Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
   use Cortex\JsonSchema\Enums\SchemaVersion;
 
   // Use Draft 2019-09 for advanced features
-  $modernSchema = Schema::string('legacy_field', SchemaVersion::Draft_2019_09)
+  // Draft 2020-12 is used by default (includes deprecated feature)
+  $modernSchema = Schema::string('legacy_field')
       ->deprecated()  // Mark field as deprecated
       ->comment('Use new_field instead');
 
-  // Set default version for all schemas
-  Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
+  // Override default version if needed for compatibility
+  Schema::setDefaultVersion(SchemaVersion::Draft_07);
   ```
 
   <Warning>

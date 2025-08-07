@@ -17,7 +17,7 @@ it('can create a basic null schema', function (): void {
 
     $schemaArray = $nullSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'null');
     expect($schemaArray)->toHaveKey('title', 'deleted_at');
     expect($schemaArray)->toHaveKey('description', 'Soft delete timestamp');

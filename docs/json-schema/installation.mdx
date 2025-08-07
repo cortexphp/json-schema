@@ -67,14 +67,16 @@ icon: 'terminal'
 
 ### Set Default Version (Optional)
 
-If you want to use a specific JSON Schema version for all schemas by default:
+The package uses **Draft 2020-12** as the default version. If you need to use a different version for all schemas:
 
 ```php
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
-// Set global default version
-Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
+// Override default version (if needed)
+Schema::setDefaultVersion(SchemaVersion::Draft_07); // For maximum compatibility
+// or
+Schema::setDefaultVersion(SchemaVersion::Draft_2019_09); // For balanced features
 ```
 
 ## Development Setup

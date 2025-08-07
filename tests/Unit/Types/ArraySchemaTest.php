@@ -27,7 +27,7 @@ it('can create an array schema', function (): void {
 
     $schemaArray = $arraySchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'array');
     expect($schemaArray)->toHaveKey('title', 'tags');
     expect($schemaArray)->toHaveKey('description', 'List of tags');
@@ -201,14 +201,14 @@ it('allows equal values for minContains and maxContains', function (): void {
 });
 
 it('validates minContains and maxContains feature support', function (): void {
-    // Test that minContains/maxContains require Draft 2019-09
+    // Test that minContains/maxContains require Draft 2019-09+
     expect(
-        fn(): ArraySchema => Schema::array('test')
+        fn(): ArraySchema => Schema::array('test', SchemaVersion::Draft_07)
             ->minContains(1),
     )->toThrow(SchemaException::class, 'not supported in Draft 7');
 
     expect(
-        fn(): ArraySchema => Schema::array('test')
+        fn(): ArraySchema => Schema::array('test', SchemaVersion::Draft_07)
             ->maxContains(1),
     )->toThrow(SchemaException::class, 'not supported in Draft 7');
 
@@ -242,9 +242,9 @@ it('can handle unevaluated items feature', function (): void {
 });
 
 it('validates unevaluated items feature support', function (): void {
-    // Test that unevaluatedItems requires Draft 2019-09
+    // Test that unevaluatedItems requires Draft 2019-09+
     expect(
-        fn(): ArraySchema => Schema::array('test')
+        fn(): ArraySchema => Schema::array('test', SchemaVersion::Draft_07)
             ->unevaluatedItems(false),
     )->toThrow(SchemaException::class, 'not supported in Draft 7');
 

@@ -18,7 +18,7 @@ it('can create a basic number schema', function (): void {
 
     $schemaArray = $numberSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'number');
     expect($schemaArray)->toHaveKey('title', 'price');
     expect($schemaArray)->toHaveKey('description', 'Product price');

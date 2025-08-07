@@ -34,7 +34,7 @@ it('can create a basic object schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'object');
     expect($schemaArray)->toHaveKey('title', 'user');
     expect($schemaArray)->toHaveKey('description', 'User schema');

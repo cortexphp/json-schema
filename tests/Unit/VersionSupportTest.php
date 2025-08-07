@@ -133,7 +133,7 @@ it('provides feature metadata through enum', function (): void {
 });
 
 it('has correct default and latest versions', function (): void {
-    expect(SchemaVersion::default())->toBe(SchemaVersion::Draft_07);
+    expect(SchemaVersion::default())->toBe(SchemaVersion::Draft_2020_12);
     expect(SchemaVersion::latest())->toBe(SchemaVersion::Draft_2020_12);
 });
 
@@ -147,17 +147,17 @@ it('can create schema factory with version parameter', function (): void {
 it('can manage schema factory default version', function (): void {
     // Test default version
     $schema = Schema::string('test');
-    expect($schema->getVersion())->toBe(SchemaVersion::Draft_07);
+    expect($schema->getVersion())->toBe(SchemaVersion::Draft_2020_12);
 
     // Test setting global default
-    Schema::setDefaultVersion(SchemaVersion::Draft_2020_12);
+    Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
     $schema = Schema::string('test');
-    expect($schema->getVersion())->toBe(SchemaVersion::Draft_2020_12);
+    expect($schema->getVersion())->toBe(SchemaVersion::Draft_2019_09);
 
     // Test reset to default
     Schema::resetDefaultVersion();
     $schema = Schema::string('test');
-    expect($schema->getVersion())->toBe(SchemaVersion::Draft_07);
+    expect($schema->getVersion())->toBe(SchemaVersion::Draft_2020_12);
 });
 
 it('includes correct schema version in output', function (): void {
@@ -231,5 +231,5 @@ it('can exclude schema version from output', function (): void {
     $arrayWithRef = $stringSchema->toArray(true);
 
     expect($arrayWithoutRef)->not->toHaveKey('$schema');
-    expect($arrayWithRef)->toHaveKey('$schema', SchemaVersion::Draft_07->value);
+    expect($arrayWithRef)->toHaveKey('$schema', SchemaVersion::Draft_2020_12->value);
 });

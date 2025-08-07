@@ -25,7 +25,7 @@ it('can create a schema from an string backed enum', function (): void {
     expect($schema)->toBeInstanceOf(StringSchema::class);
     expect($schema->toArray())->toBe([
         'type' => 'string',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'title' => 'PostStatus',
         'description' => 'This is the description of the string backed enum',
         'enum' => ['draft', 'published', 'archived'],
@@ -46,7 +46,7 @@ it('can create a schema from an integer backed enum', function (): void {
     expect($schema)->toBeInstanceOf(IntegerSchema::class);
     expect($schema->toArray())->toBe([
         'type' => 'integer',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'title' => 'PostType',
         'description' => 'This is the description of the integer backed enum',
         'enum' => [1, 2, 3],

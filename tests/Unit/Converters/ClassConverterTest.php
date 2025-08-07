@@ -21,7 +21,7 @@ it('can create a schema from a class', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'name' => [
                 'type' => 'string',
@@ -65,7 +65,7 @@ it('can create a schema from a class with docblocks', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'name' => [
                 'type' => 'string',
@@ -108,7 +108,7 @@ it('can create a schema from a class with constructor property promotion', funct
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'description' => 'This is the description of the class',
         'properties' => [
             'name' => [
@@ -142,7 +142,7 @@ it('can create a schema from a class with an enum', function (): void {
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
-        '$schema' => 'http://json-schema.org/draft-07/schema#',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         'properties' => [
             'name' => [
                 'type' => 'string',
