@@ -36,8 +36,14 @@ class ClosureConverter implements Converter
     {
         $objectSchema = new ObjectSchema(schemaVersion: $this->version);
 
+        $docParser = $this->getDocParser();
+
+        if ($docParser?->isDeprecated() === true || $this->reflection->isDeprecated()) {
+            $objectSchema->deprecated();
+        }
+
         // Get the description from the doc parser
-        $description = $this->getDocParser()?->description() ?? null;
+        $description = $docParser?->description() ?? null;
 
         // Add the description to the schema if it exists
         if ($description !== null) {
@@ -45,7 +51,7 @@ class ClosureConverter implements Converter
         }
 
         // Get the parameters from the doc parser
-        $params = $this->getDocParser()?->params();
+        $params = $docParser?->params();
 
         // Add the parameters to the objectschema
         foreach ($this->reflection->getParameters() as $parameter) {
@@ -115,9 +121,9 @@ class ClosureConverter implements Converter
         return $jsonSchema;
     }
 
-    protected function getDocParser(): ?DocParser
+    protected function getDocParser(?string $docComment = null): ?DocParser
     {
-        $docComment = $this->reflection->getDocComment();
+        $docComment ??= $this->reflection->getDocComment();
 
         return is_string($docComment)
             ? new DocParser($docComment)

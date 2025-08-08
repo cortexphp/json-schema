@@ -78,6 +78,14 @@ class DocParser
     }
 
     /**
+     * Determine if the docblock is marked as deprecated.
+     */
+    public function isDeprecated(): bool
+    {
+        return $this->parse()->getTagsByName('@deprecated') !== [];
+    }
+
+    /**
      * Map the value node to its types.
      *
      * @return array<array-key, string>

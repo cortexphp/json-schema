@@ -41,8 +41,14 @@ class ClassConverter implements Converter
     {
         $objectSchema = new ObjectSchema(schemaVersion: $this->version);
 
+        $docParser = $this->getDocParser($this->reflection);
+
+        if ($docParser?->isDeprecated() === true) {
+            $objectSchema->deprecated();
+        }
+
         // Get the description from the doc parser
-        $description = $this->getDocParser($this->reflection)?->description() ?? null;
+        $description = $docParser?->description() ?? null;
 
         // Add the description to the schema if it exists
         if ($description !== null) {
@@ -74,7 +80,13 @@ class ClassConverter implements Converter
 
         $jsonSchema->title($reflectionProperty->getName());
 
-        $variable = $this->getDocParser($reflectionProperty)?->variable();
+        $docParser = $this->getDocParser($reflectionProperty);
+
+        if ($docParser?->isDeprecated() === true) {
+            $jsonSchema->deprecated();
+        }
+
+        $variable = $docParser?->variable();
 
         // Add the description to the schema if it exists
         if ($variable?->description !== null) {

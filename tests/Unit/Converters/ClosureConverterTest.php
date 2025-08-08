@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Converters;
 
+use Deprecated;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 use Cortex\JsonSchema\Converters\ClosureConverter;
@@ -316,6 +317,100 @@ it('can create a schema from a closure with array type', function (): void {
                 'type' => 'array',
                 'default' => ['default'],
             ],
+        ],
+    ]);
+});
+
+it('can create a schema from a deprecated closure', function (): void {
+    /**
+     * A deprecated function for processing user data
+     *
+     * @deprecated Use processUserDataV2() instead since v2.0
+     *
+     * @param string $name The user's name
+     * @param int $age The user's age
+     */
+    $closure = function (string $name, int $age): void {};
+    $objectSchema = (new ClosureConverter($closure))->convert();
+
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
+        'type' => 'object',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+        'description' => 'A deprecated function for processing user data',
+        'deprecated' => true,
+        'properties' => [
+            'name' => [
+                'type' => 'string',
+                'description' => "The user's name",
+            ],
+            'age' => [
+                'type' => 'integer',
+                'description' => "The user's age",
+            ],
+        ],
+        'required' => [
+            'name',
+            'age',
+        ],
+    ]);
+});
+
+it('can create a schema from a deprecated closure using the deprecated attribute', function (): void {
+    /**
+     * A deprecated function for processing user data
+     *
+     * @param string $name The user's name
+     * @param int $age The user's age
+     */
+    $closure = #[Deprecated('Use processUserDataV2() instead since v2.0')] function (string $name, int $age): void {};
+    $objectSchema = (new ClosureConverter($closure))->convert();
+
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
+        'type' => 'object',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+        'description' => 'A deprecated function for processing user data',
+        'deprecated' => true,
+        'properties' => [
+            'name' => [
+                'type' => 'string',
+                'description' => "The user's name",
+            ],
+            'age' => [
+                'type' => 'integer',
+                'description' => "The user's age",
+            ],
+        ],
+        'required' => [
+            'name',
+            'age',
+        ],
+    ]);
+})->skipOnPhp('<8.4');
+
+it('can create a schema from a deprecated closure without description', function (): void {
+    /**
+     * @deprecated
+     *
+     * @param string $data Some data
+     */
+    $closure = function (string $data): void {};
+    $objectSchema = (new ClosureConverter($closure))->convert();
+
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
+        'type' => 'object',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+        'deprecated' => true,
+        'properties' => [
+            'data' => [
+                'type' => 'string',
+                'description' => 'Some data',
+            ],
+        ],
+        'required' => [
+            'data',
         ],
     ]);
 });

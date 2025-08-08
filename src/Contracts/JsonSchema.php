@@ -44,6 +44,11 @@ interface JsonSchema
     public function default(mixed $value): static;
 
     /**
+     * Mark the schema as deprecated.
+     */
+    public function deprecated(bool $deprecated = true): static;
+
+    /**
      * Set the allowed enum values.
      *
      * @param non-empty-array<int|string|bool|float|null> $values
