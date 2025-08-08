@@ -15,69 +15,29 @@ icon: 'terminal'
 <Step title="Install via Composer">
   Install the package using Composer with one of these commands:
 
-  <Tabs>
-  <Tab title="Latest Version">
-    ```bash
+  ```bash
     composer require cortexphp/json-schema
-    ```
-  </Tab>
-  <Tab title="Specific Version">
-    ```bash
-    composer require cortexphp/json-schema:^1.0
-    ```
-  </Tab>
-  </Tabs>
+  ```
 
   <Check>
   Verify the package was installed by running: `composer show cortexphp/json-schema`
   </Check>
 </Step>
 
-<Step title="Verify Installation">
-  Create a test file to confirm everything is working correctly:
+<Step title="Set Default Version (Optional)">
+  The package uses **Draft 2020-12** as the default version. If you need to use a different version for all schemas:
 
-  ```php test-installation.php
-  <?php
-
-  require_once 'vendor/autoload.php';
-
+  ```php
   use Cortex\JsonSchema\Schema;
+  use Cortex\JsonSchema\Enums\SchemaVersion;
 
-  // Create a simple schema to test installation
-  $schema = Schema::string('test')
-      ->minLength(1)
-      ->required();
-
-  // Test validation
-  $isValid = $schema->isValid('Hello World');
-
-  echo $isValid ? 'Installation successful!' : 'Installation failed!';
+  // Override default version (if needed)
+  Schema::setDefaultVersion(SchemaVersion::Draft_07); // For maximum compatibility
+  // or
+  Schema::setDefaultVersion(SchemaVersion::Draft_2019_09); // For balanced features
   ```
-
-  Run the test file:
-  ```bash
-  php test-installation.php
-  ```
-
-  <Check>
-  You should see "Installation successful!" confirming the package is ready to use.
-  </Check>
 </Step>
 </Steps>
-
-### Set Default Version (Optional)
-
-The package uses **Draft 2020-12** as the default version. If you need to use a different version for all schemas:
-
-```php
-use Cortex\JsonSchema\Schema;
-use Cortex\JsonSchema\Enums\SchemaVersion;
-
-// Override default version (if needed)
-Schema::setDefaultVersion(SchemaVersion::Draft_07); // For maximum compatibility
-// or
-Schema::setDefaultVersion(SchemaVersion::Draft_2019_09); // For balanced features
-```
 
 ## Development Setup
 
