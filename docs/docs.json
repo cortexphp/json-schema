@@ -1,93 +1,92 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "theme": "aspen",
-  "name": "CortexPHP",
-  "colors": {
-    "primary": "#1C85FE",
-    "light": "#1C85FE",
-    "dark": "#1C85FE"
-  },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "JSON Schema",
-        "groups": [
-          {
-            "group": "Get Started",
-            "pages": [
-              "json-schema/introduction",
-              "json-schema/installation",
-              "json-schema/quickstart",
-              "json-schema/versions"
-            ]
-          },
-          {
-            "group": "Schema Types",
-            "pages": [
-              "json-schema/schema-types/object",
-              "json-schema/schema-types/array",
-              "json-schema/schema-types/string",
-              "json-schema/schema-types/number",
-              "json-schema/schema-types/integer",
-              "json-schema/schema-types/boolean",
-              "json-schema/schema-types/union",
-              "json-schema/schema-types/null"
-            ]
-          },
-          {
-            "group": "Advanced Features",
-            "pages": [
-              "json-schema/advanced/conditional-validation",
-              "json-schema/advanced/string-formats",
-              "json-schema/advanced/definitions-refs",
-              "json-schema/advanced/unevaluated-properties",
-              "json-schema/advanced/dependent-schemas",
-              "json-schema/advanced/pattern-properties"
-            ]
-          },
-          {
-            "group": "Code Generation",
-            "pages": [
-              "json-schema/code-generation/from-classes",
-              "json-schema/code-generation/from-closures",
-              "json-schema/code-generation/from-enums",
-              "json-schema/code-generation/from-json"
-            ]
-          },
-          {
-            "group": "Validation",
-            "pages": [
-              "json-schema/validation/data-validation",
-              "json-schema/validation/error-handling",
-              "json-schema/validation/version-features"
-            ]
-          }
+    "$schema": "https://mintlify.com/docs.json",
+    "theme": "aspen",
+    "name": "CortexPHP",
+    "colors": {
+        "primary": "#1C85FE",
+        "light": "#1C85FE",
+        "dark": "#1C85FE"
+    },
+    "favicon": "/favicon.svg",
+    "icons": {
+        "library": "lucide"
+    },
+    "navigation": {
+        "dropdowns": [
+            {
+                "dropdown": "JSON Schema",
+                "icon": "braces",
+                "groups": [
+                    {
+                        "group": "Get Started",
+                        "pages": [
+                            "json-schema/introduction",
+                            "json-schema/installation",
+                            "json-schema/quickstart",
+                            "json-schema/versions"
+                        ]
+                    },
+                    {
+                        "group": "Schema Types",
+                        "pages": [
+                            "json-schema/schema-types/object",
+                            "json-schema/schema-types/array",
+                            "json-schema/schema-types/string",
+                            "json-schema/schema-types/number",
+                            "json-schema/schema-types/integer",
+                            "json-schema/schema-types/boolean",
+                            "json-schema/schema-types/union",
+                            "json-schema/schema-types/null"
+                        ]
+                    },
+                    {
+                        "group": "Advanced Features",
+                        "pages": [
+                            "json-schema/advanced/conditional-validation",
+                            "json-schema/advanced/string-formats",
+                            "json-schema/advanced/definitions-refs",
+                            "json-schema/advanced/unevaluated-properties",
+                            "json-schema/advanced/dependent-schemas",
+                            "json-schema/advanced/pattern-properties"
+                        ]
+                    },
+                    {
+                        "group": "Code Generation",
+                        "pages": [
+                            "json-schema/code-generation/from-classes",
+                            "json-schema/code-generation/from-closures",
+                            "json-schema/code-generation/from-enums",
+                            "json-schema/code-generation/from-json"
+                        ]
+                    },
+                    {
+                        "group": "Validation",
+                        "pages": [
+                            "json-schema/validation/data-validation",
+                            "json-schema/validation/error-handling",
+                            "json-schema/validation/version-features"
+                        ]
+                    }
+                ]
+            }
         ]
-      }
-    ]
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/cortexphp"
+    },
+    "logo": {
+        "light": "/logo/light.svg",
+        "dark": "/logo/dark.svg"
+    },
+    "navbar": {
+        "primary": {
+            "type": "github",
+            "href": "https://github.com/cortexphp/json-schema"
+        }
+    },
+    "contextual": {
+        "options": ["copy", "view", "chatgpt", "claude"]
+    },
+    "footer": {
+        "socials": {
+            "github": "https://github.com/cortexphp"
+        }
     }
-  },
-  "contextual": {
-    "options": [
-      "copy",
-      "view",
-      "chatgpt",
-      "claude"
-    ]
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/cortexphp"
-    }
-  }
 }
