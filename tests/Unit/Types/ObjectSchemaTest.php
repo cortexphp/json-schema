@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
 use ReflectionClass;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Opis\JsonSchema\Errors\ValidationError;
-use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 covers(ObjectSchema::class);
@@ -34,7 +34,7 @@ it('can create a basic object schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'object');
     expect($schemaArray)->toHaveKey('title', 'user');
     expect($schemaArray)->toHaveKey('description', 'User schema');

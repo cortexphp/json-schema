@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Targets;
 
-use Cortex\JsonSchema\SchemaFactory as Schema;
+use Cortex\JsonSchema\Schema;
 
 it('can create a schema with a $ref', function (): void {
     $stringSchema = Schema::string('name')

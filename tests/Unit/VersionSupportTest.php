@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit;
 
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Enums\SchemaFeature;
@@ -12,7 +12,7 @@ use Cortex\JsonSchema\Enums\SchemaVersion;
 
 afterEach(function (): void {
     // Always reset to default after each test
-    SchemaFactory::resetDefaultVersion();
+    Schema::resetDefaultVersion();
 });
 
 it('has correct schema version enum values', function (): void {
@@ -133,12 +133,12 @@ it('provides feature metadata through enum', function (): void {
 });
 
 it('has correct default and latest versions', function (): void {
-    expect(SchemaVersion::default())->toBe(SchemaVersion::Draft_07);
+    expect(SchemaVersion::default())->toBe(SchemaVersion::Draft_2020_12);
     expect(SchemaVersion::latest())->toBe(SchemaVersion::Draft_2020_12);
 });
 
 it('can create schema factory with version parameter', function (): void {
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_2020_12);
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_2020_12);
 
     expect($stringSchema)->toBeInstanceOf(StringSchema::class);
     expect($stringSchema->getVersion())->toBe(SchemaVersion::Draft_2020_12);
@@ -146,23 +146,23 @@ it('can create schema factory with version parameter', function (): void {
 
 it('can manage schema factory default version', function (): void {
     // Test default version
-    $schema = SchemaFactory::string('test');
-    expect($schema->getVersion())->toBe(SchemaVersion::Draft_07);
-
-    // Test setting global default
-    SchemaFactory::setDefaultVersion(SchemaVersion::Draft_2020_12);
-    $schema = SchemaFactory::string('test');
+    $schema = Schema::string('test');
     expect($schema->getVersion())->toBe(SchemaVersion::Draft_2020_12);
 
+    // Test setting global default
+    Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
+    $schema = Schema::string('test');
+    expect($schema->getVersion())->toBe(SchemaVersion::Draft_2019_09);
+
     // Test reset to default
-    SchemaFactory::resetDefaultVersion();
-    $schema = SchemaFactory::string('test');
-    expect($schema->getVersion())->toBe(SchemaVersion::Draft_07);
+    Schema::resetDefaultVersion();
+    $schema = Schema::string('test');
+    expect($schema->getVersion())->toBe(SchemaVersion::Draft_2020_12);
 });
 
 it('includes correct schema version in output', function (): void {
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
-    $draft202012Schema = SchemaFactory::string('test', SchemaVersion::Draft_2020_12);
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
+    $draft202012Schema = Schema::string('test', SchemaVersion::Draft_2020_12);
 
     $draft07Array = $stringSchema->toArray();
     $draft202012Array = $draft202012Schema->toArray();
@@ -172,7 +172,7 @@ it('includes correct schema version in output', function (): void {
 });
 
 it('can change schema version on existing schema', function (): void {
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
     expect($stringSchema->getVersion())->toBe(SchemaVersion::Draft_07);
 
     $stringSchema->version(SchemaVersion::Draft_2020_12);
@@ -185,15 +185,15 @@ it('can change schema version on existing schema', function (): void {
 it('supports versions for all schema types', function (): void {
     $version = SchemaVersion::Draft_2020_12;
 
-    $stringSchema = SchemaFactory::string('test', $version);
-    $numberSchema = SchemaFactory::number('test', $version);
-    $integerSchema = SchemaFactory::integer('test', $version);
-    $booleanSchema = SchemaFactory::boolean('test', $version);
-    $arraySchema = SchemaFactory::array('test', $version);
-    $objectSchema = SchemaFactory::object('test', $version);
-    $nullSchema = SchemaFactory::null('test', $version);
-    $unionSchema = SchemaFactory::union([SchemaType::String, SchemaType::Number], 'test', $version);
-    $mixedSchema = SchemaFactory::mixed('test', $version);
+    $stringSchema = Schema::string('test', $version);
+    $numberSchema = Schema::number('test', $version);
+    $integerSchema = Schema::integer('test', $version);
+    $booleanSchema = Schema::boolean('test', $version);
+    $arraySchema = Schema::array('test', $version);
+    $objectSchema = Schema::object('test', $version);
+    $nullSchema = Schema::null('test', $version);
+    $unionSchema = Schema::union([SchemaType::String, SchemaType::Number], 'test', $version);
+    $mixedSchema = Schema::mixed('test', $version);
 
     $schemas = [
         $stringSchema, $numberSchema, $integerSchema, $booleanSchema,
@@ -211,25 +211,25 @@ it('supports versions for from methods', function (): void {
     $version = SchemaVersion::Draft_2020_12;
 
     // Test fromClass
-    $objectSchema = SchemaFactory::fromClass(new class () {
+    $objectSchema = Schema::fromClass(new class () {
         public string $name = 'test';
     }, true, $version);
     expect($objectSchema->getVersion())->toBe($version);
 
     // Test fromClosure
-    $closureSchema = SchemaFactory::fromClosure(fn(string $name): string => $name, $version);
+    $closureSchema = Schema::fromClosure(fn(string $name): string => $name, $version);
     expect($closureSchema->getVersion())->toBe($version);
 
     // Test fromEnum
-    $enumSchema = SchemaFactory::fromEnum(SchemaType::class, $version);
+    $enumSchema = Schema::fromEnum(SchemaType::class, $version);
     expect($enumSchema->getVersion())->toBe($version);
 });
 
 it('can exclude schema version from output', function (): void {
-    $stringSchema = SchemaFactory::string('test');
+    $stringSchema = Schema::string('test');
     $arrayWithoutRef = $stringSchema->toArray(false);
     $arrayWithRef = $stringSchema->toArray(true);
 
     expect($arrayWithoutRef)->not->toHaveKey('$schema');
-    expect($arrayWithRef)->toHaveKey('$schema', SchemaVersion::Draft_07->value);
+    expect($arrayWithRef)->toHaveKey('$schema', SchemaVersion::Draft_2020_12->value);
 });

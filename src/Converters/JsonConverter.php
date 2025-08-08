@@ -6,7 +6,6 @@ namespace Cortex\JsonSchema\Converters;
 
 use JsonException;
 use ReflectionClass;
-use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\NullSchema;
 use Cortex\JsonSchema\Types\ArraySchema;
@@ -18,6 +17,7 @@ use Cortex\JsonSchema\Contracts\Converter;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 class JsonConverter implements Converter
@@ -60,7 +60,7 @@ class JsonConverter implements Converter
         }
     }
 
-    public function convert(): Schema
+    public function convert(): JsonSchema
     {
         $type = $this->data['type'] ?? null;
         $title = isset($this->data['title']) && is_string($this->data['title']) ? $this->data['title'] : null;

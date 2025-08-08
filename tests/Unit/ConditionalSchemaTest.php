@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit;
 
 use ArrayObject;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\ObjectSchema;
-use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 it('can create a schema with if/then/else conditions', function (): void {

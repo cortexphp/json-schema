@@ -1,0 +1,739 @@
+---
+title: Error Handling
+description: 'Advanced error handling and exception management for schema validation'
+icon: 'x'
+---
+
+Master error handling in JSON Schema validation with detailed exception information, custom error messages, and graceful error recovery patterns.
+
+## SchemaException Overview
+
+All validation errors throw `SchemaException` with detailed information:
+
+```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Exceptions\SchemaException;
+
+$schema = Schema::string('email')
+    ->format(SchemaFormat::Email)
+    ->minLength(5)
+    ->maxLength(100)
+    ->required();
+
+try {
+    $schema->validate('invalid-email-format');
+} catch (SchemaException $e) {
+    echo "Error: " . $e->getMessage();           // User-friendly message
+    echo "Code: " . $e->getCode();               // Error code
+    echo "Property: " . $e->getProperty();       // Failed property (if available)
+    echo "Value: " . $e->getFailedValue();       // Value that failed (if available)
+}
+```
+
+## Exception Types and Error Codes
+
+Different validation failures produce specific error codes:
+
+```php
+$userSchema = Schema::object('user')
+    ->properties(
+        Schema::string('name')
+            ->minLength(2)
+            ->maxLength(50)
+            ->required(),
+        Schema::string('email')
+            ->format(SchemaFormat::Email)
+            ->required(),
+        Schema::integer('age')
+            ->minimum(0)
+            ->maximum(150)
+            ->required()
+    );
+
+// Test different error scenarios
+$testCases = [
+    // Missing required field
+    ['name' => 'John'],
+
+    // String too short
+    ['name' => 'J', 'email' => 'john@example.com', 'age' => 30],
+
+    // Invalid format
+    ['name' => 'John', 'email' => 'invalid-email', 'age' => 30],
+
+    // Type mismatch
+    ['name' => 'John', 'email' => 'john@example.com', 'age' => 'thirty'],
+
+    // Value out of range
+    ['name' => 'John', 'email' => 'john@example.com', 'age' => -5]
+];
+
+foreach ($testCases as $index => $testData) {
+    try {
+        $userSchema->validate($testData);
+        echo "Test case {$index}: Valid\n";
+    } catch (SchemaException $e) {
+        echo "Test case {$index}: {$e->getMessage()}\n";
+        echo "  Error code: {$e->getCode()}\n";
+        echo "  Failed property: " . ($e->getProperty() ?? 'unknown') . "\n\n";
+    }
+}
+```
+
+## Error Message Categories
+
+Schema validation errors fall into several categories:
+
+### Type Validation Errors
+
+```php
+$typeSchema = Schema::string('name');
+
+try {
+    $typeSchema->validate(123);  // Number instead of string
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must be a string"
+    echo $e->getCode();    // Type validation error code
+}
+```
+
+### Format Validation Errors
+
+```php
+$emailSchema = Schema::string('email')->format(SchemaFormat::Email);
+
+try {
+    $emailSchema->validate('not-an-email');
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must match the 'email' format"
+}
+```
+
+### Constraint Validation Errors
+
+```php
+$lengthSchema = Schema::string('username')
+    ->minLength(3)
+    ->maxLength(20);
+
+try {
+    $lengthSchema->validate('ab');  // Too short
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "String must have minimum length of 3"
+}
+
+try {
+    $lengthSchema->validate('very_long_username_that_exceeds_limit');
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "String must have maximum length of 20"
+}
+```
+
+### Required Field Errors
+
+```php
+$requiredSchema = Schema::object('user')
+    ->properties(
+        Schema::string('name')->required(),
+        Schema::string('email')->required()
+    );
+
+try {
+    $requiredSchema->validate(['name' => 'John']);  // Missing email
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Property 'email' is required"
+    echo $e->getProperty(); // "email"
+}
+```
+
+## Custom Error Messages
+
+Create user-friendly error messages for different contexts:
+
+```php
+class UserFriendlyErrorHandler
+{
+    private array $messageMap = [
+        // Type errors
+        'must be a string' => 'Please enter text for this field',
+        'must be an integer' => 'Please enter a whole number',
+        'must be a number' => 'Please enter a valid number',
+        'must be a boolean' => 'Please select yes or no',
+
+        // Format errors
+        'must match the \'email\' format' => 'Please enter a valid email address',
+        'must match the \'uri\' format' => 'Please enter a valid URL',
+        'must match the \'date\' format' => 'Please enter a valid date (YYYY-MM-DD)',
+
+        // Constraint errors
+        'must have minimum length' => 'This field is too short',
+        'must have maximum length' => 'This field is too long',
+        'must be greater than or equal to' => 'Value is too small',
+        'must be less than or equal to' => 'Value is too large',
+
+        // Required field errors
+        'is required' => 'This field is required',
+    ];
+
+    public function getFriendlyMessage(SchemaException $e): string
+    {
+        $originalMessage = $e->getMessage();
+
+        foreach ($this->messageMap as $pattern => $friendlyMessage) {
+            if (strpos($originalMessage, $pattern) !== false) {
+                return $friendlyMessage;
+            }
+        }
+
+        return $originalMessage; // Fallback to original message
+    }
+
+    public function getFieldSpecificMessage(SchemaException $e): string
+    {
+        $property = $e->getProperty();
+        $friendlyMessage = $this->getFriendlyMessage($e);
+
+        if ($property) {
+            $fieldName = ucfirst(str_replace('_', ' ', $property));
+            return "{$fieldName}: {$friendlyMessage}";
+        }
+
+        return $friendlyMessage;
+    }
+}
+
+// Usage
+$errorHandler = new UserFriendlyErrorHandler();
+
+try {
+    $userSchema->validate(['name' => 'J', 'email' => 'invalid']);
+} catch (SchemaException $e) {
+    echo "Technical: " . $e->getMessage() . "\n";
+    echo "User-friendly: " . $errorHandler->getFriendlyMessage($e) . "\n";
+    echo "Field-specific: " . $errorHandler->getFieldSpecificMessage($e) . "\n";
+}
+```
+
+## Validation Result Objects
+
+Create structured validation results for better error handling:
+
+```php
+class ValidationResult
+{
+    public function __construct(
+        public bool $isValid,
+        public array $errors = [],
+        public ?array $data = null
+    ) {}
+
+    public function hasErrors(): bool
+    {
+        return !empty($this->errors);
+    }
+
+    public function getFirstError(): ?string
+    {
+        return $this->errors[0] ?? null;
+    }
+
+    public function getErrorsForField(string $field): array
+    {
+        return array_filter($this->errors, fn($error) =>
+            isset($error['field']) && $error['field'] === $field
+        );
+    }
+}
+
+class ValidatorWithResults
+{
+    public function validate(Schema $schema, mixed $data): ValidationResult
+    {
+        if ($schema->isValid($data)) {
+            return new ValidationResult(true, [], $data);
+        }
+
+        $errors = [];
+        try {
+            $schema->validate($data);
+        } catch (SchemaException $e) {
+            $errors[] = [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'field' => $e->getProperty(),
+                'value' => $e->getFailedValue()
+            ];
+        }
+
+        return new ValidationResult(false, $errors, $data);
+    }
+
+    public function validateMultiple(Schema $schema, array $items): array
+    {
+        $results = [];
+
+        foreach ($items as $index => $item) {
+            $results[$index] = $this->validate($schema, $item);
+        }
+
+        return $results;
+    }
+}
+
+// Usage
+$validator = new ValidatorWithResults();
+$userSchema = Schema::object('user')
+    ->properties(
+        Schema::string('name')->minLength(2)->required(),
+        Schema::string('email')->format(SchemaFormat::Email)->required()
+    );
+
+$result = $validator->validate($userSchema, ['name' => 'J']);
+
+if (!$result->isValid) {
+    echo "Validation failed:\n";
+    foreach ($result->errors as $error) {
+        echo "- {$error['message']}\n";
+    }
+}
+```
+
+## Nested Object Error Handling
+
+Handle errors in complex nested structures:
+
+```php
+class NestedErrorHandler
+{
+    public function validateWithPath(Schema $schema, mixed $data, string $path = ''): array
+    {
+        $errors = [];
+
+        try {
+            $schema->validate($data);
+        } catch (SchemaException $e) {
+            $fieldPath = $path;
+            if ($e->getProperty()) {
+                $fieldPath .= ($fieldPath ? '.' : '') . $e->getProperty();
+            }
+
+            $errors[] = [
+                'path' => $fieldPath,
+                'message' => $e->getMessage(),
+                'value' => $e->getFailedValue()
+            ];
+        }
+
+        return $errors;
+    }
+
+    public function validateObject(Schema $schema, array $data, string $basePath = ''): array
+    {
+        $allErrors = [];
+
+        // First validate the entire object
+        $errors = $this->validateWithPath($schema, $data, $basePath);
+        $allErrors = array_merge($allErrors, $errors);
+
+        // If the object validation passes, validate individual properties
+        if (empty($errors) && is_array($data)) {
+            $schemaArray = $schema->toArray();
+
+            if (isset($schemaArray['properties'])) {
+                foreach ($schemaArray['properties'] as $property => $propSchema) {
+                    if (isset($data[$property])) {
+                        $propertyPath = $basePath . ($basePath ? '.' : '') . $property;
+                        $propertySchema = Schema::fromJson($propSchema);
+
+                        $propertyErrors = $this->validateWithPath(
+                            $propertySchema,
+                            $data[$property],
+                            $propertyPath
+                        );
+
+                        $allErrors = array_merge($allErrors, $propertyErrors);
+                    }
+                }
+            }
+        }
+
+        return $allErrors;
+    }
+}
+
+// Complex nested schema
+$orderSchema = Schema::object('order')
+    ->properties(
+        Schema::string('id')->required(),
+        Schema::object('customer')
+            ->properties(
+                Schema::string('name')->minLength(2)->required(),
+                Schema::string('email')->format(SchemaFormat::Email)->required(),
+                Schema::object('address')
+                    ->properties(
+                        Schema::string('street')->required(),
+                        Schema::string('city')->required(),
+                        Schema::string('postal_code')
+                            ->pattern('^\d{5}$')
+                            ->required()
+                    )
+                    ->required()
+            )
+            ->required(),
+        Schema::array('items')
+            ->items(
+                Schema::object()
+                    ->properties(
+                        Schema::string('sku')->required(),
+                        Schema::integer('quantity')->minimum(1)->required()
+                    )
+            )
+            ->minItems(1)
+            ->required()
+    );
+
+$nestedHandler = new NestedErrorHandler();
+
+$invalidOrder = [
+    'id' => 'ORD-123',
+    'customer' => [
+        'name' => 'J',  // Too short
+        'email' => 'invalid-email',  // Invalid format
+        'address' => [
+            'street' => '123 Main St',
+            // Missing city
+            'postal_code' => '1234'  // Invalid format
+        ]
+    ],
+    'items' => [
+        [
+            'sku' => 'ITEM-001',
+            'quantity' => 0  // Below minimum
+        ]
+    ]
+];
+
+$errors = $nestedHandler->validateObject($orderSchema, $invalidOrder);
+
+foreach ($errors as $error) {
+    echo "Error at {$error['path']}: {$error['message']}\n";
+}
+```
+
+## Error Recovery and Suggestions
+
+Provide helpful suggestions for common validation errors:
+
+```php
+class ErrorRecoveryHelper
+{
+    public function suggestCorrections(SchemaException $e): array
+    {
+        $suggestions = [];
+        $message = $e->getMessage();
+        $value = $e->getFailedValue();
+
+        // Email format suggestions
+        if (strpos($message, 'email') !== false && is_string($value)) {
+            if (!strpos($value, '@')) {
+                $suggestions[] = "Add an '@' symbol to your email address";
+            } elseif (!strpos($value, '.')) {
+                $suggestions[] = "Add a domain extension like '.com' to your email";
+            }
+        }
+
+        // String length suggestions
+        if (strpos($message, 'minimum length') !== false) {
+            preg_match('/minimum length of (\d+)/', $message, $matches);
+            if ($matches) {
+                $required = (int)$matches[1];
+                $current = is_string($value) ? strlen($value) : 0;
+                $needed = $required - $current;
+                $suggestions[] = "Add {$needed} more character" . ($needed > 1 ? 's' : '');
+            }
+        }
+
+        if (strpos($message, 'maximum length') !== false) {
+            preg_match('/maximum length of (\d+)/', $message, $matches);
+            if ($matches) {
+                $allowed = (int)$matches[1];
+                $current = is_string($value) ? strlen($value) : 0;
+                $excess = $current - $allowed;
+                $suggestions[] = "Remove {$excess} character" . ($excess > 1 ? 's' : '');
+            }
+        }
+
+        // Numeric range suggestions
+        if (strpos($message, 'greater than or equal to') !== false) {
+            preg_match('/greater than or equal to ([\d.]+)/', $message, $matches);
+            if ($matches) {
+                $minimum = $matches[1];
+                $suggestions[] = "Enter a value of {$minimum} or higher";
+            }
+        }
+
+        // Enum suggestions
+        if (strpos($message, 'must be one of') !== false) {
+            $suggestions[] = "Choose from the available options";
+        }
+
+        return $suggestions;
+    }
+
+    public function getDetailedError(SchemaException $e): array
+    {
+        return [
+            'message' => $e->getMessage(),
+            'code' => $e->getCode(),
+            'field' => $e->getProperty(),
+            'value' => $e->getFailedValue(),
+            'suggestions' => $this->suggestCorrections($e)
+        ];
+    }
+}
+
+// Usage
+$recoveryHelper = new ErrorRecoveryHelper();
+
+try {
+    $emailSchema = Schema::string('email')->format(SchemaFormat::Email);
+    $emailSchema->validate('userexample.com');  // Missing @
+} catch (SchemaException $e) {
+    $detailedError = $recoveryHelper->getDetailedError($e);
+
+    echo "Error: {$detailedError['message']}\n";
+    if (!empty($detailedError['suggestions'])) {
+        echo "Suggestions:\n";
+        foreach ($detailedError['suggestions'] as $suggestion) {
+            echo "- {$suggestion}\n";
+        }
+    }
+}
+```
+
+## Bulk Validation Error Handling
+
+Handle errors when validating multiple items:
+
+```php
+class BulkValidator
+{
+    public function validateBatch(Schema $schema, array $items): array
+    {
+        $results = [];
+
+        foreach ($items as $index => $item) {
+            try {
+                $schema->validate($item);
+                $results[$index] = [
+                    'valid' => true,
+                    'data' => $item,
+                    'errors' => []
+                ];
+            } catch (SchemaException $e) {
+                $results[$index] = [
+                    'valid' => false,
+                    'data' => $item,
+                    'errors' => [
+                        [
+                            'message' => $e->getMessage(),
+                            'field' => $e->getProperty(),
+                            'code' => $e->getCode()
+                        ]
+                    ]
+                ];
+            }
+        }
+
+        return $results;
+    }
+
+    public function getValidItems(array $batchResults): array
+    {
+        $validItems = [];
+
+        foreach ($batchResults as $index => $result) {
+            if ($result['valid']) {
+                $validItems[$index] = $result['data'];
+            }
+        }
+
+        return $validItems;
+    }
+
+    public function getErrorSummary(array $batchResults): array
+    {
+        $summary = [
+            'total' => count($batchResults),
+            'valid' => 0,
+            'invalid' => 0,
+            'error_types' => []
+        ];
+
+        foreach ($batchResults as $result) {
+            if ($result['valid']) {
+                $summary['valid']++;
+            } else {
+                $summary['invalid']++;
+
+                foreach ($result['errors'] as $error) {
+                    $errorType = $error['message'];
+                    $summary['error_types'][$errorType] =
+                        ($summary['error_types'][$errorType] ?? 0) + 1;
+                }
+            }
+        }
+
+        return $summary;
+    }
+}
+
+// Usage
+$bulkValidator = new BulkValidator();
+$userSchema = Schema::object('user')
+    ->properties(
+        Schema::string('name')->minLength(2)->required(),
+        Schema::string('email')->format(SchemaFormat::Email)->required()
+    );
+
+$users = [
+    ['name' => 'John Doe', 'email' => 'john@example.com'],        // Valid
+    ['name' => 'J', 'email' => 'jane@example.com'],               // Invalid name
+    ['name' => 'Bob Smith', 'email' => 'invalid-email'],          // Invalid email
+    ['name' => 'Alice Johnson', 'email' => 'alice@example.com']   // Valid
+];
+
+$results = $bulkValidator->validateBatch($userSchema, $users);
+$validUsers = $bulkValidator->getValidItems($results);
+$summary = $bulkValidator->getErrorSummary($results);
+
+echo "Validation Summary:\n";
+echo "Total: {$summary['total']}\n";
+echo "Valid: {$summary['valid']}\n";
+echo "Invalid: {$summary['invalid']}\n";
+
+if (!empty($summary['error_types'])) {
+    echo "\nError Types:\n";
+    foreach ($summary['error_types'] as $errorType => $count) {
+        echo "- {$errorType}: {$count} occurrence(s)\n";
+    }
+}
+```
+
+## Best Practices
+
+### 1. Use Specific Error Messages
+
+```php
+// Good: Specific validation rules with clear error context
+$passwordSchema = Schema::string('password')
+    ->minLength(8)
+    ->pattern('(?=.*[a-z])(?=.*[A-Z])(?=.*\d)')
+    ->description('Password must be at least 8 characters with uppercase, lowercase, and number');
+
+// Provide context in error handling
+try {
+    $passwordSchema->validate($password);
+} catch (SchemaException $e) {
+    $errorContext = [
+        'field' => 'password',
+        'message' => $e->getMessage(),
+        'requirements' => 'At least 8 characters with uppercase, lowercase, and number'
+    ];
+}
+```
+
+### 2. Log Validation Errors
+
+```php
+class ValidatorWithLogging
+{
+    private LoggerInterface $logger;
+
+    public function validateWithLogging(Schema $schema, mixed $data, array $context = []): bool
+    {
+        try {
+            $schema->validate($data);
+            return true;
+        } catch (SchemaException $e) {
+            $this->logger->warning('Schema validation failed', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'field' => $e->getProperty(),
+                'context' => $context
+            ]);
+
+            return false;
+        }
+    }
+}
+```
+
+### 3. Graceful Degradation
+
+```php
+function processUserDataSafely(array $userData): array
+{
+    $userSchema = Schema::object('user')
+        ->properties(
+            Schema::string('name')->required(),
+            Schema::string('email')->format(SchemaFormat::Email)->required()
+        );
+
+    try {
+        $userSchema->validate($userData);
+        return ['status' => 'success', 'data' => $userData];
+    } catch (SchemaException $e) {
+        // Log error but continue with partial processing
+        error_log("User data validation failed: " . $e->getMessage());
+
+        // Return what we can process safely
+        $safeData = [];
+        if (isset($userData['name']) && is_string($userData['name'])) {
+            $safeData['name'] = $userData['name'];
+        }
+
+        return [
+            'status' => 'partial',
+            'data' => $safeData,
+            'errors' => [$e->getMessage()]
+        ];
+    }
+}
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Form Validation" icon="file-text">
+    Provide user-friendly error messages and suggestions for form input validation.
+  </Card>
+  <Card title="API Error Responses" icon="server">
+    Structure detailed error responses for API endpoints with validation failures.
+  </Card>
+  <Card title="Data Import" icon="file-import">
+    Handle validation errors during bulk data import with detailed error reporting.
+  </Card>
+  <Card title="Configuration Validation" icon="gear">
+    Provide helpful error messages for application configuration validation.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Version Features"
+    icon="code-branch"
+    href="/validation/version-features"
+  >
+    Learn about version-specific validation features and compatibility
+  </Card>
+  <Card
+    title="Data Validation"
+    icon="check-circle"
+    href="/validation/data-validation"
+  >
+    Master the core validation methods and techniques
+  </Card>
+</CardGroup>

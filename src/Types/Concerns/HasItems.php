@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Types\Concerns;
 
-use Cortex\JsonSchema\Contracts\Schema;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-/** @mixin \Cortex\JsonSchema\Contracts\Schema */
+/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
 trait HasItems
 {
-    protected ?Schema $items = null;
+    protected ?JsonSchema $items = null;
 
     protected ?int $minItems = null;
 
@@ -21,9 +21,9 @@ trait HasItems
     /**
      * Set the schema for validating array items.
      */
-    public function items(Schema $schema): static
+    public function items(JsonSchema $jsonSchema): static
     {
-        $this->items = $schema;
+        $this->items = $jsonSchema;
 
         return $this;
     }

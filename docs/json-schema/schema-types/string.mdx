@@ -1,0 +1,317 @@
+---
+title: String Schema
+description: 'String validation with patterns, lengths, formats, and constraints'
+icon: 'letter-text'
+---
+
+String schemas provide comprehensive validation for text data with support for patterns, length constraints, format validation, and more.
+
+## Basic String Schema
+
+```php
+use Cortex\JsonSchema\Schema;
+
+$schema = Schema::string('name')
+    ->description('User full name')
+    ->required();
+
+// Test validation
+$schema->isValid('John Doe'); // true
+$schema->isValid('');         // false (required field)
+$schema->isValid(123);        // false (not a string)
+```
+
+## Length Constraints
+
+Set minimum and maximum character limits for your strings:
+
+<Tabs>
+<Tab title="Basic Length">
+  ```php
+  $usernameSchema = Schema::string('username')
+      ->minLength(3)
+      ->maxLength(20)
+      ->description('Username between 3-20 characters');
+
+  // Test validation
+  $usernameSchema->isValid('john');                    // true
+  $usernameSchema->isValid('jo');                      // false (too short)
+  $usernameSchema->isValid('verylongusername123456');  // false (too long)
+  ```
+</Tab>
+
+<Tab title="Advanced Length">
+  ```php
+  $passwordSchema = Schema::string('password')
+      ->minLength(8)     // Security requirement
+      ->maxLength(128)   // Database limit
+      ->writeOnly()      // Don't return in responses
+      ->description('Secure password with minimum 8 characters');
+  ```
+</Tab>
+</Tabs>
+
+<Expandable title="Generated JSON Schema">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "string",
+    "title": "username",
+    "description": "Username between 3-20 characters",
+    "minLength": 3,
+    "maxLength": 20
+}
+```
+</Expandable>
+
+<Check>
+Length constraints help ensure data fits database fields and meets business requirements.
+</Check>
+
+## Pattern Matching
+
+Use regular expressions to validate string patterns:
+
+```php
+// Username with alphanumeric and underscores only
+$usernameSchema = Schema::string('username')
+    ->pattern('^[a-zA-Z0-9_]{3,20}$')
+    ->description('Alphanumeric username with underscores');
+
+$usernameSchema->isValid('john_doe123'); // true
+$usernameSchema->isValid('john-doe');    // false (contains hyphen)
+$usernameSchema->isValid('jo');          // false (too short)
+
+// Phone number pattern
+$phoneSchema = Schema::string('phone')
+    ->pattern('^\+\d{1,3}-\d{3,4}-\d{6,8}$')
+    ->description('International phone number');
+
+$phoneSchema->isValid('+1-555-1234567'); // true
+$phoneSchema->isValid('555-1234567');    // false (missing country code)
+```
+
+## Format Validation
+
+Validate strings against common formats:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
+// Email validation
+$emailSchema = Schema::string('email')
+    ->format(SchemaFormat::Email)
+    ->required();
+
+$emailSchema->isValid('user@example.com'); // true
+$emailSchema->isValid('invalid-email');    // false
+
+// URL validation
+$urlSchema = Schema::string('website')
+    ->format(SchemaFormat::Uri);
+
+$urlSchema->isValid('https://example.com'); // true
+$urlSchema->isValid('not-a-url');           // false
+
+// Date and time formats
+$dateSchema = Schema::string('birth_date')
+    ->format(SchemaFormat::Date); // YYYY-MM-DD
+
+$dateTimeSchema = Schema::string('created_at')
+    ->format(SchemaFormat::DateTime); // RFC 3339 date-time
+
+$timeSchema = Schema::string('appointment_time')
+    ->format(SchemaFormat::Time); // HH:MM:SS
+```
+
+### Available Formats
+
+| Format | Description | Example |
+|--------|-------------|---------|
+| `Email` | Email address | `user@example.com` |
+| `Uri` | URI reference | `https://example.com` |
+| `Hostname` | Internet hostname | `example.com` |
+| `Ipv4` | IPv4 address | `192.168.1.1` |
+| `Ipv6` | IPv6 address | `2001:db8::1` |
+| `Date` | Full date (RFC 3339) | `2023-12-25` |
+| `Time` | Time (RFC 3339) | `14:30:00` |
+| `DateTime` | Date-time (RFC 3339) | `2023-12-25T14:30:00Z` |
+| `Duration` | Duration (ISO 8601)* | `P1Y2M3DT4H5M6S` |
+| `Uuid` | UUID string* | `123e4567-e89b-12d3-a456-426614174000` |
+| `JsonPointer` | JSON Pointer | `/users/123/name` |
+| `RelativeJsonPointer` | Relative JSON Pointer | `1/name` |
+| `UriTemplate` | URI Template | `/users/{id}` |
+| `IdnEmail` | Internationalized email | `用户@example.com` |
+| `IdnHostname` | Internationalized hostname | `例え.テスト` |
+| `Iri` | Internationalized URI | `https://例え.テスト` |
+| `IriReference` | IRI reference | `//例え.テスト/path` |
+
+<Note>
+Formats marked with * require JSON Schema Draft 2019-09 or later.
+</Note>
+
+## Enumeration Values
+
+Restrict strings to a specific set of allowed values:
+
+```php
+// Theme selection
+$themeSchema = Schema::string('theme')
+    ->enum(['light', 'dark', 'auto'])
+    ->default('light');
+
+$themeSchema->isValid('dark');    // true
+$themeSchema->isValid('custom');  // false (not in enum)
+
+// Status with description
+$statusSchema = Schema::string('status')
+    ->enum(['draft', 'published', 'archived'])
+    ->description('Article publication status');
+```
+
+## Const Values
+
+Validate that a string has an exact constant value:
+
+```php
+$versionSchema = Schema::string('api_version')
+    ->const('v1.0')
+    ->description('API version must be exactly v1.0');
+
+$versionSchema->isValid('v1.0'); // true
+$versionSchema->isValid('v2.0'); // false
+```
+
+## Read-Only and Write-Only
+
+Control when fields can be read or written:
+
+```php
+// Read-only field (e.g., auto-generated ID)
+$idSchema = Schema::string('id')
+    ->readOnly()
+    ->pattern('^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$');
+
+// Write-only field (e.g., password)
+$passwordSchema = Schema::string('password')
+    ->writeOnly()
+    ->minLength(8)
+    ->pattern('(?=.*[a-z])(?=.*[A-Z])(?=.*\d)');
+```
+
+## Complex Example
+
+Here's a comprehensive example combining multiple string validation features:
+
+```php
+$userSchema = Schema::object('user_profile')
+    ->properties(
+        // Username with strict pattern
+        Schema::string('username')
+            ->pattern('^[a-zA-Z0-9_]{3,20}$')
+            ->minLength(3)
+            ->maxLength(20)
+            ->required()
+            ->description('Unique username for the account'),
+
+        // Email with format validation
+        Schema::string('email')
+            ->format(SchemaFormat::Email)
+            ->required()
+            ->description('Primary email address'),
+
+        // Full name with length constraints
+        Schema::string('full_name')
+            ->minLength(2)
+            ->maxLength(100)
+            ->required()
+            ->description('User full name'),
+
+        // Bio with optional content
+        Schema::string('bio')
+            ->maxLength(500)
+            ->description('User biography (optional)'),
+
+        // Theme preference
+        Schema::string('theme')
+            ->enum(['light', 'dark', 'auto'])
+            ->default('auto')
+            ->description('UI theme preference'),
+
+        // Website URL
+        Schema::string('website')
+            ->format(SchemaFormat::Uri)
+            ->description('Personal website URL'),
+
+        // Read-only created timestamp
+        Schema::string('created_at')
+            ->format(SchemaFormat::DateTime)
+            ->readOnly()
+            ->description('Account creation timestamp'),
+
+        // Write-only password
+        Schema::string('password')
+            ->writeOnly()
+            ->minLength(8)
+            ->pattern('(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])')
+            ->description('Password with complexity requirements')
+    );
+```
+
+## Version-Specific Features
+
+Some string features require specific JSON Schema versions:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Deprecated annotation (Draft 2019-09+)
+$legacyFieldSchema = Schema::string('old_field', SchemaVersion::Draft_2019_09)
+    ->deprecated()
+    ->comment('Use new_field instead');
+
+// Advanced formats (Draft 2019-09+)
+$durationSchema = Schema::string('duration', SchemaVersion::Draft_2019_09)
+    ->format(SchemaFormat::Duration)
+    ->description('ISO 8601 duration string');
+
+$uuidSchema = Schema::string('id', SchemaVersion::Draft_2019_09)
+    ->format(SchemaFormat::Uuid)
+    ->description('Unique identifier');
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="User Input Validation" icon="user">
+    Validate usernames, emails, names, and other user-provided text with appropriate constraints and formats.
+  </Card>
+  <Card title="API Endpoints" icon="code">
+    Validate API parameters, paths, and identifiers with strict patterns and format requirements.
+  </Card>
+  <Card title="Configuration Values" icon="gear">
+    Validate configuration strings with enumerated values and predefined options.
+  </Card>
+  <Card title="Data Import" icon="file-import">
+    Validate imported text data against expected patterns and formats before processing.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Number Schema"
+    icon="hashtag"
+    href="/schema-types/number"
+  >
+    Learn about numeric validation with ranges and constraints
+  </Card>
+  <Card
+    title="String Formats Guide"
+    icon="check-circle"
+    href="/advanced/string-formats"
+  >
+    Comprehensive guide to all available string formats
+  </Card>
+</CardGroup>

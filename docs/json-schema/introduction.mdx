@@ -1,0 +1,208 @@
+---
+title: Introduction
+description: 'Fluent, type-safe JSON Schema builder for PHP with multi-version support and comprehensive validation'
+icon: 'book-open'
+---
+
+<Frame>
+  <img
+    src="/images/hero-light.png"
+    alt="JSON Schema Builder PHP package - fluent API for creating and validating JSON schemas"
+  />
+</Frame>
+
+## What is JSON Schema?
+
+[JSON Schema](https://json-schema.org/overview/what-is-jsonschema) is a vocabulary that allows you to annotate and validate JSON documents. It provides a contract for what JSON data is required for a given application and how to interact with it.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card
+    title="Fluent Builder API"
+    icon="hammer"
+    href="/json-schema/quickstart"
+    horizontal
+  >
+    Build JSON Schemas using an intuitive fluent interface that feels natural and reduces boilerplate code.
+  </Card>
+  <Card
+    title="Multi-Version Support"
+    icon="code-branch"
+    href="/json-schema/versions"
+    horizontal
+  >
+    Support for JSON Schema Draft-07, Draft 2019-09, and Draft 2020-12 with automatic feature validation.
+  </Card>
+  <Card
+    title="Data Validation"
+    icon="circle-check"
+    href="/json-schema/validation/data-validation"
+    horizontal
+  >
+    Validate data against schemas with detailed error messages and boolean validation methods.
+  </Card>
+  <Card
+    title="Type Safety"
+    icon="shield-check"
+    href="/json-schema/installation"
+    horizontal
+  >
+    Built with PHP 8.3+ features and strict typing for reliable, maintainable code.
+  </Card>
+  <Card
+    title="Conditional Schemas"
+    icon="sitemap"
+    href="/json-schema/advanced/conditional-validation"
+    horizontal
+  >
+    Support for if/then/else, allOf, anyOf, oneOf, and not conditions for complex validation logic.
+  </Card>
+  <Card
+    title="Code Generation"
+    icon="arrows-rotate"
+    href="/json-schema/code-generation/from-classes"
+    horizontal
+  >
+    Generate schemas automatically from PHP Classes, Enums, and Closures using reflection.
+  </Card>
+  <Card
+    title="Rich Validation"
+    icon="list-check"
+    href="/json-schema/schema-types/string"
+    horizontal
+  >
+    Comprehensive validation rules including formats, patterns, ranges, and custom constraints.
+  </Card>
+  <Card
+    title="Version-Aware Features"
+    icon="magnifying-glass"
+    href="/json-schema/validation/version-features"
+    horizontal
+  >
+    Automatic validation of version-specific features with helpful error messages.
+  </Card>
+</CardGroup>
+
+## About This Package
+
+This PHP package provides a fluent, type-safe way to build and validate JSON Schemas. Built with PHP 8.3+ features and strict typing, it supports multiple JSON Schema specification versions with automatic feature validation.
+
+## Quick Example
+
+Here's how to create and validate a JSON Schema:
+
+```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
+// Create a user schema
+$schema = Schema::object('user')
+    ->description('User schema')
+    ->properties(
+        Schema::string('name')
+            ->minLength(2)
+            ->maxLength(100)
+            ->required(),
+        Schema::string('email')
+            ->format(SchemaFormat::Email)
+            ->required(),
+        Schema::integer('age')
+            ->minimum(18)
+            ->maximum(150)
+    );
+
+// Validate data
+$data = [
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'age' => 30
+];
+
+if ($schema->isValid($data)) {
+    echo "Valid user data!";
+}
+```
+
+<Note>
+This package requires PHP 8.3 or higher and uses modern PHP features for optimal performance and developer experience.
+</Note>
+
+## Supported Schema Types
+
+<Info>
+All schema types support common properties like title, description, examples, default values, and metadata annotations.
+</Info>
+
+  - **Object Schema** - Property validation, pattern properties, additional properties, dependencies
+  - **Array Schema** - Item validation, tuple support, contains validation, uniqueness
+  - **String Schema** - Pattern matching, length constraints, format validation
+  - **Number Schema** - Range validation, multiple constraints, precision control
+  - **Integer Schema** - Whole number validation with exclusivity options
+  - **Boolean Schema** - True/false validation with default values
+  - **Null Schema** - Null value validation and nullable type support
+  - **Union Schema** - Multi-type schemas with nullable support and discriminated unions
+
+## Advanced Features
+
+### Conditional Validation
+- **if/then/else** - Conditional schema application
+- **allOf** - All schemas must match
+- **anyOf** - At least one schema must match
+- **oneOf** - Exactly one schema must match
+- **not** - Schema must not match
+
+### Modern JSON Schema Features
+- **Definitions & References** - Reusable schema components with `$ref`
+- **Unevaluated Properties** - Advanced property validation (Draft 2019-09+)
+- **Dependent Schemas** - Property-dependent validation rules
+- **Pattern Properties** - Regex-based property validation
+- **Contains Validation** - Array item existence validation
+
+### Code Generation
+Generate schemas from existing PHP code:
+- **PHP Classes** - Extract schemas from class properties and docblocks
+- **Closures** - Generate from function signatures and parameter types
+- **Backed Enums** - Create enum validation schemas
+- **JSON Import** - Convert existing JSON Schema definitions
+
+## JSON Schema Version Compatibility
+
+<Warning>
+The package automatically validates feature compatibility with your chosen JSON Schema version. Using unsupported features will throw clear error messages guiding you to upgrade your schema version.
+</Warning>
+
+<Tip>
+The package defaults to Draft 2020-12 for the latest features. Use Draft-07 for maximum compatibility with older tools, or Draft 2019-09 for a balance of features and compatibility.
+</Tip>
+
+| Feature | Draft-07 | Draft 2019-09 | Draft 2020-12 |
+|---------|----------|---------------|---------------|
+| Basic validation | ✅ | ✅ | ✅ |
+| Conditionals | ✅ | ✅ | ✅ |
+| Basic formats | ✅ | ✅ | ✅ |
+| `deprecated` | ❌ | ✅ | ✅ |
+| `$defs` | ❌ | ✅ | ✅ |
+| `minContains`/`maxContains` | ❌ | ✅ | ✅ |
+| `unevaluatedProperties` | ❌ | ✅ | ✅ |
+| `dependentSchemas` | ❌ | ✅ | ✅ |
+| `prefixItems` | ❌ | ❌ | ✅ |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Get Started"
+    icon="rocket"
+    href="/json-schema/installation"
+  >
+    Install the package and create your first schema
+  </Card>
+  <Card
+    title="Quick Start Guide"
+    icon="bolt"
+    href="/json-schema/quickstart"
+  >
+    Learn the basics with practical examples
+  </Card>
+</CardGroup>

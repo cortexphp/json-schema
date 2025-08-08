@@ -1,0 +1,872 @@
+---
+title: From PHP Classes
+description: 'Generate JSON schemas automatically from PHP class definitions'
+icon: 'code'
+---
+
+Generate JSON schemas automatically from PHP classes using reflection and docblock analysis. This feature extracts property types, validation rules, and documentation from your existing PHP classes.
+
+## Basic Class Schema Generation
+
+Generate a schema from a simple PHP class:
+
+```php
+use Cortex\JsonSchema\Schema;
+
+/**
+ * User profile information
+ */
+class User
+{
+    /**
+     * @var string The user's full name
+     */
+    public string $name;
+
+    /**
+     * @var int The user's age in years
+     */
+    public int $age;
+
+    /**
+     * @var string The user's email address
+     */
+    public string $email;
+
+    /**
+     * @var bool Whether the user account is active
+     */
+    public bool $active = true;
+}
+
+// Generate schema from class
+$schema = Schema::fromClass(User::class);
+
+// Convert to JSON Schema
+$jsonSchema = $schema->toJson(JSON_PRETTY_PRINT);
+```
+
+<Accordion title="View Generated JSON Schema">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "User",
+    "description": "User profile information",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "The user's full name"
+        },
+        "age": {
+            "type": "integer",
+            "description": "The user's age in years"
+        },
+        "email": {
+            "type": "string",
+            "description": "The user's email address"
+        },
+        "active": {
+            "type": "boolean",
+            "description": "Whether the user account is active",
+            "default": true
+        }
+    },
+    "required": ["name", "age", "email"]
+}
+```
+</Accordion>
+
+## Nullable and Optional Properties
+
+Handle nullable properties and default values:
+
+```php
+/**
+ * Product information
+ */
+class Product
+{
+    /**
+     * @var string Product name (required)
+     */
+    public string $name;
+
+    /**
+     * @var ?string Product description (optional)
+     */
+    public ?string $description = null;
+
+    /**
+     * @var float Product price
+     */
+    public float $price;
+
+    /**
+     * @var ?float Discounted price (if applicable)
+     */
+    public ?float $sale_price = null;
+
+    /**
+     * @var bool Whether product is in stock
+     */
+    public bool $in_stock = true;
+
+    /**
+     * @var array Product tags
+     */
+    public array $tags = [];
+}
+
+$schema = Schema::fromClass(Product::class);
+```
+
+<Accordion title="View Generated JSON Schema">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "Product",
+    "description": "Product information",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Product name (required)"
+        },
+        "description": {
+            "type": ["string", "null"],
+            "description": "Product description (optional)",
+            "default": null
+        },
+        "price": {
+            "type": "number",
+            "description": "Product price"
+        },
+        "sale_price": {
+            "type": ["number", "null"],
+            "description": "Discounted price (if applicable)",
+            "default": null
+        },
+        "in_stock": {
+            "type": "boolean",
+            "description": "Whether product is in stock",
+            "default": true
+        },
+        "tags": {
+            "type": "array",
+            "description": "Product tags",
+            "default": []
+        }
+    },
+    "required": ["name", "price"]
+}
+```
+</Accordion>
+
+## Schema Version Support
+
+Specify the JSON Schema version when generating:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+/**
+ * Modern user profile with advanced features
+ */
+class ModernUser
+{
+    public string $name;
+    public string $email;
+
+    /**
+     * @var ?string Legacy email field
+     * @deprecated Use email instead
+     */
+    public ?string $old_email = null;
+}
+
+// Generate with Draft 2019-09 for deprecated support
+$schema = Schema::fromClass(
+    ModernUser::class,
+    version: SchemaVersion::Draft_2019_09
+);
+
+// The generated schema will include "deprecated": true for old_email
+```
+
+## Complex Property Types
+
+Handle complex property types and collections:
+
+```php
+/**
+ * Order with complex nested structures
+ */
+class Order
+{
+    /**
+     * @var string Order ID
+     */
+    public string $id;
+
+    /**
+     * @var array<OrderItem> List of order items
+     */
+    public array $items;
+
+    /**
+     * @var Address Shipping address
+     */
+    public Address $shipping_address;
+
+    /**
+     * @var ?Address Billing address (same as shipping if null)
+     */
+    public ?Address $billing_address = null;
+
+    /**
+     * @var array<string> Additional notes
+     */
+    public array $notes = [];
+
+    /**
+     * @var array<string, mixed> Metadata key-value pairs
+     */
+    public array $metadata = [];
+}
+
+/**
+ * Order item details
+ */
+class OrderItem
+{
+    public string $product_id;
+    public int $quantity;
+    public float $unit_price;
+}
+
+/**
+ * Address information
+ */
+class Address
+{
+    public string $street;
+    public string $city;
+    public string $state;
+    public string $postal_code;
+    public string $country = 'US';
+}
+
+$schema = Schema::fromClass(Order::class);
+// This will analyze the entire object graph and create definitions for nested classes
+```
+
+## Validation Attributes and Docblock Tags
+
+Use docblock tags to specify validation rules:
+
+```php
+/**
+ * User registration data
+ */
+class UserRegistration
+{
+    /**
+     * @var string Username (3-20 characters, alphanumeric and underscore only)
+     * @minLength 3
+     * @maxLength 20
+     * @pattern ^[a-zA-Z0-9_]+$
+     */
+    public string $username;
+
+    /**
+     * @var string Email address
+     * @format email
+     */
+    public string $email;
+
+    /**
+     * @var string Password (minimum 8 characters)
+     * @minLength 8
+     */
+    public string $password;
+
+    /**
+     * @var int Age (must be 18 or older)
+     * @minimum 18
+     * @maximum 120
+     */
+    public int $age;
+
+    /**
+     * @var float Height in meters
+     * @minimum 0.5
+     * @maximum 3.0
+     * @multipleOf 0.01
+     */
+    public float $height;
+
+    /**
+     * @var array<string> Interests (max 10 items)
+     * @maxItems 10
+     * @uniqueItems
+     */
+    public array $interests = [];
+}
+
+$schema = Schema::fromClass(UserRegistration::class);
+```
+
+<Accordion title="View Generated JSON Schema with Validation">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "UserRegistration",
+    "description": "User registration data",
+    "properties": {
+        "username": {
+            "type": "string",
+            "description": "Username (3-20 characters, alphanumeric and underscore only)",
+            "minLength": 3,
+            "maxLength": 20,
+            "pattern": "^[a-zA-Z0-9_]+$"
+        },
+        "email": {
+            "type": "string",
+            "description": "Email address",
+            "format": "email"
+        },
+        "password": {
+            "type": "string",
+            "description": "Password (minimum 8 characters)",
+            "minLength": 8
+        },
+        "age": {
+            "type": "integer",
+            "description": "Age (must be 18 or older)",
+            "minimum": 18,
+            "maximum": 120
+        },
+        "height": {
+            "type": "number",
+            "description": "Height in meters",
+            "minimum": 0.5,
+            "maximum": 3.0,
+            "multipleOf": 0.01
+        },
+        "interests": {
+            "type": "array",
+            "description": "Interests (max 10 items)",
+            "items": {
+                "type": "string"
+            },
+            "maxItems": 10,
+            "uniqueItems": true,
+            "default": []
+        }
+    },
+    "required": ["username", "email", "password", "age", "height"]
+}
+```
+</Accordion>
+
+## Enum Integration
+
+Automatically handle backed enums:
+
+```php
+/**
+ * User status levels
+ */
+enum UserStatus: string
+{
+    case Active = 'active';
+    case Inactive = 'inactive';
+    case Suspended = 'suspended';
+    case Pending = 'pending';
+}
+
+/**
+ * Priority levels
+ */
+enum Priority: int
+{
+    case Low = 1;
+    case Medium = 2;
+    case High = 3;
+    case Critical = 4;
+}
+
+/**
+ * Task management
+ */
+class Task
+{
+    public string $title;
+    public string $description;
+    public UserStatus $status;
+    public Priority $priority;
+    public ?DateTime $due_date = null;
+}
+
+$schema = Schema::fromClass(Task::class);
+```
+
+The generated schema will automatically include enum constraints:
+
+```json
+{
+    "properties": {
+        "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "suspended", "pending"]
+        },
+        "priority": {
+            "type": "integer",
+            "enum": [1, 2, 3, 4]
+        }
+    }
+}
+```
+
+## Inheritance and Trait Support
+
+Handle class inheritance and traits:
+
+```php
+/**
+ * Base entity with common fields
+ */
+abstract class BaseEntity
+{
+    /**
+     * @var string Unique identifier
+     */
+    public string $id;
+
+    /**
+     * @var DateTime Creation timestamp
+     */
+    public DateTime $created_at;
+
+    /**
+     * @var DateTime Last update timestamp
+     */
+    public DateTime $updated_at;
+}
+
+/**
+ * Timestamping functionality
+ */
+trait Timestampable
+{
+    /**
+     * @var ?DateTime Deletion timestamp (soft delete)
+     */
+    public ?DateTime $deleted_at = null;
+}
+
+/**
+ * Complete user entity
+ */
+class CompleteUser extends BaseEntity
+{
+    use Timestampable;
+
+    public string $name;
+    public string $email;
+
+    /**
+     * @var array<string> User roles
+     */
+    public array $roles = ['user'];
+}
+
+$schema = Schema::fromClass(CompleteUser::class);
+// Schema will include properties from base class and traits
+```
+
+## Advanced Configuration Options
+
+Customize schema generation with options:
+
+```php
+/**
+ * Configuration class for API settings
+ */
+class ApiConfig
+{
+    /**
+     * @var string API base URL
+     * @format uri
+     */
+    public string $base_url;
+
+    /**
+     * @var int Request timeout in seconds
+     * @minimum 1
+     * @maximum 300
+     */
+    public int $timeout = 30;
+
+    /**
+     * @var bool Enable debug mode
+     */
+    public bool $debug = false;
+
+    /**
+     * @var array<string, mixed> Custom headers
+     */
+    public array $headers = [];
+
+    /**
+     * @ignore This field should not appear in the schema
+     */
+    public string $internal_secret;
+}
+
+// Generate schema with custom options
+$schema = Schema::fromClass(
+    ApiConfig::class,
+    version: SchemaVersion::Draft_2019_09,
+    options: [
+        'respectIgnoreAnnotations' => true,    // Skip @ignore properties
+        'includePrivateProperties' => false,   // Only public properties
+        'generateDefinitions' => true,         // Create reusable definitions
+        'strictTypes' => true                  // Strict type validation
+    ]
+);
+```
+
+## Real-World E-commerce Example
+
+Complete e-commerce schema generation:
+
+```php
+/**
+ * Customer information
+ */
+class Customer
+{
+    /**
+     * @var string Customer unique ID
+     * @format uuid
+     */
+    public string $id;
+
+    /**
+     * @var string First name
+     * @minLength 1
+     * @maxLength 50
+     */
+    public string $first_name;
+
+    /**
+     * @var string Last name
+     * @minLength 1
+     * @maxLength 50
+     */
+    public string $last_name;
+
+    /**
+     * @var string Email address
+     * @format email
+     */
+    public string $email;
+
+    /**
+     * @var ?string Phone number
+     * @pattern ^\+\d{1,3}-\d{3,4}-\d{6,8}$
+     */
+    public ?string $phone = null;
+
+    /**
+     * @var DateTime Registration date
+     * @format date-time
+     */
+    public DateTime $created_at;
+}
+
+/**
+ * Product in the catalog
+ */
+class CatalogProduct
+{
+    /**
+     * @var string Product SKU
+     * @pattern ^[A-Z]{3}-\d{4}$
+     */
+    public string $sku;
+
+    /**
+     * @var string Product name
+     * @minLength 1
+     * @maxLength 200
+     */
+    public string $name;
+
+    /**
+     * @var string Product description
+     * @maxLength 2000
+     */
+    public string $description;
+
+    /**
+     * @var float Price in USD
+     * @minimum 0.01
+     * @multipleOf 0.01
+     */
+    public float $price;
+
+    /**
+     * @var int Available quantity
+     * @minimum 0
+     */
+    public int $stock_quantity;
+
+    /**
+     * @var array<string> Product categories
+     * @maxItems 5
+     */
+    public array $categories = [];
+
+    /**
+     * @var bool Whether product is active
+     */
+    public bool $active = true;
+}
+
+/**
+ * Shopping cart item
+ */
+class CartItem
+{
+    /**
+     * @var string Product SKU
+     */
+    public string $product_sku;
+
+    /**
+     * @var int Quantity
+     * @minimum 1
+     * @maximum 99
+     */
+    public int $quantity;
+
+    /**
+     * @var float Unit price at time of adding to cart
+     * @minimum 0.01
+     * @multipleOf 0.01
+     */
+    public float $unit_price;
+}
+
+/**
+ * Complete order
+ */
+class Order
+{
+    /**
+     * @var string Order ID
+     * @format uuid
+     */
+    public string $id;
+
+    /**
+     * @var Customer Order customer
+     */
+    public Customer $customer;
+
+    /**
+     * @var array<CartItem> Order items
+     * @minItems 1
+     */
+    public array $items;
+
+    /**
+     * @var string Order status
+     * @enum pending,processing,shipped,delivered,cancelled
+     */
+    public string $status = 'pending';
+
+    /**
+     * @var float Order total
+     * @minimum 0.01
+     * @multipleOf 0.01
+     */
+    public float $total;
+
+    /**
+     * @var DateTime Order creation time
+     * @format date-time
+     */
+    public DateTime $created_at;
+}
+
+// Generate comprehensive order schema
+$orderSchema = Schema::fromClass(Order::class, SchemaVersion::Draft_2019_09);
+
+// The schema will include definitions for all nested classes
+// and proper validation rules from docblock annotations
+```
+
+## Validation and Usage
+
+Use the generated schema to validate data:
+
+```php
+// Generate schema from class
+$userSchema = Schema::fromClass(UserRegistration::class);
+
+// Test data
+$userData = [
+    'username' => 'john_doe',
+    'email' => 'john@example.com',
+    'password' => 'securepass123',
+    'age' => 25,
+    'height' => 1.75,
+    'interests' => ['programming', 'music', 'travel']
+];
+
+// Validate
+if ($userSchema->isValid($userData)) {
+    echo "User registration data is valid";
+} else {
+    try {
+        $userSchema->validate($userData);
+    } catch (SchemaException $e) {
+        echo "Validation error: " . $e->getMessage();
+    }
+}
+```
+
+## Supported Docblock Annotations
+
+| Annotation | Applies To | Description | Example |
+|------------|------------|-------------|---------|
+| `@minLength` | string | Minimum string length | `@minLength 3` |
+| `@maxLength` | string | Maximum string length | `@maxLength 100` |
+| `@pattern` | string | Regex pattern | `@pattern ^[a-zA-Z]+$` |
+| `@format` | string | String format | `@format email` |
+| `@minimum` | number/integer | Minimum value | `@minimum 0` |
+| `@maximum` | number/integer | Maximum value | `@maximum 100` |
+| `@exclusiveMinimum` | number/integer | Exclusive minimum | `@exclusiveMinimum 0` |
+| `@exclusiveMaximum` | number/integer | Exclusive maximum | `@exclusiveMaximum 100` |
+| `@multipleOf` | number/integer | Multiple constraint | `@multipleOf 0.01` |
+| `@minItems` | array | Minimum array items | `@minItems 1` |
+| `@maxItems` | array | Maximum array items | `@maxItems 10` |
+| `@uniqueItems` | array | Unique array items | `@uniqueItems` |
+| `@enum` | any | Enumerated values | `@enum value1,value2,value3` |
+| `@deprecated` | any | Mark as deprecated | `@deprecated` |
+| `@ignore` | any | Skip in schema generation | `@ignore` |
+
+## Best Practices
+
+### 1. Use Descriptive Class and Property Documentation
+
+```php
+/**
+ * User account information for the application
+ *
+ * This class represents a user account with all necessary
+ * information for authentication and profile management.
+ */
+class UserAccount
+{
+    /**
+     * @var string The user's unique username for login
+     *
+     * Must be 3-20 characters, alphanumeric with underscores allowed.
+     * Cannot be changed after account creation.
+     */
+    public string $username;
+}
+```
+
+### 2. Leverage Type Hints and Nullable Types
+
+```php
+// Good: Clear type information
+public string $name;              // Required string
+public ?string $nickname = null;  // Optional string
+public int $age;                  // Required integer
+public ?DateTime $last_login;     // Optional datetime
+
+// Avoid: Unclear types
+public $data;                     // Type unknown
+```
+
+### 3. Use Validation Annotations Appropriately
+
+```php
+/**
+ * @var string Email address
+ * @format email           // Use built-in formats
+ * @maxLength 255         // Reasonable database limits
+ */
+public string $email;
+
+/**
+ * @var string Username
+ * @minLength 3           // Business rules
+ * @maxLength 20
+ * @pattern ^[a-zA-Z0-9_]+$  // Clear patterns
+ */
+public string $username;
+```
+
+### 4. Handle Enums and Complex Types
+
+```php
+// Good: Use backed enums for clear validation
+enum Status: string {
+    case Active = 'active';
+    case Inactive = 'inactive';
+}
+
+public Status $status;
+
+// Good: Document complex array types
+/**
+ * @var array<string> List of user roles
+ * @maxItems 5
+ */
+public array $roles;
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="API Documentation" icon="api">
+    Generate OpenAPI schemas from your data transfer objects and API models.
+  </Card>
+  <Card title="Form Validation" icon="file-text">
+    Create client-side validation schemas from your backend models.
+  </Card>
+  <Card title="Data Migration" icon="exchange-alt">
+    Validate data integrity during migrations using existing model definitions.
+  </Card>
+  <Card title="Configuration Validation" icon="gear">
+    Generate schemas for application configuration classes.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="From Closures"
+    icon="code"
+    href="/code-generation/from-closures"
+  >
+    Learn to generate schemas from function signatures
+  </Card>
+  <Card
+    title="From Enums"
+    icon="list-ul"
+    href="/code-generation/from-enums"
+  >
+    Generate validation schemas from PHP enums
+  </Card>
+</CardGroup>

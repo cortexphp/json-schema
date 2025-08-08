@@ -11,7 +11,7 @@ use Opis\JsonSchema\Errors\ValidationError;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 use Opis\JsonSchema\Exceptions\SchemaException as OpisSchemaException;
 
-/** @mixin \Cortex\JsonSchema\Contracts\Schema */
+/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
 trait HasValidation
 {
     /**

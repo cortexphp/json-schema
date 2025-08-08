@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\StringSchema;
@@ -12,24 +12,24 @@ use Cortex\JsonSchema\Exceptions\SchemaException;
 
 it('validates conditional features against schema version', function (): void {
     // Draft 07 supports if-then-else (this should work)
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
-    $conditionSchema = SchemaFactory::string('condition');
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
+    $conditionSchema = Schema::string('condition');
 
     expect(fn(): StringSchema => $stringSchema->if($conditionSchema))->not->toThrow(SchemaException::class);
 
     // All versions support if-then-else, so this should work for all versions
-    $draft201909Schema = SchemaFactory::string('test', SchemaVersion::Draft_2019_09);
-    $draft202012Schema = SchemaFactory::string('test', SchemaVersion::Draft_2020_12);
+    $draft201909Schema = Schema::string('test', SchemaVersion::Draft_2019_09);
+    $draft202012Schema = Schema::string('test', SchemaVersion::Draft_2020_12);
 
     expect(fn(): StringSchema => $draft201909Schema->if($conditionSchema))->not->toThrow(SchemaException::class);
     expect(fn(): StringSchema => $draft202012Schema->if($conditionSchema))->not->toThrow(SchemaException::class);
 });
 
 it('outputs version-appropriate definition keywords', function (): void {
-    $stringSchema = SchemaFactory::string('definition');
+    $stringSchema = Schema::string('definition');
 
     // Draft 07 should use 'definitions'
-    $objectSchema = SchemaFactory::object('test', SchemaVersion::Draft_07);
+    $objectSchema = Schema::object('test', SchemaVersion::Draft_07);
     $objectSchema->addDefinition('myDef', $stringSchema);
 
     $draft07Array = $objectSchema->toArray();
@@ -38,7 +38,7 @@ it('outputs version-appropriate definition keywords', function (): void {
     expect($draft07Array)->not->toHaveKey('$defs');
 
     // Draft 2019-09+ should use '$defs'
-    $draft201909Schema = SchemaFactory::object('test', SchemaVersion::Draft_2019_09);
+    $draft201909Schema = Schema::object('test', SchemaVersion::Draft_2019_09);
     $draft201909Schema->addDefinition('myDef', $stringSchema);
 
     $draft201909Array = $draft201909Schema->toArray();
@@ -47,7 +47,7 @@ it('outputs version-appropriate definition keywords', function (): void {
     expect($draft201909Array)->not->toHaveKey('definitions');
 
     // Draft 2020-12 should also use '$defs'
-    $draft202012Schema = SchemaFactory::object('test', SchemaVersion::Draft_2020_12);
+    $draft202012Schema = Schema::object('test', SchemaVersion::Draft_2020_12);
     $draft202012Schema->addDefinition('myDef', $stringSchema);
 
     $draft202012Array = $draft202012Schema->toArray();
@@ -58,9 +58,9 @@ it('outputs version-appropriate definition keywords', function (): void {
 
 it('validates features during schema output', function (): void {
     // Create a schema with conditional logic
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
-    $conditionSchema = SchemaFactory::string('condition');
-    $thenSchema = SchemaFactory::string('then');
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
+    $conditionSchema = Schema::string('condition');
+    $thenSchema = Schema::string('then');
 
     $stringSchema->if($conditionSchema)->then($thenSchema);
 
@@ -75,7 +75,7 @@ it('validates features during schema output', function (): void {
 it('provides helpful error messages for unsupported features', function (): void {
     // We need to create a scenario where a feature isn't supported
     // Since all our current features are supported in Draft 07+, let's test the validation logic directly
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
 
     // Test the validation method directly with a hypothetical unsupported feature
     expect(function () use ($stringSchema): void {
@@ -92,8 +92,8 @@ it('provides helpful error messages for unsupported features', function (): void
 });
 
 it('correctly identifies version-appropriate keywords', function (): void {
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
-    $draft201909Schema = SchemaFactory::string('test', SchemaVersion::Draft_2019_09);
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
+    $draft201909Schema = Schema::string('test', SchemaVersion::Draft_2019_09);
 
     $reflection07 = new ReflectionClass($stringSchema);
     $reflectionMethod = $reflection07->getMethod('getVersionAppropriateKeyword');
@@ -111,9 +111,9 @@ it('correctly identifies version-appropriate keywords', function (): void {
 });
 
 it('collects features from all traits correctly', function (): void {
-    $objectSchema = SchemaFactory::object('test', SchemaVersion::Draft_2019_09);
-    $stringSchema = SchemaFactory::string('condition');
-    $definitionSchema = SchemaFactory::string('definition');
+    $objectSchema = Schema::object('test', SchemaVersion::Draft_2019_09);
+    $stringSchema = Schema::string('condition');
+    $definitionSchema = Schema::string('definition');
 
     // Add conditional and definition features
     $objectSchema->if($stringSchema);
@@ -131,10 +131,10 @@ it('collects features from all traits correctly', function (): void {
 });
 
 it('includes IfThenElse feature when complete conditional construct is used', function (): void {
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
-    $conditionSchema = SchemaFactory::string('condition');
-    $thenSchema = SchemaFactory::string('then');
-    $elseSchema = SchemaFactory::string('else');
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
+    $conditionSchema = Schema::string('condition');
+    $thenSchema = Schema::string('then');
+    $elseSchema = Schema::string('else');
 
     // Test with if-then construct
     $stringSchema->if($conditionSchema)->then($thenSchema);
@@ -150,7 +150,7 @@ it('includes IfThenElse feature when complete conditional construct is used', fu
     expect($features)->toContain(SchemaFeature::IfThenElse);
 
     // Test with if-else construct
-    $schema2 = SchemaFactory::string('test2', SchemaVersion::Draft_07);
+    $schema2 = Schema::string('test2', SchemaVersion::Draft_07);
     $schema2->if($conditionSchema)->else($elseSchema);
 
     $features2 = $reflectionMethod->invoke($schema2);
@@ -160,7 +160,7 @@ it('includes IfThenElse feature when complete conditional construct is used', fu
     expect($features2)->toContain(SchemaFeature::IfThenElse);
 
     // Test with complete if-then-else construct
-    $schema3 = SchemaFactory::string('test3', SchemaVersion::Draft_07);
+    $schema3 = Schema::string('test3', SchemaVersion::Draft_07);
     $schema3->if($conditionSchema)->then($thenSchema)->else($elseSchema);
 
     $features3 = $reflectionMethod->invoke($schema3);
@@ -173,7 +173,7 @@ it('includes IfThenElse feature when complete conditional construct is used', fu
 
 it('validates deprecated feature against schema version', function (): void {
     // Draft 07 should reject deprecated feature
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
 
     expect(fn(): StringSchema => $stringSchema->deprecated())->toThrow(
         SchemaException::class,
@@ -181,8 +181,8 @@ it('validates deprecated feature against schema version', function (): void {
     );
 
     // Draft 2019-09+ should accept deprecated feature
-    $draft201909Schema = SchemaFactory::string('test', SchemaVersion::Draft_2019_09);
-    $draft202012Schema = SchemaFactory::string('test', SchemaVersion::Draft_2020_12);
+    $draft201909Schema = Schema::string('test', SchemaVersion::Draft_2019_09);
+    $draft202012Schema = Schema::string('test', SchemaVersion::Draft_2020_12);
 
     expect(fn(): StringSchema => $draft201909Schema->deprecated())->not->toThrow(SchemaException::class);
     expect(fn(): StringSchema => $draft202012Schema->deprecated())->not->toThrow(SchemaException::class);
@@ -190,7 +190,7 @@ it('validates deprecated feature against schema version', function (): void {
 
 it('validates array contains count features against schema version', function (): void {
     // Draft 07 should reject minContains/maxContains
-    $arraySchema = SchemaFactory::array('test', SchemaVersion::Draft_07);
+    $arraySchema = Schema::array('test', SchemaVersion::Draft_07);
 
     expect(fn(): ArraySchema => $arraySchema->minContains(1))->toThrow(
         SchemaException::class,
@@ -202,8 +202,8 @@ it('validates array contains count features against schema version', function ()
     );
 
     // Draft 2019-09+ should accept contains count features
-    $draft201909Array = SchemaFactory::array('test', SchemaVersion::Draft_2019_09);
-    $draft202012Array = SchemaFactory::array('test', SchemaVersion::Draft_2020_12);
+    $draft201909Array = Schema::array('test', SchemaVersion::Draft_2019_09);
+    $draft202012Array = Schema::array('test', SchemaVersion::Draft_2020_12);
 
     expect(fn(): ArraySchema => $draft201909Array->minContains(1))->not->toThrow(SchemaException::class);
     expect(fn(): ArraySchema => $draft201909Array->maxContains(5))->not->toThrow(SchemaException::class);
@@ -212,7 +212,7 @@ it('validates array contains count features against schema version', function ()
 });
 
 it('detects metadata and read/write features correctly', function (): void {
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_2019_09);
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_2019_09);
 
     // Add metadata features
     $stringSchema->deprecated()->readOnly();
@@ -240,7 +240,7 @@ it('detects metadata and read/write features correctly', function (): void {
 });
 
 it('detects array contains count features correctly', function (): void {
-    $arraySchema = SchemaFactory::array('test', SchemaVersion::Draft_2019_09);
+    $arraySchema = Schema::array('test', SchemaVersion::Draft_2019_09);
     $arraySchema->minContains(1)->maxContains(5);
 
     $reflection = new ReflectionClass($arraySchema);
@@ -263,7 +263,7 @@ it('detects array contains count features correctly', function (): void {
 
 it('validates format features against schema version', function (): void {
     // Draft 07 should reject duration and uuid formats
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
 
     expect(fn(): StringSchema => $stringSchema->format(SchemaFormat::Duration))->toThrow(
         SchemaException::class,
@@ -280,8 +280,8 @@ it('validates format features against schema version', function (): void {
     expect(fn(): StringSchema => $stringSchema->format(SchemaFormat::DateTime))->not->toThrow(SchemaException::class);
 
     // Draft 2019-09+ should accept duration and uuid formats
-    $draft201909Schema = SchemaFactory::string('test', SchemaVersion::Draft_2019_09);
-    $draft202012Schema = SchemaFactory::string('test', SchemaVersion::Draft_2020_12);
+    $draft201909Schema = Schema::string('test', SchemaVersion::Draft_2019_09);
+    $draft202012Schema = Schema::string('test', SchemaVersion::Draft_2020_12);
 
     expect(fn(): StringSchema => $draft201909Schema->format(SchemaFormat::Duration))->not->toThrow(
         SchemaException::class,
@@ -294,7 +294,7 @@ it('validates format features against schema version', function (): void {
 });
 
 it('detects format features correctly', function (): void {
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_2019_09);
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_2019_09);
 
     // Add version-specific format features
     $stringSchema->format(SchemaFormat::Duration);
@@ -308,7 +308,7 @@ it('detects format features correctly', function (): void {
     expect($formatFeatures)->toContain(SchemaFeature::FormatDuration);
 
     // Test UUID format
-    $uuidSchema = SchemaFactory::string('uuid', SchemaVersion::Draft_2019_09);
+    $uuidSchema = Schema::string('uuid', SchemaVersion::Draft_2019_09);
     $uuidSchema->format(SchemaFormat::Uuid);
 
     $uuidFormatFeatures = $reflectionMethod->invoke($uuidSchema);
@@ -325,7 +325,7 @@ it('detects format features correctly', function (): void {
     expect($allUuidFeatures)->toContain(SchemaFeature::FormatUuid);
 
     // Test that non-version-specific formats don't add features
-    $emailSchema = SchemaFactory::string('email', SchemaVersion::Draft_07);
+    $emailSchema = Schema::string('email', SchemaVersion::Draft_07);
     $emailSchema->format(SchemaFormat::Email);
 
     $emailFormatFeatures = $reflectionMethod->invoke($emailSchema);
@@ -334,7 +334,7 @@ it('detects format features correctly', function (): void {
 
 it('allows string formats for custom validation', function (): void {
     // String formats should not trigger validation (for custom formats)
-    $stringSchema = SchemaFactory::string('test', SchemaVersion::Draft_07);
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
 
     expect(fn(): StringSchema => $stringSchema->format('custom-format'))->not->toThrow(SchemaException::class);
     expect(fn(): StringSchema => $stringSchema->format('duration'))->not->toThrow(

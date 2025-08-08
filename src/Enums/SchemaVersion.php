@@ -23,7 +23,7 @@ enum SchemaVersion: string
      */
     public static function default(): self
     {
-        return self::Draft_07;
+        return self::Draft_2020_12;
     }
 
     /**
