@@ -99,7 +99,7 @@ class DocParser
 
         return match (true) {
             $param->type instanceof UnionTypeNode => array_map(
-                fn(TypeNode $typeNode): string => (string) $typeNode,
+                static fn(TypeNode $typeNode): string => (string) $typeNode,
                 $param->type->types,
             ),
             $param->type instanceof NullableTypeNode => [

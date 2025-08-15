@@ -22,7 +22,7 @@ class NodeCollection
         $nodes = array_values(
             array_filter(
                 $this->nodes,
-                fn(NodeData $nodeData): bool => $nodeData->name === $name,
+                static fn(NodeData $nodeData): bool => $nodeData->name === $name,
             ),
         );
 

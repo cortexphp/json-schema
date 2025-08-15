@@ -56,7 +56,7 @@ trait ValidatesVersionFeatures
      * Get version-appropriate keyword name for a feature.
      * Some keywords changed names between versions.
      */
-    protected function getVersionAppropriateKeyword(string $modernKeyword, string $legacyKeyword): string
+    protected function getVersionAppropriateKeyword(string $modernKeyword): string
     {
         // For features that were renamed, use the appropriate keyword for the version
         return match ($modernKeyword) {
