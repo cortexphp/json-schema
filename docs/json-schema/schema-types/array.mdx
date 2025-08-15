@@ -1,0 +1,431 @@
+---
+title: Array Schema
+description: 'Array validation with items, tuples, contains, and constraints'
+icon: 'brackets'
+---
+
+Array schemas provide comprehensive validation for arrays with support for item validation, tuple validation, contains validation, and various array constraints.
+
+## Basic Array Schema
+
+```php
+use Cortex\JsonSchema\Schema;
+
+$tagsSchema = Schema::array('tags')
+    ->description('List of product tags')
+    ->items(Schema::string())
+    ->required();
+
+$tagsSchema->isValid(['electronics', 'mobile', 'phone']); // true
+$tagsSchema->isValid(['electronics', 123]);              // false (contains non-string)
+$tagsSchema->isValid('not-an-array');                    // false (not an array)
+```
+
+## Item Validation
+
+Define schemas for array items:
+
+```php
+// Array of strings
+$stringArraySchema = Schema::array('categories')
+    ->items(Schema::string()->minLength(1))
+    ->description('Non-empty category names');
+
+// Array of numbers with constraints
+$scoresSchema = Schema::array('scores')
+    ->items(
+        Schema::number()
+            ->minimum(0)
+            ->maximum(100)
+    )
+    ->description('Test scores between 0-100');
+
+// Array of objects
+$usersSchema = Schema::array('users')
+    ->items(
+        Schema::object()
+            ->properties(
+                Schema::string('name')->required(),
+                Schema::string('email')->required(),
+                Schema::integer('age')->minimum(0)
+            )
+    );
+
+$usersSchema->isValid([
+    ['name' => 'John', 'email' => 'john@example.com', 'age' => 30],
+    ['name' => 'Jane', 'email' => 'jane@example.com', 'age' => 25]
+]); // true
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "title": "users",
+    "items": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string"
+            },
+            "email": {
+                "type": "string"
+            },
+            "age": {
+                "type": "integer",
+                "minimum": 0
+            }
+        },
+        "required": ["name", "email"]
+    }
+}
+```
+</Accordion>
+
+## Array Length Constraints
+
+Control the minimum and maximum number of items:
+
+```php
+$teamSchema = Schema::array('team_members')
+    ->items(Schema::string())
+    ->minItems(2)   // At least 2 members
+    ->maxItems(10)  // No more than 10 members
+    ->description('Team must have 2-10 members');
+
+$teamSchema->isValid(['Alice', 'Bob', 'Charlie']); // true
+$teamSchema->isValid(['Alice']);                   // false (too few)
+$teamSchema->isValid(['Alice', 'Bob', /* ...12 more names */]); // false (too many)
+
+// Required non-empty array
+$requiredItemsSchema = Schema::array('required_list')
+    ->items(Schema::string())
+    ->minItems(1)  // Must have at least one item
+    ->required();
+```
+
+## Unique Items
+
+Ensure all items in the array are unique:
+
+```php
+$uniqueTagsSchema = Schema::array('unique_tags')
+    ->items(Schema::string())
+    ->uniqueItems(true)
+    ->description('Each tag must be unique');
+
+$uniqueTagsSchema->isValid(['php', 'json', 'schema']); // true
+$uniqueTagsSchema->isValid(['php', 'json', 'php']);    // false (duplicate 'php')
+
+// Unique objects (compared by value)
+$uniqueUsersSchema = Schema::array('users')
+    ->items(
+        Schema::object()
+            ->properties(
+                Schema::string('id')->required(),
+                Schema::string('name')->required()
+            )
+    )
+    ->uniqueItems(true);
+
+$uniqueUsersSchema->isValid([
+    ['id' => '1', 'name' => 'John'],
+    ['id' => '2', 'name' => 'Jane']
+]); // true
+
+$uniqueUsersSchema->isValid([
+    ['id' => '1', 'name' => 'John'],
+    ['id' => '1', 'name' => 'John']  // Duplicate object
+]); // false
+```
+
+## Tuple Validation
+
+Validate arrays with specific items at specific positions:
+
+```php
+// Coordinate pair [latitude, longitude]
+$coordinateSchema = Schema::array('coordinates')
+    ->items(
+        Schema::number()
+            ->minimum(-180)
+            ->maximum(180)
+            ->description('latitude'),
+        Schema::number()
+            ->minimum(-180)
+            ->maximum(180)
+            ->description('longitude')
+    )
+    ->minItems(2)
+    ->maxItems(2)
+    ->description('Geographic coordinates [lat, lng]');
+
+$coordinateSchema->isValid([51.5074, -0.1278]); // true (London coordinates)
+$coordinateSchema->isValid([51.5074]);          // false (missing longitude)
+$coordinateSchema->isValid([51.5074, -0.1278, 100]); // false (too many items)
+
+// Mixed type tuple
+$recordSchema = Schema::array('record')
+    ->items(
+        Schema::string()->description('name'),
+        Schema::integer()->minimum(0)->description('age'),
+        Schema::boolean()->description('active')
+    )
+    ->minItems(3)
+    ->maxItems(3);
+
+$recordSchema->isValid(['John Doe', 30, true]); // true
+$recordSchema->isValid(['John Doe', 30]);       // false (missing boolean)
+```
+
+## Contains Validation
+
+Validate that an array contains specific items:
+
+```php
+// Array must contain at least one admin user
+$usersSchema = Schema::array('users')
+    ->items(
+        Schema::object()
+            ->properties(
+                Schema::string('name')->required(),
+                Schema::string('role')->required()
+            )
+    )
+    ->contains(
+        Schema::object()
+            ->properties(
+                Schema::string('role')->const('admin')
+            )
+    )
+    ->description('Must include at least one admin user');
+
+$usersSchema->isValid([
+    ['name' => 'John', 'role' => 'user'],
+    ['name' => 'Jane', 'role' => 'admin'],  // Contains admin
+    ['name' => 'Bob', 'role' => 'user']
+]); // true
+
+$usersSchema->isValid([
+    ['name' => 'John', 'role' => 'user'],
+    ['name' => 'Jane', 'role' => 'user']    // No admin user
+]); // false
+```
+
+## Advanced Contains (Draft 2019-09+)
+
+Use `minContains` and `maxContains` for more precise control:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Array must contain 2-3 numbers between 10-20
+$numbersSchema = Schema::array('numbers', SchemaVersion::Draft_2019_09)
+    ->items(Schema::number())
+    ->contains(
+        Schema::number()
+            ->minimum(10)
+            ->maximum(20)
+    )
+    ->minContains(2)  // At least 2 numbers in range
+    ->maxContains(3)  // At most 3 numbers in range
+    ->description('Must contain 2-3 numbers between 10-20');
+
+$numbersSchema->isValid([5, 15, 18, 12, 25]); // true (contains 15, 18, 12)
+$numbersSchema->isValid([5, 15, 25]);         // false (only 1 number in range)
+$numbersSchema->isValid([15, 16, 17, 18, 19]); // false (5 numbers in range)
+```
+
+## Complex Array Examples
+
+### E-commerce Order Items
+
+```php
+$orderItemsSchema = Schema::array('order_items')
+    ->items(
+        Schema::object()
+            ->properties(
+                Schema::string('sku')
+                    ->pattern('^[A-Z]{3}-\d{4}$')
+                    ->required(),
+                Schema::string('name')
+                    ->minLength(1)
+                    ->maxLength(200)
+                    ->required(),
+                Schema::integer('quantity')
+                    ->minimum(1)
+                    ->maximum(99)
+                    ->required(),
+                Schema::number('unit_price')
+                    ->minimum(0.01)
+                    ->multipleOf(0.01)
+                    ->required(),
+                Schema::array('options')
+                    ->items(
+                        Schema::object()
+                            ->properties(
+                                Schema::string('name')->required(),
+                                Schema::string('value')->required()
+                            )
+                    )
+                    ->maxItems(5)
+            )
+            ->additionalProperties(false)
+    )
+    ->minItems(1)    // At least one item
+    ->maxItems(50)   // Maximum 50 items
+    ->uniqueItems(true)  // No duplicate items
+    ->description('Order items with product details');
+```
+
+### Multi-dimensional Array
+
+```php
+$matrixSchema = Schema::array('matrix')
+    ->items(
+        Schema::array('row')
+            ->items(Schema::number())
+            ->minItems(3)
+            ->maxItems(3)
+    )
+    ->minItems(3)
+    ->maxItems(3)
+    ->description('3x3 numeric matrix');
+
+$matrixSchema->isValid([
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+]); // true
+
+$matrixSchema->isValid([
+    [1, 2],      // Row too short
+    [4, 5, 6],
+    [7, 8, 9]
+]); // false
+```
+
+### Tagged Array with Metadata
+
+```php
+$taggedArraySchema = Schema::array('tagged_items')
+    ->items(
+        Schema::object()
+            ->properties(
+                Schema::string('id')->required(),
+                Schema::string('content')->required(),
+                Schema::array('tags')
+                    ->items(Schema::string())
+                    ->uniqueItems(true)
+                    ->maxItems(10)
+            )
+            ->additionalProperties(false)
+    )
+    ->contains(
+        Schema::object()
+            ->properties(
+                Schema::array('tags')
+                    ->contains(Schema::string()->const('featured'))
+            )
+    )
+    ->minItems(1)
+    ->description('Items list with at least one featured item');
+```
+
+## Version-Specific Features
+
+Advanced array features available in newer JSON Schema versions:
+
+```php
+// Unevaluated items (Draft 2019-09+)
+$strictArraySchema = Schema::array('strict', SchemaVersion::Draft_2019_09)
+    ->items(Schema::string())
+    ->unevaluatedItems(false)  // No additional items beyond schema
+    ->description('Strict array validation');
+
+// Prefix items (Draft 2020-12+)
+$prefixArraySchema = Schema::array('prefixed', SchemaVersion::Draft_2020_12)
+    ->prefixItems([
+        Schema::string(),   // First item must be string
+        Schema::integer(),  // Second item must be integer
+    ])
+    ->items(Schema::boolean())  // Additional items must be boolean
+    ->description('Array with typed prefix and additional items');
+```
+
+## Validation Examples
+
+```php
+$schema = Schema::array('scores')
+    ->items(Schema::integer()->minimum(0)->maximum(100))
+    ->minItems(1)
+    ->maxItems(10)
+    ->uniqueItems(true);
+
+// Valid arrays
+$schema->isValid([85, 92, 78]);           // true
+$schema->isValid([100]);                  // true
+$schema->isValid([0, 25, 50, 75, 100]);   // true
+
+// Invalid arrays
+$schema->isValid([]);                     // false (too few items)
+$schema->isValid([85, 92, 85]);           // false (not unique)
+$schema->isValid([85, 101]);              // false (101 > maximum)
+$schema->isValid(['85', '92']);           // false (strings, not integers)
+$schema->isValid([85, 92, /* 9 more valid numbers */]); // false (too many items)
+```
+
+## Error Messages
+
+Array validation provides specific error messages:
+
+```php
+try {
+    $schema->validate([]);
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Array must have at least 1 item"
+}
+
+try {
+    $schema->validate([85, 92, 85]);
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Array items must be unique"
+}
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Lists & Collections" icon="list">
+    Validate lists of items like tags, categories, or user collections with constraints.
+  </Card>
+  <Card title="Structured Data" icon="table">
+    Validate arrays of objects representing records, configurations, or API responses.
+  </Card>
+  <Card title="Coordinates & Tuples" icon="map-pin">
+    Validate fixed-length arrays like coordinates, RGB values, or structured tuples.
+  </Card>
+  <Card title="Nested Hierarchies" icon="sitemap">
+    Validate complex nested structures like menu trees or organizational hierarchies.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Object Schema"
+    icon="cube"
+    href="/schema-types/object"
+  >
+    Learn about validating complex object structures
+  </Card>
+  <Card
+    title="Advanced Array Features"
+    icon="star"
+    href="/advanced/unevaluated-properties"
+  >
+    Explore advanced array validation features in modern JSON Schema versions
+  </Card>
+</CardGroup>

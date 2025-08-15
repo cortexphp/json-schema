@@ -1,0 +1,368 @@
+---
+title: Quick Start
+description: 'Get up and running with JSON Schema Builder in minutes'
+icon: 'rocket'
+---
+
+## Build Your First Schema
+
+<Steps>
+<Step title="Create a User Schema">
+  Let's build a user registration schema with validation rules:
+
+  ```php
+  use Cortex\JsonSchema\Schema;
+  use Cortex\JsonSchema\Enums\SchemaFormat;
+
+  // Create a user schema
+  $userSchema = Schema::object('user')
+      ->description('User registration schema')
+      ->properties(
+          Schema::string('name')
+              ->minLength(2)
+              ->maxLength(100)
+              ->required(),
+          Schema::string('email')
+              ->format(SchemaFormat::Email)
+              ->required(),
+          Schema::integer('age')
+              ->minimum(18)
+              ->maximum(150),
+          Schema::boolean('active')
+              ->default(true)
+      );
+  ```
+
+  <Check>
+  Your schema now validates name length, email format, age range, and includes a default active status.
+  </Check>
+</Step>
+
+<Step title="Validate Valid Data">
+  Test your schema with valid user data:
+
+  ```php
+  // Valid data example
+  $validData = [
+      'name' => 'John Doe',
+      'email' => 'john@example.com',
+      'age' => 30,
+      'active' => true
+  ];
+
+  // Method 1: Quick boolean check
+  if ($userSchema->isValid($validData)) {
+      echo "User data is valid!";
+  }
+
+  // Method 2: Detailed validation with error handling
+  try {
+      $userSchema->validate($validData);
+      echo "Validation passed!";
+  } catch (SchemaException $e) {
+      echo "Validation failed: " . $e->getMessage();
+  }
+  ```
+
+  <Check>
+  You should see "User data is valid!" confirming your schema works correctly.
+  </Check>
+</Step>
+
+<Step title="Test Invalid Data">
+  See how your schema handles validation errors:
+
+  ```php
+  // Invalid data example
+  $invalidData = [
+      'name' => 'J',  // Too short (minimum 2 characters)
+      'email' => 'not-an-email',  // Invalid email format
+      'age' => 15  // Too young (minimum 18)
+  ];
+
+  // Quick boolean check
+  $isValid = $userSchema->isValid($invalidData); // Returns false
+
+  // Detailed error information
+  try {
+      $userSchema->validate($invalidData);
+  } catch (SchemaException $e) {
+      echo "Error: " . $e->getMessage();
+      // Output: "String must have minimum length of 2"
+      // or "The data must match the 'email' format"
+      // or "Value must be greater than or equal to 18"
+  }
+  ```
+
+  <Warning>
+  The validate() method throws a SchemaException on the first validation error encountered. Use isValid() for simple boolean checks.
+  </Warning>
+</Step>
+</Steps>
+
+## Converting to JSON Schema
+
+Convert your PHP schema to standard JSON Schema format for use with other tools and languages:
+
+<CodeGroup>
+
+```php PHP Code
+// Convert to array
+$schemaArray = $userSchema->toArray();
+
+// Convert to JSON string
+$schemaJson = $userSchema->toJson();
+
+// Pretty-printed JSON for debugging
+$prettyJson = $userSchema->toJson(JSON_PRETTY_PRINT);
+
+echo $prettyJson;
+```
+
+```json Generated Output
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "title": "user",
+    "description": "User registration schema",
+    "properties": {
+        "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+        },
+        "email": {
+            "type": "string",
+            "format": "email"
+        },
+        "age": {
+            "type": "integer",
+            "minimum": 18,
+            "maximum": 150
+        },
+        "active": {
+            "type": "boolean",
+            "default": true
+        }
+    },
+    "required": ["name", "email"]
+}
+```
+
+</CodeGroup>
+
+<Tip>
+Use `toArray()` when you need to programmatically work with the schema structure, and `toJson()` when you need to export or save the schema.
+</Tip>
+
+## Explore Different Schema Types
+
+<Tabs>
+<Tab title="String Validation">
+  Create string schemas with pattern matching and constraints:
+
+  ```php
+  $usernameSchema = Schema::string('username')
+      ->pattern('^[a-zA-Z0-9_]{3,20}$')
+      ->description('Username with alphanumeric characters and underscores');
+
+  // Test validation
+  $usernameSchema->isValid('john_doe123'); // true
+  $usernameSchema->isValid('jo');          // false (too short)
+  $usernameSchema->isValid('john-doe');    // false (contains hyphen)
+  ```
+
+  <Check>
+  String schemas support patterns, length constraints, and format validation.
+  </Check>
+</Tab>
+
+<Tab title="Array Validation">
+  Build array schemas with item validation and constraints:
+
+  ```php
+  $tagsSchema = Schema::array('tags')
+      ->items(Schema::string())
+      ->minItems(1)
+      ->maxItems(5)
+      ->uniqueItems(true);
+
+  // Test validation
+  $tagsSchema->isValid(['php', 'json', 'schema']); // true
+  $tagsSchema->isValid(['php', 'php']);            // false (not unique)
+  $tagsSchema->isValid([]);                        // false (too few items)
+  ```
+
+  <Check>
+  Array schemas can validate item types, count limits, and uniqueness.
+  </Check>
+</Tab>
+
+<Tab title="Nested Objects">
+  Create complex nested object structures:
+
+  ```php
+  $profileSchema = Schema::object('profile')
+      ->properties(
+          Schema::string('name')->required(),
+          Schema::object('address')
+              ->properties(
+                  Schema::string('street')->required(),
+                  Schema::string('city')->required(),
+                  Schema::string('country')->required()
+              )
+              ->required()
+      );
+  ```
+
+  <Check>
+  Object schemas support unlimited nesting and property requirements.
+  </Check>
+</Tab>
+</Tabs>
+
+## Alternative Syntax
+
+You can also use schema classes directly instead of the factory:
+
+<CodeGroup>
+
+```php Factory Method (Recommended)
+use Cortex\JsonSchema\Schema;
+
+$schema = Schema::string('name')
+    ->minLength(2)
+    ->required();
+```
+
+```php Direct Class Usage
+use Cortex\JsonSchema\Types\StringSchema;
+
+$schema = new StringSchema('name')
+    ->minLength(2)
+    ->required();
+```
+
+</CodeGroup>
+
+## Working with Schema Versions
+
+Specify JSON Schema versions for advanced features:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Schemas use Draft 2020-12 by default (latest features)
+$modernSchema = Schema::string('field')
+    ->deprecated()  // Available in Draft 2019-09+, included by default
+    ->comment('Use newField instead');
+
+// Override default version if needed
+Schema::setDefaultVersion(SchemaVersion::Draft_07); // For maximum compatibility
+```
+
+## Common Validation Patterns
+
+<AccordionGroup>
+<Accordion title="Conditional Validation - if/then logic">
+  Create conditional validation rules based on property values:
+
+  ```php
+  $userSchema = Schema::object('user')
+      ->properties(
+          Schema::string('type')->enum(['personal', 'business']),
+          Schema::string('company_name')
+      )
+      ->if(
+          Schema::object()->properties(
+              Schema::string('type')->const('business')
+          )
+      )
+      ->then(
+          Schema::object()->properties(
+              Schema::string('company_name')->required()
+          )
+      );
+  ```
+
+  <Info>
+  When `type` is "business", the `company_name` field becomes required. Personal accounts don't need a company name.
+  </Info>
+</Accordion>
+
+<Accordion title="Union Types - Multiple allowed types">
+  Allow properties to accept multiple data types:
+
+  ```php
+  $idSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'id')
+      ->description('ID can be string or integer');
+
+  // Test validation
+  $idSchema->isValid('abc123'); // true - string ID
+  $idSchema->isValid(12345);    // true - numeric ID
+  $idSchema->isValid(true);     // false - boolean not allowed
+  ```
+
+  <Info>
+  Union types are perfect for APIs that accept legacy string IDs and new numeric IDs.
+  </Info>
+</Accordion>
+
+<Accordion title="Schema Versioning - Using modern features">
+  Leverage advanced JSON Schema features with version specification:
+
+  ```php
+  use Cortex\JsonSchema\Enums\SchemaVersion;
+
+  // Use Draft 2019-09 for advanced features
+  // Draft 2020-12 is used by default (includes deprecated feature)
+  $modernSchema = Schema::string('legacy_field')
+      ->deprecated()  // Mark field as deprecated
+      ->comment('Use new_field instead');
+
+  // Override default version if needed for compatibility
+  Schema::setDefaultVersion(SchemaVersion::Draft_07);
+  ```
+
+  <Warning>
+  Using features with incompatible versions will throw a `SchemaException`. Check the [Version Compatibility](/versions) guide for feature support.
+  </Warning>
+</Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Schema Types"
+    icon="shapes"
+    href="/schema-types/string"
+  >
+    Learn about all available schema types and their validation options
+  </Card>
+  <Card
+    title="Advanced Features"
+    icon="star"
+    href="/advanced/conditional-validation"
+  >
+    Explore conditional validation, definitions, and complex patterns
+  </Card>
+  <Card
+    title="Code Generation"
+    icon="code"
+    href="/code-generation/from-classes"
+  >
+    Generate schemas automatically from PHP classes and functions
+  </Card>
+  <Card
+    title="Validation Guide"
+    icon="check-circle"
+    href="/validation/data-validation"
+  >
+    Master data validation and error handling techniques
+  </Card>
+</CardGroup>
+
+<Tip>
+The Schema class provides the most convenient way to create schemas. All examples in this documentation use the factory methods unless otherwise specified.
+</Tip>

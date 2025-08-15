@@ -4,45 +4,45 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Types\Concerns;
 
-use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaFeature;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-/** @mixin \Cortex\JsonSchema\Contracts\Schema */
+/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
 trait HasConditionals
 {
-    protected ?Schema $if = null;
+    protected ?JsonSchema $if = null;
 
-    protected ?Schema $then = null;
+    protected ?JsonSchema $then = null;
 
-    protected ?Schema $else = null;
+    protected ?JsonSchema $else = null;
 
-    protected ?Schema $not = null;
+    protected ?JsonSchema $not = null;
 
     /**
-     * @var array<int, Schema>
+     * @var array<int, JsonSchema>
      */
     protected array $allOf = [];
 
     /**
-     * @var array<int, Schema>
+     * @var array<int, JsonSchema>
      */
     protected array $anyOf = [];
 
     /**
-     * @var array<int, Schema>
+     * @var array<int, JsonSchema>
      */
     protected array $oneOf = [];
 
     /**
      * Set the if condition
      */
-    public function if(Schema $schema): static
+    public function if(JsonSchema $jsonSchema): static
     {
         // Validate that if-then-else is supported in the current version
         $this->validateFeatureSupport(SchemaFeature::If);
 
-        $this->if = $schema;
+        $this->if = $jsonSchema;
 
         return $this;
     }
@@ -50,7 +50,7 @@ trait HasConditionals
     /**
      * Set the then condition
      */
-    public function then(Schema $schema): static
+    public function then(JsonSchema $jsonSchema): static
     {
         if ($this->if === null) {
             throw new SchemaException('Cannot set then condition without if condition');
@@ -59,7 +59,7 @@ trait HasConditionals
         $this->validateFeatureSupport(SchemaFeature::Then);
         $this->validateFeatureSupport(SchemaFeature::IfThenElse);
 
-        $this->then = $schema;
+        $this->then = $jsonSchema;
 
         return $this;
     }
@@ -67,7 +67,7 @@ trait HasConditionals
     /**
      * Set the else condition
      */
-    public function else(Schema $schema): static
+    public function else(JsonSchema $jsonSchema): static
     {
         if ($this->if === null) {
             throw new SchemaException('Cannot set else condition without if condition');
@@ -76,7 +76,7 @@ trait HasConditionals
         $this->validateFeatureSupport(SchemaFeature::Else);
         $this->validateFeatureSupport(SchemaFeature::IfThenElse);
 
-        $this->else = $schema;
+        $this->else = $jsonSchema;
 
         return $this;
     }
@@ -84,7 +84,7 @@ trait HasConditionals
     /**
      * Set the allOf condition
      */
-    public function allOf(Schema ...$schemas): static
+    public function allOf(JsonSchema ...$schemas): static
     {
         $this->allOf = array_values($schemas);
 
@@ -94,7 +94,7 @@ trait HasConditionals
     /**
      * Set the anyOf condition
      */
-    public function anyOf(Schema ...$schemas): static
+    public function anyOf(JsonSchema ...$schemas): static
     {
         $this->anyOf = array_values($schemas);
 
@@ -104,7 +104,7 @@ trait HasConditionals
     /**
      * Set the oneOf condition
      */
-    public function oneOf(Schema ...$schemas): static
+    public function oneOf(JsonSchema ...$schemas): static
     {
         $this->oneOf = array_values($schemas);
 
@@ -114,9 +114,9 @@ trait HasConditionals
     /**
      * Set the not condition
      */
-    public function not(Schema $schema): static
+    public function not(JsonSchema $jsonSchema): static
     {
-        $this->not = $schema;
+        $this->not = $jsonSchema;
 
         return $this;
     }
@@ -144,21 +144,21 @@ trait HasConditionals
 
         if ($this->allOf !== []) {
             $schema['allOf'] = array_map(
-                static fn(Schema $schema): array => $schema->toArray(includeSchemaRef: false),
+                static fn(JsonSchema $jsonSchema): array => $jsonSchema->toArray(includeSchemaRef: false),
                 $this->allOf,
             );
         }
 
         if ($this->anyOf !== []) {
             $schema['anyOf'] = array_map(
-                static fn(Schema $schema): array => $schema->toArray(includeSchemaRef: false),
+                static fn(JsonSchema $jsonSchema): array => $jsonSchema->toArray(includeSchemaRef: false),
                 $this->anyOf,
             );
         }
 
         if ($this->oneOf !== []) {
             $schema['oneOf'] = array_map(
-                static fn(Schema $schema): array => $schema->toArray(includeSchemaRef: false),
+                static fn(JsonSchema $jsonSchema): array => $jsonSchema->toArray(includeSchemaRef: false),
                 $this->oneOf,
             );
         }

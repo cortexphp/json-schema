@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
-use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 covers(StringSchema::class);
@@ -20,7 +20,7 @@ it('can create a string schema with length constraints', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'string');
     expect($schemaArray)->toHaveKey('title', 'username');
     expect($schemaArray)->toHaveKey('description', 'Username for the account');

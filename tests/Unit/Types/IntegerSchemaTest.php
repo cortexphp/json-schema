@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\IntegerSchema;
-use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 covers(IntegerSchema::class);
@@ -18,7 +18,7 @@ it('can create a basic integer schema', function (): void {
 
     $schemaArray = $integerSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'integer');
     expect($schemaArray)->toHaveKey('title', 'age');
     expect($schemaArray)->toHaveKey('description', 'User age');

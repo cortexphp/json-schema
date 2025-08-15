@@ -8,9 +8,9 @@ use ReflectionEnum;
 use ReflectionNamedType;
 use ReflectionUnionType;
 use ReflectionIntersectionType;
-use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\UnionSchema;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 trait InteractsWithTypes
@@ -20,7 +20,7 @@ trait InteractsWithTypes
      */
     protected function getSchemaFromReflectionType(
         ReflectionNamedType|ReflectionUnionType|ReflectionIntersectionType|null $type,
-    ): Schema {
+    ): JsonSchema {
         $schemaTypes = match (true) {
             $type instanceof ReflectionUnionType, $type instanceof ReflectionIntersectionType => array_map(
                 // @phpstan-ignore argument.type

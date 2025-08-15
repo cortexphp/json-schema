@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-use Cortex\JsonSchema\SchemaFactory;
-use Cortex\JsonSchema\Contracts\Schema;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\NullSchema;
 use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Types\UnionSchema;
@@ -13,6 +12,7 @@ use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Converters\JsonConverter;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -28,10 +28,10 @@ it('can convert string JSON schema', function (): void {
     ];
 
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(StringSchema::class);
-    expect($schema->toArray())->toMatchArray([
+    expect($jsonSchema)->toBeInstanceOf(StringSchema::class);
+    expect($jsonSchema->toArray())->toMatchArray([
         'type' => 'string',
         'title' => 'Test String',
         'minLength' => 1,
@@ -61,11 +61,11 @@ it('can convert object JSON schema with properties', function (): void {
     ];
 
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
+    expect($jsonSchema)->toBeInstanceOf(ObjectSchema::class);
 
-    $output = $schema->toArray();
+    $output = $jsonSchema->toArray();
     expect($output['type'])->toBe('object');
     expect($output['title'])->toBe('User');
     expect($output['additionalProperties'])->toBe(false);
@@ -87,11 +87,11 @@ it('can convert array JSON schema with items', function (): void {
     ];
 
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(ArraySchema::class);
+    expect($jsonSchema)->toBeInstanceOf(ArraySchema::class);
 
-    $output = $schema->toArray();
+    $output = $jsonSchema->toArray();
     expect($output['type'])->toBe('array');
     expect($output['title'])->toBe('String Array');
     expect($output['items']['type'])->toBe('string');
@@ -109,10 +109,10 @@ it('can convert number schema with constraints', function (): void {
     ];
 
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(NumberSchema::class);
-    expect($schema->toArray())->toMatchArray([
+    expect($jsonSchema)->toBeInstanceOf(NumberSchema::class);
+    expect($jsonSchema->toArray())->toMatchArray([
         'type' => 'number',
         'minimum' => 0.5,
         'maximum' => 100.5,
@@ -130,10 +130,10 @@ it('can convert integer schema with constraints', function (): void {
     ];
 
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(IntegerSchema::class);
-    expect($schema->toArray())->toMatchArray([
+    expect($jsonSchema)->toBeInstanceOf(IntegerSchema::class);
+    expect($jsonSchema->toArray())->toMatchArray([
         'type' => 'integer',
         'minimum' => 1,
         'maximum' => 100,
@@ -150,10 +150,10 @@ it('can convert boolean schema', function (): void {
     ];
 
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(BooleanSchema::class);
-    expect($schema->toArray())->toMatchArray([
+    expect($jsonSchema)->toBeInstanceOf(BooleanSchema::class);
+    expect($jsonSchema->toArray())->toMatchArray([
         'type' => 'boolean',
         'default' => true,
         'description' => 'A boolean value',
@@ -167,10 +167,10 @@ it('can convert null schema', function (): void {
     ];
 
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(NullSchema::class);
-    expect($schema->toArray())->toMatchArray([
+    expect($jsonSchema)->toBeInstanceOf(NullSchema::class);
+    expect($jsonSchema->toArray())->toMatchArray([
         'type' => 'null',
         'description' => 'A null value',
     ]);
@@ -183,10 +183,10 @@ it('can convert union schema with multiple types', function (): void {
     ];
 
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(UnionSchema::class);
-    expect($schema->toArray())->toMatchArray([
+    expect($jsonSchema)->toBeInstanceOf(UnionSchema::class);
+    expect($jsonSchema->toArray())->toMatchArray([
         'type' => ['string', 'number'],
         'description' => 'String or number',
     ]);
@@ -198,21 +198,21 @@ it('can handle schema without type as mixed', function (): void {
     ];
 
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(UnionSchema::class);
+    expect($jsonSchema)->toBeInstanceOf(UnionSchema::class);
     // Should include all possible types
-    expect($schema->toArray()['type'])->toHaveCount(7);
+    expect($jsonSchema->toArray()['type'])->toHaveCount(7);
 });
 
 it('can parse JSON string input', function (): void {
     $jsonString = '{"type": "string", "minLength": 5}';
 
     $converter = new JsonConverter($jsonString, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(StringSchema::class);
-    expect($schema->toArray()['minLength'])->toBe(5);
+    expect($jsonSchema)->toBeInstanceOf(StringSchema::class);
+    expect($jsonSchema->toArray()['minLength'])->toBe(5);
 });
 
 it('detects schema version from $schema property', function (): void {
@@ -224,13 +224,13 @@ it('detects schema version from $schema property', function (): void {
 
     // Even though we pass Draft_07, it should detect 2019-09 from the $schema
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(StringSchema::class);
-    expect($schema->getVersion())->toBe(SchemaVersion::Draft_2019_09);
+    expect($jsonSchema)->toBeInstanceOf(StringSchema::class);
+    expect($jsonSchema->getVersion())->toBe(SchemaVersion::Draft_2019_09);
 
     // Should work with deprecated (2019-09+ feature)
-    expect($schema->toArray()['deprecated'])->toBe(true);
+    expect($jsonSchema->toArray()['deprecated'])->toBe(true);
 });
 
 it('can handle nested schemas', function (): void {
@@ -253,11 +253,11 @@ it('can handle nested schemas', function (): void {
     ];
 
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(ObjectSchema::class);
+    expect($jsonSchema)->toBeInstanceOf(ObjectSchema::class);
 
-    $output = $schema->toArray();
+    $output = $jsonSchema->toArray();
     expect($output['properties']['address']['type'])->toBe('object');
     expect($output['properties']['address']['properties']['street']['type'])->toBe('string');
     expect($output['properties']['address']['required'])->toBe(['street']);
@@ -278,20 +278,20 @@ it('throws exception for unsupported schema type', function (): void {
         'type' => 'unsupported',
     ];
 
-    expect(fn(): Schema => (new JsonConverter($json, SchemaVersion::Draft_07))->convert())
+    expect(fn(): JsonSchema => (new JsonConverter($json, SchemaVersion::Draft_07))->convert())
         ->toThrow(SchemaException::class, 'Unsupported schema type: unsupported');
 });
 
-it('integrates with SchemaFactory::fromJson', function (): void {
+it('integrates with Schema::fromJson', function (): void {
     $json = [
         'type' => 'string',
         'minLength' => 3,
     ];
 
-    $schema = SchemaFactory::fromJson($json);
+    $jsonSchema = Schema::fromJson($json);
 
-    expect($schema)->toBeInstanceOf(StringSchema::class);
-    expect($schema->toArray()['minLength'])->toBe(3);
+    expect($jsonSchema)->toBeInstanceOf(StringSchema::class);
+    expect($jsonSchema->toArray()['minLength'])->toBe(3);
 });
 
 it('can handle array with contains and min/max contains', function (): void {
@@ -306,11 +306,11 @@ it('can handle array with contains and min/max contains', function (): void {
 
     // Use 2019-09 version which supports minContains/maxContains
     $converter = new JsonConverter($json, SchemaVersion::Draft_2019_09);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(ArraySchema::class);
+    expect($jsonSchema)->toBeInstanceOf(ArraySchema::class);
 
-    $output = $schema->toArray();
+    $output = $jsonSchema->toArray();
     expect($output['type'])->toBe('array');
     expect($output['contains']['type'])->toBe('string');
     expect($output['minContains'])->toBe(1);
@@ -326,10 +326,10 @@ it('can handle string with enum and const', function (): void {
     ];
 
     $converter = new JsonConverter($json, SchemaVersion::Draft_07);
-    $schema = $converter->convert();
+    $jsonSchema = $converter->convert();
 
-    expect($schema)->toBeInstanceOf(StringSchema::class);
-    expect($schema->toArray())->toMatchArray([
+    expect($jsonSchema)->toBeInstanceOf(StringSchema::class);
+    expect($jsonSchema->toArray())->toMatchArray([
         'type' => 'string',
         'enum' => ['red', 'green', 'blue'],
         'const' => 'red',
