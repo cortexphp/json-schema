@@ -134,6 +134,49 @@ $invalidData = [
 ];
 ```
 
+## Object Inspection Methods
+
+Once you've defined an object schema, you can inspect its structure using several convenient methods:
+
+```php
+$userSchema = Schema::object('user')
+    ->properties(
+        Schema::string('name')->required(),
+        Schema::string('email')->required(),
+        Schema::integer('age'),
+        Schema::string('bio')
+    );
+
+// Get all properties as an array of schema objects
+$properties = $userSchema->getProperties();
+// Returns: ['name' => StringSchema, 'email' => StringSchema, 'age' => IntegerSchema, 'bio' => StringSchema]
+
+// Get list of required property names
+$requiredProps = $userSchema->getRequiredProperties();
+// Returns: ['name', 'email']
+
+// Check if schema has any properties defined
+$hasProperties = $userSchema->hasProperties();
+// Returns: true
+
+// Check if schema has any required properties
+$hasRequiredProperties = $userSchema->hasRequiredProperties();
+// Returns: true
+
+// Example with empty schema
+$emptySchema = Schema::object('empty');
+$emptySchema->hasProperties();         // false
+$emptySchema->hasRequiredProperties(); // false
+$emptySchema->getProperties();         // []
+$emptySchema->getRequiredProperties(); // []
+```
+
+These methods are particularly useful when:
+- **Building dynamic forms** - inspect required fields to add validation indicators
+- **Generating documentation** - list all available properties and their requirements
+- **Schema introspection** - programmatically analyze schema structure
+- **Conditional logic** - check if a schema has properties before processing
+
 ## Additional Properties
 
 Control whether objects can have properties beyond those defined:
