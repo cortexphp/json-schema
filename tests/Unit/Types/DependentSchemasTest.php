@@ -154,7 +154,6 @@ it('detects dependentSchemas feature correctly', function (): void {
     // Access the protected method via reflection to test feature detection
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($objectSchema);
 
@@ -171,7 +170,6 @@ it('does not include dependentSchemas feature when not used', function (): void 
     // Access the protected method via reflection to test feature detection
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($objectSchema);
 

@@ -217,6 +217,38 @@ trait HasProperties
     }
 
     /**
+     * @return array<string, \Cortex\JsonSchema\Contracts\JsonSchema>
+     */
+    public function getProperties(): array
+    {
+        return $this->properties;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getRequiredProperties(): array
+    {
+        return $this->requiredProperties;
+    }
+
+    /**
+     * Determine if the schema has properties
+     */
+    public function hasProperties(): bool
+    {
+        return $this->properties !== [];
+    }
+
+    /**
+     * Determine if the schema has required properties
+     */
+    public function hasRequiredProperties(): bool
+    {
+        return $this->requiredProperties !== [];
+    }
+
+    /**
      * Add properties to schema array
      *
      * @param array<string, mixed> $schema

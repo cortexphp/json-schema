@@ -397,11 +397,9 @@ class JsonConverter implements Converter
             // Set properties and required directly using reflection to avoid title requirement
             $reflectionClass = new ReflectionClass($objectSchema);
             $propertiesProperty = $reflectionClass->getProperty('properties');
-            $propertiesProperty->setAccessible(true);
             $propertiesProperty->setValue($objectSchema, $propertySchemas);
 
             $requiredProperty = $reflectionClass->getProperty('requiredProperties');
-            $requiredProperty->setAccessible(true);
             $requiredProperty->setValue($objectSchema, $requiredProps);
         }
 

@@ -45,8 +45,8 @@ it('can create schema instance', function (SchemaType $schemaType, string $expec
 
 it('sets title when creating schema instances', function (): void {
     $title = 'My Schema';
-    $schema = SchemaType::String->instance($title);
+    $jsonSchema = SchemaType::String->instance($title);
 
-    expect($schema)->toBeInstanceOf(StringSchema::class)
-        ->and($schema->getTitle())->toBe($title);
+    expect($jsonSchema)->toBeInstanceOf(StringSchema::class)
+        ->and($jsonSchema->getTitle())->toBe($title);
 });

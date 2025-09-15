@@ -98,7 +98,6 @@ it('detects unevaluatedItems feature correctly', function (): void {
     // Access the protected method via reflection to test feature detection
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($arraySchema);
 
@@ -113,7 +112,6 @@ it('does not include unevaluatedItems feature when not used', function (): void 
     // Access the protected method via reflection to test feature detection
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($arraySchema);
 

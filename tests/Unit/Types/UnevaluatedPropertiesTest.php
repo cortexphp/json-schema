@@ -119,7 +119,6 @@ it('detects unevaluatedProperties feature correctly', function (): void {
     // Access the protected method via reflection to test feature detection
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($objectSchema);
 
@@ -136,7 +135,6 @@ it('does not include unevaluatedProperties feature when not used', function (): 
     // Access the protected method via reflection to test feature detection
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($objectSchema);
 

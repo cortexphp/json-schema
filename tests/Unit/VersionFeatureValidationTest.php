@@ -81,7 +81,6 @@ it('provides helpful error messages for unsupported features', function (): void
     expect(function () use ($stringSchema): void {
         $reflection = new ReflectionClass($stringSchema);
         $reflectionMethod = $reflection->getMethod('validateFeatureSupport');
-        $reflectionMethod->setAccessible(true);
 
         // Test with a feature that's only in 2020-12
         $reflectionMethod->invoke($stringSchema, SchemaFeature::PrefixItems);
@@ -97,11 +96,9 @@ it('correctly identifies version-appropriate keywords', function (): void {
 
     $reflection07 = new ReflectionClass($stringSchema);
     $reflectionMethod = $reflection07->getMethod('getVersionAppropriateKeyword');
-    $reflectionMethod->setAccessible(true);
 
     $reflection201909 = new ReflectionClass($draft201909Schema);
     $method201909 = $reflection201909->getMethod('getVersionAppropriateKeyword');
-    $method201909->setAccessible(true);
 
     // Draft 07 should use 'definitions'
     expect($reflectionMethod->invoke($stringSchema, '$defs', 'definitions'))->toBe('definitions');
@@ -121,7 +118,6 @@ it('collects features from all traits correctly', function (): void {
 
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($objectSchema);
 
@@ -141,7 +137,6 @@ it('includes IfThenElse feature when complete conditional construct is used', fu
 
     $reflection = new ReflectionClass($stringSchema);
     $reflectionMethod = $reflection->getMethod('getConditionalFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($stringSchema);
 
@@ -219,10 +214,8 @@ it('detects metadata and read/write features correctly', function (): void {
 
     $reflection = new ReflectionClass($stringSchema);
     $reflectionMethod = $reflection->getMethod('getMetadataFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $getReadWriteMethod = $reflection->getMethod('getReadWriteFeatures');
-    $getReadWriteMethod->setAccessible(true);
 
     $metadataFeatures = $reflectionMethod->invoke($stringSchema);
     $readWriteFeatures = $getReadWriteMethod->invoke($stringSchema);
@@ -232,7 +225,6 @@ it('detects metadata and read/write features correctly', function (): void {
 
     // Test that features are included in overall feature detection
     $getUsedMethod = $reflection->getMethod('getUsedFeatures');
-    $getUsedMethod->setAccessible(true);
 
     $allFeatures = $getUsedMethod->invoke($stringSchema);
     expect($allFeatures)->toContain(SchemaFeature::Deprecated);
@@ -245,7 +237,6 @@ it('detects array contains count features correctly', function (): void {
 
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getArrayFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($arraySchema);
 
@@ -254,7 +245,6 @@ it('detects array contains count features correctly', function (): void {
 
     // Test that features are included in overall feature detection
     $getUsedMethod = $reflection->getMethod('getUsedFeatures');
-    $getUsedMethod->setAccessible(true);
 
     $allFeatures = $getUsedMethod->invoke($arraySchema);
     expect($allFeatures)->toContain(SchemaFeature::MinContains);
@@ -301,7 +291,6 @@ it('detects format features correctly', function (): void {
 
     $reflection = new ReflectionClass($stringSchema);
     $reflectionMethod = $reflection->getMethod('getFormatFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $formatFeatures = $reflectionMethod->invoke($stringSchema);
 
@@ -316,7 +305,6 @@ it('detects format features correctly', function (): void {
 
     // Test that features are included in overall feature detection
     $getUsedMethod = $reflection->getMethod('getUsedFeatures');
-    $getUsedMethod->setAccessible(true);
 
     $allFeatures = $getUsedMethod->invoke($stringSchema);
     expect($allFeatures)->toContain(SchemaFeature::FormatDuration);
@@ -344,7 +332,6 @@ it('allows string formats for custom validation', function (): void {
     // Verify that string formats don't add features
     $reflection = new ReflectionClass($stringSchema);
     $reflectionMethod = $reflection->getMethod('getFormatFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $formatFeatures = $reflectionMethod->invoke($stringSchema);
     expect($formatFeatures)->toBeEmpty();

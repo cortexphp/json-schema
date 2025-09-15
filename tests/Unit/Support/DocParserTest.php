@@ -194,10 +194,8 @@ it('correctly filters text nodes in getTextNodes method', function (): void {
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($parser);
     $reflectionMethod = $reflection->getMethod('parse');
-    $reflectionMethod->setAccessible(true);
 
     $getTextNodesMethod = $reflection->getMethod('getTextNodes');
-    $getTextNodesMethod->setAccessible(true);
 
     $phpDocNode = $reflectionMethod->invoke($parser);
     $textNodes = $getTextNodesMethod->invoke($parser, $phpDocNode->children);
@@ -320,7 +318,6 @@ it('directly tests mapValueNodeToTypes method coverage', function (): void {
     // Use reflection to access the parse method and get the tag values
     $reflection = new ReflectionClass($parser);
     $reflectionMethod = $reflection->getMethod('parse');
-    $reflectionMethod->setAccessible(true);
 
     $phpDocNode = $reflectionMethod->invoke($parser);
     $paramTags = $phpDocNode->getParamTagValues();
@@ -332,7 +329,6 @@ it('directly tests mapValueNodeToTypes method coverage', function (): void {
 
     // Access the static method directly to ensure coverage
     $mapMethod = $reflection->getMethod('mapValueNodeToTypes');
-    $mapMethod->setAccessible(true);
 
     // Test each type scenario directly
     foreach ($paramTags as $paramTag) {

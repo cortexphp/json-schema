@@ -57,7 +57,7 @@ trait HasDefinitions
     {
         if ($this->definitions !== []) {
             // Use version-appropriate keyword: $defs for 2019-09+, definitions for Draft 07
-            $keyword = $this->getVersionAppropriateKeyword('$defs', 'definitions');
+            $keyword = $this->getVersionAppropriateKeyword('$defs');
             $schema[$keyword] = [];
 
             foreach ($this->definitions as $name => $definition) {

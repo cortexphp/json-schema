@@ -34,7 +34,7 @@ return ECSConfig::configure()
         strict: true,
     )
     ->withPhpCsFixerSets(
-        php84Migration: true,
+        php83Migration: true,
     )
     ->withRules([
         NotOperatorWithSuccessorSpaceFixer::class,

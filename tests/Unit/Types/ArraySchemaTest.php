@@ -265,7 +265,6 @@ it('correctly collects array-specific features', function (): void {
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getArrayFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $arrayFeatures = $reflectionMethod->invoke($arraySchema);
     $featureValues = array_map(fn($feature) => $feature->value, $arrayFeatures);
@@ -294,7 +293,6 @@ it('properly merges parent and array features in getUsedFeatures', function (): 
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $allFeatures = $reflectionMethod->invoke($arraySchema);
     $featureValues = array_map(fn($feature) => $feature->value, $allFeatures);
@@ -311,12 +309,10 @@ it('properly merges parent and array features in getUsedFeatures', function (): 
     // Test that array_merge is working correctly (testing the UnwrapArrayMerge mutation)
     // Compare with direct call to parent method to ensure merger is happening
     $getParentFeaturesMethod = $reflection->getParentClass()->getMethod('getUsedFeatures');
-    $getParentFeaturesMethod->setAccessible(true);
 
     $parentFeatures = $getParentFeaturesMethod->invoke($arraySchema);
 
     $getArrayFeaturesMethod = $reflection->getMethod('getArrayFeatures');
-    $getArrayFeaturesMethod->setAccessible(true);
 
     $arrayOnlyFeatures = $getArrayFeaturesMethod->invoke($arraySchema);
 
@@ -333,7 +329,6 @@ it('returns correct feature collection structure', function (): void {
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getArrayFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($arraySchema);
 
