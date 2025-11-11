@@ -1,0 +1,755 @@
+---
+title: From JSON Schema
+description: 'Import and work with existing JSON Schema definitions'
+icon: 'file-json'
+---
+
+Import existing JSON Schema definitions and convert them into schema objects for validation and manipulation. This feature allows you to work with external schemas, migrate from other tools, or load schemas from configuration files.
+
+## Basic JSON Schema Import
+
+Import a schema from a JSON string:
+
+```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// JSON Schema as string
+$jsonString = '{
+    "type": "object",
+    "title": "User",
+    "properties": {
+        "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+        },
+        "email": {
+            "type": "string",
+            "format": "email"
+        },
+        "age": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 150
+        }
+    },
+    "required": ["name", "email"]
+}';
+
+// Import JSON Schema
+$schema = Schema::fromJson($jsonString);
+
+// Use the imported schema for validation
+$userData = [
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'age' => 30
+];
+
+$schema->isValid($userData); // true
+```
+
+## Import from Array
+
+Import a schema from a PHP array representation:
+
+```php
+$schemaArray = [
+    'type' => 'object',
+    'title' => 'Product',
+    'description' => 'E-commerce product schema',
+    'properties' => [
+        'sku' => [
+            'type' => 'string',
+            'pattern' => '^[A-Z]{3}-\d{4}$',
+            'description' => 'Product SKU'
+        ],
+        'name' => [
+            'type' => 'string',
+            'minLength' => 1,
+            'maxLength' => 200
+        ],
+        'price' => [
+            'type' => 'number',
+            'minimum' => 0,
+            'multipleOf' => 0.01
+        ],
+        'categories' => [
+            'type' => 'array',
+            'items' => [
+                'type' => 'string'
+            ],
+            'maxItems' => 5,
+            'uniqueItems' => true
+        ],
+        'in_stock' => [
+            'type' => 'boolean',
+            'default' => true
+        ]
+    ],
+    'required' => ['sku', 'name', 'price'],
+    'additionalProperties' => false
+];
+
+// Import from array
+$productSchema = Schema::fromJson($schemaArray);
+```
+
+<Accordion title="Imported Schema Usage">
+```php
+// Validate product data
+$productData = [
+    'sku' => 'ABC-1234',
+    'name' => 'Wireless Headphones',
+    'price' => 99.99,
+    'categories' => ['electronics', 'audio'],
+    'in_stock' => true
+];
+
+$productSchema->isValid($productData); // true
+
+// Convert back to JSON
+$jsonOutput = $productSchema->toJson(JSON_PRETTY_PRINT);
+echo $jsonOutput;
+```
+</Accordion>
+
+## Schema Version Detection and Specification
+
+Import schemas with specific versions or detect automatically:
+
+```php
+// Draft 2019-09 schema with $defs
+$modern_schema_json = '{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "type": "object",
+    "title": "ModernUser",
+    "$defs": {
+        "address": {
+            "type": "object",
+            "properties": {
+                "street": { "type": "string" },
+                "city": { "type": "string" },
+                "country": { "type": "string" }
+            },
+            "required": ["street", "city", "country"]
+        }
+    },
+    "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "deprecated_field": {
+            "type": "string",
+            "deprecated": true
+        },
+        "home_address": { "$ref": "#/$defs/address" },
+        "work_address": { "$ref": "#/$defs/address" }
+    },
+    "required": ["name", "email"],
+    "unevaluatedProperties": false
+}';
+
+// Import with automatic version detection
+$modernSchema = Schema::fromJson($modern_schema_json);
+
+// Or specify version explicitly
+$explicitSchema = Schema::fromJson(
+    $modern_schema_json,
+    SchemaVersion::Draft_2019_09
+);
+```
+
+## Complex Schema with References
+
+Import schemas with definitions and references:
+
+```php
+$complex_api_schema = [
+    '$schema' => 'http://json-schema.org/draft-07/schema#',
+    'type' => 'object',
+    'title' => 'APIResponse',
+    'definitions' => [
+        'user' => [
+            'type' => 'object',
+            'properties' => [
+                'id' => ['type' => 'string'],
+                'username' => ['type' => 'string'],
+                'email' => ['type' => 'string', 'format' => 'email'],
+                'profile' => ['$ref' => '#/definitions/profile']
+            ],
+            'required' => ['id', 'username', 'email']
+        ],
+        'profile' => [
+            'type' => 'object',
+            'properties' => [
+                'first_name' => ['type' => 'string'],
+                'last_name' => ['type' => 'string'],
+                'avatar_url' => ['type' => 'string', 'format' => 'uri'],
+                'bio' => ['type' => 'string', 'maxLength' => 500]
+            ]
+        ],
+        'pagination' => [
+            'type' => 'object',
+            'properties' => [
+                'page' => ['type' => 'integer', 'minimum' => 1],
+                'per_page' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 100],
+                'total' => ['type' => 'integer', 'minimum' => 0],
+                'total_pages' => ['type' => 'integer', 'minimum' => 0]
+            ],
+            'required' => ['page', 'per_page', 'total', 'total_pages']
+        ]
+    ],
+    'properties' => [
+        'success' => ['type' => 'boolean'],
+        'data' => [
+            'oneOf' => [
+                ['$ref' => '#/definitions/user'],
+                [
+                    'type' => 'array',
+                    'items' => ['$ref' => '#/definitions/user']
+                ]
+            ]
+        ],
+        'pagination' => ['$ref' => '#/definitions/pagination'],
+        'message' => ['type' => 'string']
+    ],
+    'required' => ['success']
+];
+
+$apiSchema = Schema::fromJson($complex_api_schema);
+
+// Validate API responses
+$singleUserResponse = [
+    'success' => true,
+    'data' => [
+        'id' => 'user_123',
+        'username' => 'johndoe',
+        'email' => 'john@example.com',
+        'profile' => [
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'bio' => 'Software developer'
+        ]
+    ]
+];
+
+$apiSchema->isValid($singleUserResponse); // true
+```
+
+## Loading from Files
+
+Load schemas from external files:
+
+```php
+/**
+ * Load schema from file
+ */
+function loadSchemaFromFile(string $filepath): Schema
+{
+    if (!file_exists($filepath)) {
+        throw new InvalidArgumentException("Schema file not found: {$filepath}");
+    }
+
+    $content = file_get_contents($filepath);
+    $schemaData = json_decode($content, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new InvalidArgumentException("Invalid JSON in schema file: " . json_last_error_msg());
+    }
+
+    return Schema::fromJson($schemaData);
+}
+
+// Usage
+$userSchema = loadSchemaFromFile('schemas/user.json');
+$productSchema = loadSchemaFromFile('schemas/product.json');
+$orderSchema = loadSchemaFromFile('schemas/order.json');
+```
+
+## Schema Registry Pattern
+
+Create a schema registry for managing multiple schemas:
+
+```php
+class SchemaRegistry
+{
+    private array $schemas = [];
+
+    public function register(string $name, string $jsonSchemaPath): void
+    {
+        $this->schemas[$name] = loadSchemaFromFile($jsonSchemaPath);
+    }
+
+    public function registerFromJson(string $name, string $jsonString): void
+    {
+        $this->schemas[$name] = Schema::fromJson($jsonString);
+    }
+
+    public function get(string $name): Schema
+    {
+        if (!isset($this->schemas[$name])) {
+            throw new InvalidArgumentException("Schema not found: {$name}");
+        }
+
+        return $this->schemas[$name];
+    }
+
+    public function validate(string $schemaName, array $data): bool
+    {
+        return $this->get($schemaName)->isValid($data);
+    }
+
+    public function listSchemas(): array
+    {
+        return array_keys($this->schemas);
+    }
+}
+
+// Usage
+$registry = new SchemaRegistry();
+$registry->register('user', 'schemas/user.json');
+$registry->register('product', 'schemas/product.json');
+$registry->register('order', 'schemas/order.json');
+
+// Validate against registered schemas
+if ($registry->validate('user', $userData)) {
+    echo "User data is valid";
+}
+
+// List available schemas
+$availableSchemas = $registry->listSchemas();
+```
+
+## OpenAPI Integration
+
+Convert OpenAPI schemas to validation schemas:
+
+```php
+/**
+ * Extract JSON Schema from OpenAPI component
+ */
+function extractOpenApiSchema(array $openApiSpec, string $componentName): Schema
+{
+    if (!isset($openApiSpec['components']['schemas'][$componentName])) {
+        throw new InvalidArgumentException("Component not found: {$componentName}");
+    }
+
+    $componentSchema = $openApiSpec['components']['schemas'][$componentName];
+
+    // Convert OpenAPI schema to JSON Schema
+    $jsonSchema = [
+        'type' => $componentSchema['type'] ?? 'object',
+        'title' => $componentName,
+        'properties' => $componentSchema['properties'] ?? [],
+        'required' => $componentSchema['required'] ?? []
+    ];
+
+    // Handle OpenAPI-specific properties
+    if (isset($componentSchema['description'])) {
+        $jsonSchema['description'] = $componentSchema['description'];
+    }
+
+    if (isset($componentSchema['example'])) {
+        $jsonSchema['examples'] = [$componentSchema['example']];
+    }
+
+    return Schema::fromJson($jsonSchema);
+}
+
+// Example OpenAPI specification
+$openApiSpec = [
+    'components' => [
+        'schemas' => [
+            'User' => [
+                'type' => 'object',
+                'description' => 'User information',
+                'properties' => [
+                    'id' => [
+                        'type' => 'string',
+                        'format' => 'uuid'
+                    ],
+                    'username' => [
+                        'type' => 'string',
+                        'minLength' => 3,
+                        'maxLength' => 50
+                    ],
+                    'email' => [
+                        'type' => 'string',
+                        'format' => 'email'
+                    ],
+                    'created_at' => [
+                        'type' => 'string',
+                        'format' => 'date-time'
+                    ]
+                ],
+                'required' => ['id', 'username', 'email']
+            ]
+        ]
+    ]
+];
+
+$userSchema = extractOpenApiSchema($openApiSpec, 'User');
+```
+
+## Schema Transformation and Migration
+
+Transform schemas between versions or formats:
+
+```php
+/**
+ * Migrate Draft-07 schema to Draft 2019-09
+ */
+function migrateToDraft201909(array $draft07Schema): array
+{
+    $migratedSchema = $draft07Schema;
+
+    // Update schema version
+    $migratedSchema['$schema'] = 'https://json-schema.org/draft/2019-09/schema';
+
+    // Convert definitions to $defs
+    if (isset($migratedSchema['definitions'])) {
+        $migratedSchema['$defs'] = $migratedSchema['definitions'];
+        unset($migratedSchema['definitions']);
+
+        // Update all $ref paths
+        $migratedSchema = updateRefPaths($migratedSchema, '#/definitions/', '#/$defs/');
+    }
+
+    return $migratedSchema;
+}
+
+/**
+ * Update $ref paths recursively
+ */
+function updateRefPaths(array $schema, string $oldPrefix, string $newPrefix): array
+{
+    foreach ($schema as $key => $value) {
+        if ($key === '$ref' && is_string($value) && str_starts_with($value, $oldPrefix)) {
+            $schema[$key] = str_replace($oldPrefix, $newPrefix, $value);
+        } elseif (is_array($value)) {
+            $schema[$key] = updateRefPaths($value, $oldPrefix, $newPrefix);
+        }
+    }
+
+    return $schema;
+}
+
+// Usage
+$oldSchema = [
+    '$schema' => 'http://json-schema.org/draft-07/schema#',
+    'type' => 'object',
+    'definitions' => [
+        'address' => [
+            'type' => 'object',
+            'properties' => [
+                'street' => ['type' => 'string']
+            ]
+        ]
+    ],
+    'properties' => [
+        'home' => ['$ref' => '#/definitions/address']
+    ]
+];
+
+$newSchema = migrateToDraft201909($oldSchema);
+$modernSchema = Schema::fromJson($newSchema, SchemaVersion::Draft_2019_09);
+```
+
+## Configuration-Driven Validation
+
+Use JSON schemas for configuration validation:
+
+```php
+class ConfigValidator
+{
+    private Schema $schema;
+
+    public function __construct(string $configSchemaPath)
+    {
+        $this->schema = loadSchemaFromFile($configSchemaPath);
+    }
+
+    public function validateConfig(array $config): array
+    {
+        $errors = [];
+
+        try {
+            $this->schema->validate($config);
+        } catch (SchemaException $e) {
+            $errors[] = $e->getMessage();
+        }
+
+        return $errors;
+    }
+
+    public function getConfigExample(): array
+    {
+        $schemaArray = $this->schema->toArray();
+        return $this->generateExampleFromSchema($schemaArray);
+    }
+
+    private function generateExampleFromSchema(array $schema): array
+    {
+        $example = [];
+
+        if (isset($schema['properties'])) {
+            foreach ($schema['properties'] as $property => $propSchema) {
+                if (isset($propSchema['default'])) {
+                    $example[$property] = $propSchema['default'];
+                } elseif (isset($propSchema['examples'])) {
+                    $example[$property] = $propSchema['examples'][0];
+                } else {
+                    // Generate basic example based on type
+                    $example[$property] = $this->generateValueExample($propSchema);
+                }
+            }
+        }
+
+        return $example;
+    }
+
+    private function generateValueExample(array $schema): mixed
+    {
+        return match ($schema['type'] ?? 'string') {
+            'string' => 'example_string',
+            'integer' => 1,
+            'number' => 1.0,
+            'boolean' => true,
+            'array' => [],
+            'object' => [],
+            default => null
+        };
+    }
+}
+
+// config-schema.json
+$configSchemaJson = '{
+    "type": "object",
+    "title": "ApplicationConfig",
+    "properties": {
+        "database": {
+            "type": "object",
+            "properties": {
+                "host": { "type": "string", "default": "localhost" },
+                "port": { "type": "integer", "minimum": 1, "maximum": 65535, "default": 3306 },
+                "name": { "type": "string" },
+                "username": { "type": "string" },
+                "password": { "type": "string" }
+            },
+            "required": ["name", "username", "password"]
+        },
+        "redis": {
+            "type": "object",
+            "properties": {
+                "host": { "type": "string", "default": "localhost" },
+                "port": { "type": "integer", "default": 6379 },
+                "password": { "type": "string" }
+            }
+        },
+        "features": {
+            "type": "object",
+            "properties": {
+                "caching": { "type": "boolean", "default": true },
+                "logging": { "type": "boolean", "default": true },
+                "debug": { "type": "boolean", "default": false }
+            }
+        }
+    },
+    "required": ["database"]
+}';
+
+// Save schema and use validator
+file_put_contents('config-schema.json', $configSchemaJson);
+$validator = new ConfigValidator('config-schema.json');
+
+$config = [
+    'database' => [
+        'host' => 'db.example.com',
+        'port' => 3306,
+        'name' => 'myapp',
+        'username' => 'dbuser',
+        'password' => 'secret'
+    ],
+    'features' => [
+        'caching' => true,
+        'debug' => false
+    ]
+];
+
+$errors = $validator->validateConfig($config);
+if (empty($errors)) {
+    echo "Configuration is valid";
+} else {
+    echo "Configuration errors: " . implode(', ', $errors);
+}
+```
+
+## Schema Composition
+
+Combine multiple imported schemas:
+
+```php
+/**
+ * Compose schemas from multiple sources
+ */
+function composeSchemas(array $schemaFiles, string $mainSchemaName): Schema
+{
+    $definitions = [];
+
+    // Load all schemas and extract their definitions
+    foreach ($schemaFiles as $name => $file) {
+        $schema = loadSchemaFromFile($file);
+        $schemaArray = $schema->toArray();
+
+        if (isset($schemaArray['definitions'])) {
+            $definitions = array_merge($definitions, $schemaArray['definitions']);
+        }
+
+        // Add the main schema as a definition
+        $definitions[$name] = $schemaArray;
+    }
+
+    // Create composed schema
+    $composedSchema = [
+        'type' => 'object',
+        'title' => 'ComposedSchema',
+        'definitions' => $definitions,
+        '$ref' => "#/definitions/{$mainSchemaName}"
+    ];
+
+    return Schema::fromJson($composedSchema);
+}
+
+// Usage
+$schemaFiles = [
+    'user' => 'schemas/user.json',
+    'address' => 'schemas/address.json',
+    'contact' => 'schemas/contact.json'
+];
+
+$composedSchema = composeSchemas($schemaFiles, 'user');
+```
+
+## Best Practices
+
+### 1. Validate JSON Before Import
+
+```php
+function safeJsonImport(string $jsonString): Schema
+{
+    $data = json_decode($jsonString, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new InvalidArgumentException(
+            "Invalid JSON: " . json_last_error_msg()
+        );
+    }
+
+    // Basic schema validation
+    if (!isset($data['type'])) {
+        throw new InvalidArgumentException("Schema must have a 'type' property");
+    }
+
+    return Schema::fromJson($data);
+}
+```
+
+### 2. Handle Schema Dependencies
+
+```php
+function resolveSchemaReferences(array $schema, array $definitions = []): array
+{
+    // Recursively resolve $ref properties
+    foreach ($schema as $key => $value) {
+        if ($key === '$ref' && is_string($value)) {
+            // Resolve reference to actual schema
+            $refPath = str_replace('#/definitions/', '', $value);
+            if (isset($definitions[$refPath])) {
+                return $definitions[$refPath];
+            }
+        } elseif (is_array($value)) {
+            $schema[$key] = resolveSchemaReferences($value, $definitions);
+        }
+    }
+
+    return $schema;
+}
+```
+
+### 3. Version Compatibility Checking
+
+```php
+function checkVersionCompatibility(array $schema): void
+{
+    $schemaVersion = $schema['$schema'] ?? '';
+
+    $supportedVersions = [
+        'http://json-schema.org/draft-07/schema#',
+        'https://json-schema.org/draft/2019-09/schema',
+        'https://json-schema.org/draft/2020-12/schema'
+    ];
+
+    if ($schemaVersion && !in_array($schemaVersion, $supportedVersions)) {
+        throw new InvalidArgumentException(
+            "Unsupported schema version: {$schemaVersion}"
+        );
+    }
+}
+```
+
+### 4. Schema Caching
+
+```php
+class CachedSchemaLoader
+{
+    private array $cache = [];
+
+    public function load(string $filepath): Schema
+    {
+        $cacheKey = md5($filepath . filemtime($filepath));
+
+        if (!isset($this->cache[$cacheKey])) {
+            $this->cache[$cacheKey] = loadSchemaFromFile($filepath);
+        }
+
+        return $this->cache[$cacheKey];
+    }
+}
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="API Documentation" icon="api">
+    Import OpenAPI schemas for request/response validation in API applications.
+  </Card>
+  <Card title="Configuration Management" icon="gear">
+    Validate application configuration files using predefined JSON schemas.
+  </Card>
+  <Card title="Data Migration" icon="exchange-alt">
+    Import legacy schemas and validate data during migration processes.
+  </Card>
+  <Card title="Third-party Integration" icon="plug">
+    Work with external JSON schemas from APIs, services, or documentation.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Data Validation"
+    icon="check-circle"
+    href="/validation/data-validation"
+  >
+    Learn to validate data with imported schemas
+  </Card>
+  <Card
+    title="Schema Factory"
+    icon="factory"
+    href="/api-reference/schema-factory"
+  >
+    Explore the complete Schema Factory API reference
+  </Card>
+</CardGroup>

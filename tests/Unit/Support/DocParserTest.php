@@ -194,10 +194,8 @@ it('correctly filters text nodes in getTextNodes method', function (): void {
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($parser);
     $reflectionMethod = $reflection->getMethod('parse');
-    $reflectionMethod->setAccessible(true);
 
     $getTextNodesMethod = $reflection->getMethod('getTextNodes');
-    $getTextNodesMethod->setAccessible(true);
 
     $phpDocNode = $reflectionMethod->invoke($parser);
     $textNodes = $getTextNodesMethod->invoke($parser, $phpDocNode->children);
@@ -320,7 +318,6 @@ it('directly tests mapValueNodeToTypes method coverage', function (): void {
     // Use reflection to access the parse method and get the tag values
     $reflection = new ReflectionClass($parser);
     $reflectionMethod = $reflection->getMethod('parse');
-    $reflectionMethod->setAccessible(true);
 
     $phpDocNode = $reflectionMethod->invoke($parser);
     $paramTags = $phpDocNode->getParamTagValues();
@@ -332,7 +329,6 @@ it('directly tests mapValueNodeToTypes method coverage', function (): void {
 
     // Access the static method directly to ensure coverage
     $mapMethod = $reflection->getMethod('mapValueNodeToTypes');
-    $mapMethod->setAccessible(true);
 
     // Test each type scenario directly
     foreach ($paramTags as $paramTag) {
@@ -354,4 +350,82 @@ it('directly tests mapValueNodeToTypes method coverage', function (): void {
         $types = $mapMethod->invoke(null, $typelessTag);
         expect($types)->toBe([]);
     }
+});
+
+it('can detect deprecated docblocks', function (): void {
+    $docblock = '/** @deprecated This method is deprecated */';
+    $parser = new DocParser($docblock);
+
+    expect($parser->isDeprecated())->toBeTrue();
+});
+
+it('can detect non-deprecated docblocks', function (): void {
+    $docblock = '/** This is a regular docblock */';
+    $parser = new DocParser($docblock);
+
+    expect($parser->isDeprecated())->toBeFalse();
+});
+
+it('can detect deprecated with other tags', function (): void {
+    $docblock = <<<'EOD'
+        /**
+         * This is a test method
+         * @deprecated Use newMethod() instead
+         * @param string $name The name parameter
+         * @return string
+         */
+        EOD;
+    $parser = new DocParser($docblock);
+
+    expect($parser->isDeprecated())->toBeTrue();
+    expect($parser->description())->toBe('This is a test method');
+});
+
+it('can detect deprecated without description', function (): void {
+    $docblock = '/** @deprecated */';
+    $parser = new DocParser($docblock);
+
+    expect($parser->isDeprecated())->toBeTrue();
+});
+
+it('handles empty docblock for deprecation check', function (): void {
+    $docblock = '/** */';
+    $parser = new DocParser($docblock);
+
+    expect($parser->isDeprecated())->toBeFalse();
+});
+
+it('can detect multiple deprecated tags', function (): void {
+    $docblock = <<<'EOD'
+        /**
+         * @deprecated Since version 2.0
+         * @deprecated Will be removed in 3.0
+         */
+        EOD;
+    $parser = new DocParser($docblock);
+
+    expect($parser->isDeprecated())->toBeTrue();
+});
+
+it('handles deprecation with complex docblock', function (): void {
+    $docblock = <<<'EOD'
+        /**
+         * A complex method that does many things
+         *
+         * @param string|null $name The name parameter
+         * @param int $age The age parameter
+         * @var array<string, mixed> $data Some data
+         * @deprecated This method is deprecated, use newComplexMethod() instead
+         * @return array<string, mixed>
+         * @throws \InvalidArgumentException When parameters are invalid
+         */
+        EOD;
+    $parser = new DocParser($docblock);
+
+    expect($parser->isDeprecated())->toBeTrue();
+    expect($parser->description())->toBe('A complex method that does many things');
+
+    $params = $parser->params();
+    expect($params->get('name')->types)->toBe(['string', 'null']);
+    expect($params->get('age')->types)->toBe(['int']);
 });

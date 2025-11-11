@@ -1,0 +1,185 @@
+---
+title: Schema Versions
+description: 'Understanding JSON Schema version support and compatibility'
+icon: 'history'
+---
+
+## Supported Versions
+
+This package supports multiple JSON Schema specification versions with automatic feature validation to ensure compatibility.
+
+<CardGroup cols={1}>
+  <Card title="Draft-07 (2018)" icon="circle-check">
+    Legacy version for maximum compatibility across tools and libraries. Includes core validation features and basic conditionals.
+  </Card>
+  <Card title="Draft 2019-09" icon="star">
+    Adds advanced features like `$defs`, `unevaluatedProperties`, `deprecated`, and enhanced array validation.
+  </Card>
+  <Card title="Draft 2020-12" icon="sparkles">
+    **Default and latest version** with `prefixItems`, dynamic references, format vocabularies, and other cutting-edge features.
+  </Card>
+</CardGroup>
+
+## Setting Schema Versions
+
+### Specify Version on Creation
+
+```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Create schema with specific version
+$schema = Schema::string('name', SchemaVersion::Draft_2020_12);
+
+// Or use the enum directly with schema classes
+$schema = new StringSchema('email', SchemaVersion::Draft_2019_09);
+```
+
+### Set Global Default Version
+
+```php
+// The default version is Draft 2020-12
+$schema1 = Schema::string('field1'); // Uses Draft 2020-12 by default
+$schema2 = Schema::object('user');   // Uses Draft 2020-12 by default
+
+// You can override the global default if needed
+Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
+$schema3 = Schema::string('field3'); // Now uses Draft 2019-09
+```
+
+### Change Version on Existing Schema
+
+```php
+// Change version on existing schema
+$schema = Schema::string('name');
+$schema->version(SchemaVersion::Draft_2020_12);
+```
+
+## Version-Specific Features
+
+The package automatically validates that features are only used with compatible versions:
+
+### ✅ Compatible Usage
+
+```php
+// deprecated is supported in Draft 2019-09+
+$schema = Schema::string('oldField', SchemaVersion::Draft_2019_09)
+    ->deprecated()
+    ->comment('Use newField instead');
+
+// minContains/maxContains work in Draft 2019-09+
+$arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
+    ->items(Schema::string())
+    ->minContains(2)
+    ->maxContains(5);
+
+// New format types in Draft 2019-09+
+$schema = Schema::string('duration', SchemaVersion::Draft_2019_09)
+    ->format(SchemaFormat::Duration); // ISO 8601 duration
+```
+
+### ❌ Incompatible Usage
+
+<Warning>
+These examples will throw a `SchemaException` because the features require newer versions:
+</Warning>
+
+```php
+// This throws an exception - deprecated requires Draft 2019-09+
+$schema = Schema::string('oldField', SchemaVersion::Draft_07)
+    ->deprecated(); // ❌ SchemaException
+
+// This throws an exception - minContains requires Draft 2019-09+
+$arraySchema = Schema::array('items', SchemaVersion::Draft_07)
+    ->minContains(2); // ❌ SchemaException
+```
+
+## Feature Support Matrix
+
+| Feature | Draft-07 | Draft 2019-09 | Draft 2020-12 | Description |
+|---------|----------|---------------|---------------|-------------|
+| **Core Validation** |
+| `minLength`, `maxLength`, `pattern` | ✅ | ✅ | ✅ | Basic string validation |
+| `minimum`, `maximum`, `multipleOf` | ✅ | ✅ | ✅ | Numeric constraints |
+| `minItems`, `maxItems`, `uniqueItems` | ✅ | ✅ | ✅ | Array validation |
+| `properties`, `required`, `additionalProperties` | ✅ | ✅ | ✅ | Object validation |
+| **Conditionals** |
+| `if`/`then`/`else` | ✅ | ✅ | ✅ | Conditional schemas |
+| `allOf`, `anyOf`, `oneOf`, `not` | ✅ | ✅ | ✅ | Logical combinations |
+| **Advanced Features** |
+| `deprecated` | ❌ | ✅ | ✅ | Property deprecation |
+| `$defs` (replaces `definitions`) | ❌ | ✅ | ✅ | Schema definitions |
+| `minContains`, `maxContains` | ❌ | ✅ | ✅ | Array contains validation |
+| `unevaluatedProperties`, `unevaluatedItems` | ❌ | ✅ | ✅ | Strict validation |
+| `dependentSchemas` | ❌ | ✅ | ✅ | Property dependencies |
+| **Draft 2020-12 Only** |
+| `prefixItems` | ❌ | ❌ | ✅ | Tuple validation |
+| Dynamic references (`$dynamicRef`) | ❌ | ❌ | ✅ | Dynamic schema refs |
+| **Formats** |
+| `email`, `uri`, `date-time` | ✅ | ✅ | ✅ | Basic formats |
+| `duration`, `uuid` | ❌ | ✅ | ✅ | Extended formats |
+
+## Version-Appropriate Output
+
+Schemas automatically use the correct keywords for their version:
+
+<CodeGroup>
+
+```json Draft-07 Output
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+```json Draft 2019-09 Output
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "type": "object",
+  "$defs": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+## Feature Detection
+
+Check if specific features are supported:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaFeature;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Check feature support
+if (SchemaVersion::Draft_07->supports(SchemaFeature::Deprecated)) {
+    // This will be false
+}
+
+if (SchemaVersion::Draft_2019_09->supports(SchemaFeature::Deprecated)) {
+    // This will be true
+}
+
+// Get feature information
+$feature = SchemaFeature::MinContains;
+echo $feature->getDescription(); // "Minimum number of contains matches"
+echo $feature->getMinimumVersion()->name; // "Draft201909"
+```
+
+<Tip>
+The package defaults to Draft 2020-12 for the latest features. Use Draft-07 for maximum compatibility with older tools if needed.
+</Tip>

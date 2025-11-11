@@ -10,12 +10,13 @@ use ReflectionEnum;
 use ReflectionFunction;
 use ReflectionNamedType;
 use ReflectionParameter;
-use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
 use Cortex\JsonSchema\Enums\SchemaVersion;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Support\NodeCollection;
+use Cortex\JsonSchema\Exceptions\UnknownTypeException;
 use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
 
 class ClosureConverter implements Converter
@@ -27,6 +28,7 @@ class ClosureConverter implements Converter
     public function __construct(
         protected Closure $closure,
         protected ?SchemaVersion $version = null,
+        protected bool $ignoreUnknownTypes = false,
     ) {
         $this->reflection = new ReflectionFunction($this->closure);
         $this->version = $version ?? SchemaVersion::default();
@@ -36,8 +38,14 @@ class ClosureConverter implements Converter
     {
         $objectSchema = new ObjectSchema(schemaVersion: $this->version);
 
+        $docParser = $this->getDocParser();
+
+        if ($docParser?->isDeprecated() === true || $this->reflection->isDeprecated()) {
+            $objectSchema->deprecated();
+        }
+
         // Get the description from the doc parser
-        $description = $this->getDocParser()?->description() ?? null;
+        $description = $docParser?->description() ?? null;
 
         // Add the description to the schema if it exists
         if ($description !== null) {
@@ -45,11 +53,21 @@ class ClosureConverter implements Converter
         }
 
         // Get the parameters from the doc parser
-        $params = $this->getDocParser()?->params();
+        $params = $docParser?->params();
 
         // Add the parameters to the objectschema
-        foreach ($this->reflection->getParameters() as $parameter) {
-            $objectSchema->properties(self::getSchemaFromReflectionParameter($parameter, $params));
+        foreach ($this->reflection->getParameters() as $reflectionParameter) {
+            try {
+                $objectSchema->properties(self::getSchemaFromReflectionParameter($reflectionParameter, $params));
+            } catch (UnknownTypeException $e) {
+                // If ignoreUnknownTypes is true, skip this parameter
+                if ($this->ignoreUnknownTypes) {
+                    continue;
+                }
+
+                // Otherwise, re-throw the exception
+                throw $e;
+            }
         }
 
         return $objectSchema;
@@ -63,23 +81,23 @@ class ClosureConverter implements Converter
     protected function getSchemaFromReflectionParameter(
         ReflectionParameter $reflectionParameter,
         ?NodeCollection $nodeCollection = null,
-    ): Schema {
+    ): JsonSchema {
         $type = $reflectionParameter->getType();
 
         // @phpstan-ignore argument.type
-        $schema = self::getSchemaFromReflectionType($type);
+        $jsonSchema = self::getSchemaFromReflectionType($type);
 
-        $schema->title($reflectionParameter->getName());
+        $jsonSchema->title($reflectionParameter->getName());
 
         $docParam = $nodeCollection?->get($reflectionParameter->getName());
 
         // Add the description to the schema if it exists
         if ($docParam?->description !== null) {
-            $schema->description($docParam->description);
+            $jsonSchema->description($docParam->description);
         }
 
         if ($type === null || $type->allowsNull()) {
-            $schema->nullable();
+            $jsonSchema->nullable();
         }
 
         if ($reflectionParameter->isDefaultValueAvailable() && ! $reflectionParameter->isDefaultValueConstant()) {
@@ -90,11 +108,11 @@ class ClosureConverter implements Converter
                 $defaultValue = $defaultValue->value;
             }
 
-            $schema->default($defaultValue);
+            $jsonSchema->default($defaultValue);
         }
 
         if (! $reflectionParameter->isOptional()) {
-            $schema->required();
+            $jsonSchema->required();
         }
 
         // If it's an enum, add the possible values
@@ -107,17 +125,17 @@ class ClosureConverter implements Converter
                 if ($reflectionEnum->isBacked()) {
                     /** @var non-empty-array<int, string|int> $values */
                     $values = array_column($typeName::cases(), 'value');
-                    $schema->enum($values);
+                    $jsonSchema->enum($values);
                 }
             }
         }
 
-        return $schema;
+        return $jsonSchema;
     }
 
-    protected function getDocParser(): ?DocParser
+    protected function getDocParser(?string $docComment = null): ?DocParser
     {
-        $docComment = $this->reflection->getDocComment();
+        $docComment ??= $this->reflection->getDocComment();
 
         return is_string($docComment)
             ? new DocParser($docComment)

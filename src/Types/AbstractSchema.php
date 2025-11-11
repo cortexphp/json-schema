@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Types;
 
-use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Enums\SchemaVersion;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Types\Concerns\HasRef;
 use Cortex\JsonSchema\Types\Concerns\HasEnum;
 use Cortex\JsonSchema\Types\Concerns\HasConst;
@@ -21,7 +21,7 @@ use Cortex\JsonSchema\Types\Concerns\HasDescription;
 use Cortex\JsonSchema\Types\Concerns\HasConditionals;
 use Cortex\JsonSchema\Types\Concerns\ValidatesVersionFeatures;
 
-abstract class AbstractSchema implements Schema
+abstract class AbstractSchema implements JsonSchema
 {
     use HasRef;
     use HasEnum;
@@ -37,7 +37,7 @@ abstract class AbstractSchema implements Schema
     use HasDefinitions;
     use ValidatesVersionFeatures;
 
-    protected SchemaVersion $schemaVersion = SchemaVersion::Draft_07;
+    protected SchemaVersion $schemaVersion = SchemaVersion::Draft_2020_12;
 
     /**
      * @param \Cortex\JsonSchema\Enums\SchemaType|array<array-key, \Cortex\JsonSchema\Enums\SchemaType> $type
@@ -79,7 +79,7 @@ abstract class AbstractSchema implements Schema
         }
 
         if (is_array($this->type)) {
-            $this->type[] = SchemaType::Null; // @phpstan-ignore assign.propertyType
+            $this->type[] = SchemaType::Null;
         } else {
             $this->type = [
                 $this->type,

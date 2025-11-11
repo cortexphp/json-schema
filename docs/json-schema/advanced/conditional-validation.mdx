@@ -1,0 +1,649 @@
+---
+title: Conditional Validation
+description: 'Advanced conditional logic with if/then/else, allOf, anyOf, oneOf, and not'
+icon: 'check-check'
+---
+
+Conditional validation allows you to create complex validation rules that apply different schemas based on the data being validated. This enables sophisticated business logic and context-dependent validation.
+
+## if/then/else Conditions
+
+The most intuitive conditional validation uses `if`/`then`/`else` logic:
+
+```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
+$userSchema = Schema::object('user')
+    ->properties(
+        Schema::string('type')->enum(['personal', 'business']),
+        Schema::string('name')->required(),
+        Schema::string('company_name'),
+        Schema::string('tax_id')
+    )
+    // If user type is 'business'
+    ->if(
+        Schema::object()->properties(
+            Schema::string('type')->const('business')
+        )
+    )
+    // Then require business fields
+    ->then(
+        Schema::object()->properties(
+            Schema::string('company_name')
+                ->minLength(1)
+                ->required(),
+            Schema::string('tax_id')
+                ->pattern('^\d{2}-\d{7}$')
+                ->required()
+        )
+    )
+    // Else (personal account) these fields should be null
+    ->else(
+        Schema::object()->properties(
+            Schema::null('company_name'),
+            Schema::null('tax_id')
+        )
+    );
+
+// Valid business user
+$userSchema->isValid([
+    'type' => 'business',
+    'name' => 'John Doe',
+    'company_name' => 'Acme Corp',
+    'tax_id' => '12-3456789'
+]); // true
+
+// Invalid business user (missing required fields)
+$userSchema->isValid([
+    'type' => 'business',
+    'name' => 'John Doe'
+    // Missing company_name and tax_id
+]); // false
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "user",
+    "properties": {
+        "type": {
+            "type": "string",
+            "enum": ["personal", "business"]
+        },
+        "name": {
+            "type": "string"
+        },
+        "company_name": {
+            "type": "string"
+        },
+        "tax_id": {
+            "type": "string"
+        }
+    },
+    "required": ["name"],
+    "if": {
+        "type": "object",
+        "properties": {
+            "type": {
+                "const": "business"
+            }
+        }
+    },
+    "then": {
+        "type": "object",
+        "properties": {
+            "company_name": {
+                "type": "string",
+                "minLength": 1
+            },
+            "tax_id": {
+                "type": "string",
+                "pattern": "^\\d{2}-\\d{7}$"
+            }
+        },
+        "required": ["company_name", "tax_id"]
+    },
+    "else": {
+        "type": "object",
+        "properties": {
+            "company_name": {
+                "type": "null"
+            },
+            "tax_id": {
+                "type": "null"
+            }
+        }
+    }
+}
+```
+</Accordion>
+
+## allOf - All Conditions Must Match
+
+Use `allOf` when data must satisfy multiple schemas simultaneously:
+
+```php
+$employeeSchema = Schema::object('employee')
+    ->allOf(
+        // Must have basic person properties
+        Schema::object()
+            ->properties(
+                Schema::string('name')->required(),
+                Schema::string('email')
+                    ->format(SchemaFormat::Email)
+                    ->required()
+            ),
+
+        // Must have employee-specific properties
+        Schema::object()
+            ->properties(
+                Schema::string('employee_id')
+                    ->pattern('^EMP-\d{6}$')
+                    ->required(),
+                Schema::integer('department_id')
+                    ->minimum(1)
+                    ->required()
+            ),
+
+        // Must meet age requirement
+        Schema::object()
+            ->properties(
+                Schema::integer('age')
+                    ->minimum(18)
+                    ->maximum(67)
+                    ->required()
+            )
+    )
+    ->description('Employee must satisfy all validation rules');
+
+$employeeSchema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@company.com',
+    'employee_id' => 'EMP-123456',
+    'department_id' => 5,
+    'age' => 30
+]); // true - satisfies all schemas
+
+$employeeSchema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@company.com',
+    'employee_id' => 'EMP-123456',
+    // Missing department_id and age
+]); // false - doesn't satisfy all schemas
+```
+
+## anyOf - At Least One Condition Must Match
+
+Use `anyOf` when data must satisfy at least one of several schemas:
+
+```php
+$contactSchema = Schema::object('contact')
+    ->properties(
+        Schema::string('name')->required(),
+        Schema::string('email'),
+        Schema::string('phone'),
+        Schema::string('address')
+    )
+    ->anyOf(
+        // Must have email
+        Schema::object()
+            ->properties(
+                Schema::string('email')
+                    ->format(SchemaFormat::Email)
+                    ->required()
+            ),
+
+        // OR must have phone
+        Schema::object()
+            ->properties(
+                Schema::string('phone')
+                    ->pattern('^\+\d{1,3}-\d{3,4}-\d{6,8}$')
+                    ->required()
+            ),
+
+        // OR must have address
+        Schema::object()
+            ->properties(
+                Schema::string('address')
+                    ->minLength(10)
+                    ->required()
+            )
+    )
+    ->description('Must have at least one contact method');
+
+// Valid - has email
+$contactSchema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@example.com'
+]); // true
+
+// Valid - has phone and email (multiple matches OK)
+$contactSchema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'phone' => '+1-555-1234567'
+]); // true
+
+// Invalid - no contact method
+$contactSchema->isValid([
+    'name' => 'John Doe'
+]); // false
+```
+
+## oneOf - Exactly One Condition Must Match
+
+Use `oneOf` for mutually exclusive validation:
+
+```php
+$paymentSchema = Schema::object('payment')
+    ->properties(
+        Schema::number('amount')->required(),
+        Schema::string('method')->required(),
+        Schema::string('card_number'),
+        Schema::string('bank_account'),
+        Schema::string('crypto_wallet')
+    )
+    ->oneOf(
+        // Credit card payment
+        Schema::object()
+            ->properties(
+                Schema::string('method')->const('credit_card'),
+                Schema::string('card_number')
+                    ->pattern('^\d{16}$')
+                    ->required()
+            ),
+
+        // Bank transfer
+        Schema::object()
+            ->properties(
+                Schema::string('method')->const('bank_transfer'),
+                Schema::string('bank_account')
+                    ->pattern('^\d{8,20}$')
+                    ->required()
+            ),
+
+        // Cryptocurrency
+        Schema::object()
+            ->properties(
+                Schema::string('method')->const('crypto'),
+                Schema::string('crypto_wallet')
+                    ->pattern('^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$')
+                    ->required()
+            )
+    )
+    ->description('Must match exactly one payment method');
+
+// Valid - matches credit card schema only
+$paymentSchema->isValid([
+    'amount' => 100.00,
+    'method' => 'credit_card',
+    'card_number' => '1234567890123456'
+]); // true
+
+// Invalid - matches multiple schemas
+$paymentSchema->isValid([
+    'amount' => 100.00,
+    'method' => 'credit_card',
+    'card_number' => '1234567890123456',
+    'bank_account' => '12345678'  // This makes it match both schemas
+]); // false - matches more than one schema
+```
+
+## not - Must Not Match Condition
+
+Use `not` to exclude certain patterns or values:
+
+```php
+$usernameSchema = Schema::string('username')
+    ->minLength(3)
+    ->maxLength(20)
+    ->pattern('^[a-zA-Z0-9_]+$')
+    ->not(
+        Schema::string()
+            ->enum(['admin', 'root', 'administrator', 'system', 'null'])
+    )
+    ->description('Username cannot be a reserved word');
+
+$usernameSchema->isValid('john_doe');     // true
+$usernameSchema->isValid('user123');      // true
+$usernameSchema->isValid('admin');        // false (reserved word)
+$usernameSchema->isValid('root');         // false (reserved word)
+
+// More complex not condition
+$securePasswordSchema = Schema::string('password')
+    ->minLength(8)
+    ->not(
+        Schema::string()
+            ->anyOf(
+                Schema::string()->pattern('^[a-z]+$'),      // All lowercase
+                Schema::string()->pattern('^[A-Z]+$'),      // All uppercase
+                Schema::string()->pattern('^\d+$'),         // All digits
+                Schema::string()->enum(['password', '12345678', 'qwerty'])
+            )
+    )
+    ->description('Password must be complex and not common');
+```
+
+## Nested Conditional Logic
+
+Combine multiple conditional operators for complex validation:
+
+```php
+$orderSchema = Schema::object('order')
+    ->properties(
+        Schema::string('type')->enum(['physical', 'digital']),
+        Schema::boolean('is_gift'),
+        Schema::string('shipping_address'),
+        Schema::string('gift_message'),
+        Schema::string('download_link')
+    )
+    ->allOf(
+        // Base order requirements
+        Schema::object()
+            ->properties(
+                Schema::string('type')->required(),
+                Schema::boolean('is_gift')->required()
+            ),
+
+        // Type-specific requirements
+        Schema::object()
+            ->anyOf(
+                // Physical order requirements
+                Schema::object()
+                    ->if(
+                        Schema::object()->properties(
+                            Schema::string('type')->const('physical')
+                        )
+                    )
+                    ->then(
+                        Schema::object()->properties(
+                            Schema::string('shipping_address')
+                                ->minLength(10)
+                                ->required()
+                        )
+                    ),
+
+                // Digital order requirements
+                Schema::object()
+                    ->if(
+                        Schema::object()->properties(
+                            Schema::string('type')->const('digital')
+                        )
+                    )
+                    ->then(
+                        Schema::object()->properties(
+                            Schema::string('download_link')
+                                ->format(SchemaFormat::Uri)
+                                ->required()
+                        )
+                    )
+            ),
+
+        // Gift-specific requirements
+        Schema::object()
+            ->if(
+                Schema::object()->properties(
+                    Schema::boolean('is_gift')->const(true)
+                )
+            )
+            ->then(
+                Schema::object()->properties(
+                    Schema::string('gift_message')
+                        ->minLength(1)
+                        ->maxLength(500)
+                        ->required()
+                )
+            )
+    );
+```
+
+## Advanced Conditional Patterns
+
+### Multi-Step Conditional Validation
+
+```php
+$loanApplicationSchema = Schema::object('loan_application')
+    ->properties(
+        Schema::integer('credit_score'),
+        Schema::number('income'),
+        Schema::number('requested_amount'),
+        Schema::boolean('has_collateral'),
+        Schema::string('collateral_type'),
+        Schema::number('collateral_value')
+    )
+    // Step 1: High credit score path
+    ->if(
+        Schema::object()->properties(
+            Schema::integer('credit_score')->minimum(750)
+        )
+    )
+    ->then(
+        Schema::object()
+            ->properties(
+                Schema::number('income')
+                    ->minimum(50000)
+                    ->required(),
+                Schema::number('requested_amount')
+                    ->maximum(500000)
+                    ->required()
+            )
+            ->description('High credit score requirements')
+    )
+    // Step 2: Medium credit score path
+    ->else(
+        Schema::object()
+            ->if(
+                Schema::object()->properties(
+                    Schema::integer('credit_score')
+                        ->minimum(650)
+                        ->maximum(749)
+                )
+            )
+            ->then(
+                Schema::object()
+                    ->properties(
+                        Schema::number('income')
+                            ->minimum(75000)
+                            ->required(),
+                        Schema::number('requested_amount')
+                            ->maximum(250000)
+                            ->required(),
+                        Schema::boolean('has_collateral')
+                            ->const(true)
+                            ->required()
+                    )
+                    // Nested condition for collateral
+                    ->if(
+                        Schema::object()->properties(
+                            Schema::boolean('has_collateral')->const(true)
+                        )
+                    )
+                    ->then(
+                        Schema::object()->properties(
+                            Schema::string('collateral_type')
+                                ->enum(['property', 'vehicle', 'securities'])
+                                ->required(),
+                            Schema::number('collateral_value')
+                                ->minimum(100000)
+                                ->required()
+                        )
+                    )
+            )
+    );
+```
+
+### Dynamic Property Requirements
+
+```php
+$dynamicFormSchema = Schema::object('dynamic_form')
+    ->properties(
+        Schema::array('enabled_fields')
+            ->items(Schema::string())
+            ->required(),
+        Schema::string('name'),
+        Schema::string('email'),
+        Schema::string('phone'),
+        Schema::string('address')
+    )
+    ->allOf(
+        // If 'name' is enabled, it's required
+        Schema::object()
+            ->if(
+                Schema::object()->properties(
+                    Schema::array('enabled_fields')
+                        ->contains(Schema::string()->const('name'))
+                )
+            )
+            ->then(
+                Schema::object()->properties(
+                    Schema::string('name')
+                        ->minLength(1)
+                        ->required()
+                )
+            ),
+
+        // If 'email' is enabled, it's required and validated
+        Schema::object()
+            ->if(
+                Schema::object()->properties(
+                    Schema::array('enabled_fields')
+                        ->contains(Schema::string()->const('email'))
+                )
+            )
+            ->then(
+                Schema::object()->properties(
+                    Schema::string('email')
+                        ->format(SchemaFormat::Email)
+                        ->required()
+                )
+            ),
+
+        // If 'phone' is enabled, it's required and validated
+        Schema::object()
+            ->if(
+                Schema::object()->properties(
+                    Schema::array('enabled_fields')
+                        ->contains(Schema::string()->const('phone'))
+                )
+            )
+            ->then(
+                Schema::object()->properties(
+                    Schema::string('phone')
+                        ->pattern('^\+\d{1,3}-\d{3,4}-\d{6,8}$')
+                        ->required()
+                )
+            )
+    );
+```
+
+## Validation Examples
+
+```php
+// Test the user schema from earlier
+$userData = [
+    'type' => 'business',
+    'name' => 'John Doe',
+    'company_name' => 'Acme Corp',
+    'tax_id' => '12-3456789'
+];
+
+try {
+    $userSchema->validate($userData);
+    echo "Valid business user";
+} catch (SchemaException $e) {
+    echo "Validation failed: " . $e->getMessage();
+}
+
+// Test invalid data
+$invalidData = [
+    'type' => 'business',
+    'name' => 'John Doe'
+    // Missing required business fields
+];
+
+try {
+    $userSchema->validate($invalidData);
+} catch (SchemaException $e) {
+    echo "Validation failed: " . $e->getMessage();
+    // "Property 'company_name' is required"
+}
+```
+
+## Best Practices
+
+### 1. Keep Conditions Simple and Readable
+
+```php
+// Good: Clear condition
+$simpleCondition = Schema::object()
+    ->if(Schema::object()->properties(
+        Schema::string('type')->const('premium')
+    ))
+    ->then(Schema::object()->properties(
+        Schema::number('limit')->minimum(1000)
+    ));
+
+// Avoid: Overly complex nested conditions
+```
+
+### 2. Use Descriptive Property Names
+
+```php
+// Good: Clear discriminator field
+$schema = Schema::object()
+    ->properties(
+        Schema::string('account_type')->enum(['basic', 'premium']),
+        // ... other properties
+    );
+
+// Less clear: Ambiguous field names
+```
+
+### 3. Document Complex Logic
+
+```php
+$complexSchema = Schema::object('complex_validation')
+    ->description('Multi-tier validation based on user level and region')
+    ->if(/* condition */)
+    ->then(/* schema */)
+    ->else(/* alternative schema */);
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="User Account Types" icon="users">
+    Different validation rules for personal vs business accounts, or basic vs premium users.
+  </Card>
+  <Card title="Payment Methods" icon="credit-card">
+    Validate different payment types with their specific required fields and formats.
+  </Card>
+  <Card title="Dynamic Forms" icon="form">
+    Forms where required fields change based on user selections or enabled features.
+  </Card>
+  <Card title="API Versioning" icon="code-branch">
+    Different validation rules for different API versions or client types.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Schema Definitions"
+    icon="bookmark"
+    href="/advanced/definitions-refs"
+  >
+    Learn to create reusable schema components for complex conditional logic
+  </Card>
+  <Card
+    title="Dependent Schemas"
+    icon="link"
+    href="/advanced/dependent-schemas"
+  >
+    Explore property-dependent validation in modern JSON Schema versions
+  </Card>
+</CardGroup>

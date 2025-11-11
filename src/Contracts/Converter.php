@@ -9,5 +9,5 @@ interface Converter
     /**
      * Convert the value to a schema instance.
      */
-    public function convert(): Schema;
+    public function convert(): JsonSchema;
 }

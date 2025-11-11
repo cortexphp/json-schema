@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
 use ReflectionClass;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
-use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 covers(ArraySchema::class);
@@ -27,7 +27,7 @@ it('can create an array schema', function (): void {
 
     $schemaArray = $arraySchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'array');
     expect($schemaArray)->toHaveKey('title', 'tags');
     expect($schemaArray)->toHaveKey('description', 'List of tags');
@@ -201,14 +201,14 @@ it('allows equal values for minContains and maxContains', function (): void {
 });
 
 it('validates minContains and maxContains feature support', function (): void {
-    // Test that minContains/maxContains require Draft 2019-09
+    // Test that minContains/maxContains require Draft 2019-09+
     expect(
-        fn(): ArraySchema => Schema::array('test')
+        fn(): ArraySchema => Schema::array('test', SchemaVersion::Draft_07)
             ->minContains(1),
     )->toThrow(SchemaException::class, 'not supported in Draft 7');
 
     expect(
-        fn(): ArraySchema => Schema::array('test')
+        fn(): ArraySchema => Schema::array('test', SchemaVersion::Draft_07)
             ->maxContains(1),
     )->toThrow(SchemaException::class, 'not supported in Draft 7');
 
@@ -242,9 +242,9 @@ it('can handle unevaluated items feature', function (): void {
 });
 
 it('validates unevaluated items feature support', function (): void {
-    // Test that unevaluatedItems requires Draft 2019-09
+    // Test that unevaluatedItems requires Draft 2019-09+
     expect(
-        fn(): ArraySchema => Schema::array('test')
+        fn(): ArraySchema => Schema::array('test', SchemaVersion::Draft_07)
             ->unevaluatedItems(false),
     )->toThrow(SchemaException::class, 'not supported in Draft 7');
 
@@ -265,7 +265,6 @@ it('correctly collects array-specific features', function (): void {
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getArrayFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $arrayFeatures = $reflectionMethod->invoke($arraySchema);
     $featureValues = array_map(fn($feature) => $feature->value, $arrayFeatures);
@@ -294,7 +293,6 @@ it('properly merges parent and array features in getUsedFeatures', function (): 
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $allFeatures = $reflectionMethod->invoke($arraySchema);
     $featureValues = array_map(fn($feature) => $feature->value, $allFeatures);
@@ -311,12 +309,10 @@ it('properly merges parent and array features in getUsedFeatures', function (): 
     // Test that array_merge is working correctly (testing the UnwrapArrayMerge mutation)
     // Compare with direct call to parent method to ensure merger is happening
     $getParentFeaturesMethod = $reflection->getParentClass()->getMethod('getUsedFeatures');
-    $getParentFeaturesMethod->setAccessible(true);
 
     $parentFeatures = $getParentFeaturesMethod->invoke($arraySchema);
 
     $getArrayFeaturesMethod = $reflection->getMethod('getArrayFeatures');
-    $getArrayFeaturesMethod->setAccessible(true);
 
     $arrayOnlyFeatures = $getArrayFeaturesMethod->invoke($arraySchema);
 
@@ -333,7 +329,6 @@ it('returns correct feature collection structure', function (): void {
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getArrayFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($arraySchema);
 

@@ -22,7 +22,6 @@ return RectorConfig::configure()
         typeDeclarations: true,
         instanceOf: true,
         earlyReturn: true,
-        strictBooleans: true,
         naming: true,
     )
     ->withFluentCallNewLine();

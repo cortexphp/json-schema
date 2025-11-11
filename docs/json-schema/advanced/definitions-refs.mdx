@@ -1,0 +1,555 @@
+---
+title: Definitions & References
+description: 'Create reusable schema components with definitions and $ref'
+icon: 'asterisk'
+---
+
+Schema definitions allow you to create reusable schema components that can be referenced multiple times throughout your schema structure, promoting code reuse and maintainability.
+
+## Basic Definitions
+
+Create reusable schema components using `addDefinition()`:
+
+```php
+use Cortex\JsonSchema\Schema;
+
+$userSchema = Schema::object('user')
+    // Define a reusable address schema
+    ->addDefinition(
+        'address',
+        Schema::object()
+            ->properties(
+                Schema::string('street')->required(),
+                Schema::string('city')->required(),
+                Schema::string('state')->required(),
+                Schema::string('postal_code')
+                    ->pattern('^\d{5}(-\d{4})?$')
+                    ->required(),
+                Schema::string('country')
+                    ->default('US')
+            )
+            ->additionalProperties(false)
+    )
+    // Use the address definition via $ref
+    ->properties(
+        Schema::string('name')->required(),
+        Schema::string('email')->required(),
+        Schema::object('billing_address')
+            ->ref('#/definitions/address')
+            ->required(),
+        Schema::object('shipping_address')
+            ->ref('#/definitions/address')
+    );
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "user",
+    "definitions": {
+        "address": {
+            "type": "object",
+            "properties": {
+                "street": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string",
+                    "pattern": "^\\d{5}(-\\d{4})?$"
+                },
+                "country": {
+                    "type": "string",
+                    "default": "US"
+                }
+            },
+            "required": ["street", "city", "state", "postal_code"],
+            "additionalProperties": false
+        }
+    },
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "email": {
+            "type": "string"
+        },
+        "billing_address": {
+            "$ref": "#/definitions/address"
+        },
+        "shipping_address": {
+            "$ref": "#/definitions/address"
+        }
+    },
+    "required": ["name", "email", "billing_address"]
+}
+```
+</Accordion>
+
+## Multiple Definitions
+
+Add multiple definitions at once using `addDefinitions()`:
+
+```php
+$ecommerceSchema = Schema::object('ecommerce')
+    ->addDefinitions([
+        // Address definition
+        'address' => Schema::object()
+            ->properties(
+                Schema::string('line1')->required(),
+                Schema::string('line2'),
+                Schema::string('city')->required(),
+                Schema::string('postal_code')->required(),
+                Schema::string('country')->required()
+            ),
+
+        // Money amount definition
+        'money' => Schema::object()
+            ->properties(
+                Schema::number('amount')
+                    ->minimum(0)
+                    ->multipleOf(0.01)
+                    ->required(),
+                Schema::string('currency')
+                    ->pattern('^[A-Z]{3}$')
+                    ->default('USD')
+                    ->required()
+            )
+            ->additionalProperties(false),
+
+        // Contact info definition
+        'contact' => Schema::object()
+            ->properties(
+                Schema::string('email')
+                    ->format(SchemaFormat::Email),
+                Schema::string('phone')
+                    ->pattern('^\+\d{1,3}-\d{3,4}-\d{6,8}$')
+            )
+            ->anyOf(
+                Schema::object()->properties(
+                    Schema::string('email')->required()
+                ),
+                Schema::object()->properties(
+                    Schema::string('phone')->required()
+                )
+            ),
+
+        // Product definition
+        'product' => Schema::object()
+            ->properties(
+                Schema::string('id')->required(),
+                Schema::string('name')->required(),
+                Schema::string('description'),
+                Schema::object('price')
+                    ->ref('#/definitions/money')
+                    ->required(),
+                Schema::array('categories')
+                    ->items(Schema::string())
+                    ->uniqueItems(true)
+            )
+    ])
+    ->properties(
+        // Use the definitions in the main schema
+        Schema::object('customer')
+            ->properties(
+                Schema::string('id')->required(),
+                Schema::string('name')->required(),
+                Schema::object('contact')
+                    ->ref('#/definitions/contact')
+                    ->required(),
+                Schema::object('billing_address')
+                    ->ref('#/definitions/address')
+                    ->required(),
+                Schema::object('shipping_address')
+                    ->ref('#/definitions/address')
+            )
+            ->required(),
+
+        Schema::array('items')
+            ->items(
+                Schema::object()
+                    ->properties(
+                        Schema::object('product')
+                            ->ref('#/definitions/product')
+                            ->required(),
+                        Schema::integer('quantity')
+                            ->minimum(1)
+                            ->required(),
+                        Schema::object('unit_price')
+                            ->ref('#/definitions/money')
+                            ->required()
+                    )
+            )
+            ->minItems(1)
+            ->required(),
+
+        Schema::object('total')
+            ->ref('#/definitions/money')
+            ->required()
+    );
+```
+
+## Reference Paths
+
+Use different reference path formats:
+
+```php
+$nestedSchema = Schema::object('nested_example')
+    ->addDefinitions([
+        // Simple definition
+        'simple_address' => Schema::object()
+            ->properties(
+                Schema::string('street')->required(),
+                Schema::string('city')->required()
+            ),
+
+        // Nested definition with its own definitions
+        'complex_user' => Schema::object()
+            ->addDefinition(
+                'preferences',
+                Schema::object()
+                    ->properties(
+                        Schema::string('theme')->enum(['light', 'dark']),
+                        Schema::boolean('notifications')->default(true)
+                    )
+            )
+            ->properties(
+                Schema::string('username')->required(),
+                Schema::object('prefs')
+                    ->ref('#/definitions/complex_user/definitions/preferences')
+            )
+    ])
+    ->properties(
+        // Root level reference
+        Schema::object('address')
+            ->ref('#/definitions/simple_address'),
+
+        // Nested reference
+        Schema::object('user')
+            ->ref('#/definitions/complex_user')
+    );
+```
+
+## Circular References
+
+Handle circular references carefully:
+
+```php
+$organizationSchema = Schema::object('organization')
+    ->addDefinitions([
+        // Employee definition that can reference other employees
+        'employee' => Schema::object()
+            ->properties(
+                Schema::string('id')->required(),
+                Schema::string('name')->required(),
+                Schema::string('title'),
+                Schema::object('manager')
+                    ->ref('#/definitions/employee')  // Circular reference
+                    ->description('Employee\'s manager'),
+                Schema::array('direct_reports')
+                    ->items(
+                        Schema::object()->ref('#/definitions/employee')
+                    )
+                    ->description('Employees reporting to this person')
+            ),
+
+        // Department with employees
+        'department' => Schema::object()
+            ->properties(
+                Schema::string('name')->required(),
+                Schema::object('head')
+                    ->ref('#/definitions/employee')
+                    ->required(),
+                Schema::array('employees')
+                    ->items(
+                        Schema::object()->ref('#/definitions/employee')
+                    )
+            )
+    ])
+    ->properties(
+        Schema::string('company_name')->required(),
+        Schema::array('departments')
+            ->items(
+                Schema::object()->ref('#/definitions/department')
+            )
+            ->required()
+    );
+```
+
+<Warning>
+Be careful with circular references as they can cause infinite loops during validation. Ensure your data structure has proper termination conditions.
+</Warning>
+
+## Version-Specific Definition Keywords
+
+### Draft-07: `definitions`
+
+```php
+$draft07Schema = Schema::object('user', SchemaVersion::Draft_07)
+    ->addDefinition('address', $addressSchema);
+
+// Output uses "definitions"
+// {
+//   "definitions": { "address": {...} }
+// }
+```
+
+### Draft 2019-09+: `$defs`
+
+```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+$modernSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
+    ->addDefinition('address', $addressSchema);
+
+// Output uses "$defs"
+// {
+//   "$defs": { "address": {...} }
+// }
+```
+
+The package automatically uses the correct keyword based on the schema version.
+
+## Complex Real-World Example
+
+Here's a comprehensive e-commerce schema using definitions:
+
+```php
+$ecommerceApiSchema = Schema::object('ecommerce_api')
+    ->addDefinitions([
+        // Base types
+        'uuid' => Schema::string()
+            ->pattern('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'),
+
+        'timestamp' => Schema::string()
+            ->format(SchemaFormat::DateTime),
+
+        'money' => Schema::object()
+            ->properties(
+                Schema::number('amount')->minimum(0)->multipleOf(0.01),
+                Schema::string('currency')->pattern('^[A-Z]{3}$')->default('USD')
+            )
+            ->required(['amount', 'currency']),
+
+        // Domain objects
+        'address' => Schema::object()
+            ->properties(
+                Schema::string('name'),
+                Schema::string('line1')->required(),
+                Schema::string('line2'),
+                Schema::string('city')->required(),
+                Schema::string('state'),
+                Schema::string('postal_code')->required(),
+                Schema::string('country')->required()
+            ),
+
+        'customer' => Schema::object()
+            ->properties(
+                Schema::string('id')->ref('#/definitions/uuid')->required(),
+                Schema::string('email')->format(SchemaFormat::Email)->required(),
+                Schema::string('first_name')->required(),
+                Schema::string('last_name')->required(),
+                Schema::string('phone'),
+                Schema::string('created_at')->ref('#/definitions/timestamp'),
+                Schema::object('billing_address')->ref('#/definitions/address'),
+                Schema::object('shipping_address')->ref('#/definitions/address')
+            ),
+
+        'product' => Schema::object()
+            ->properties(
+                Schema::string('id')->ref('#/definitions/uuid')->required(),
+                Schema::string('sku')->required(),
+                Schema::string('name')->required(),
+                Schema::string('description'),
+                Schema::object('price')->ref('#/definitions/money')->required(),
+                Schema::integer('inventory_count')->minimum(0),
+                Schema::array('images')
+                    ->items(Schema::string()->format(SchemaFormat::Uri))
+                    ->maxItems(10),
+                Schema::array('categories')
+                    ->items(Schema::string())
+                    ->uniqueItems(true)
+            ),
+
+        'order_item' => Schema::object()
+            ->properties(
+                Schema::object('product')->ref('#/definitions/product')->required(),
+                Schema::integer('quantity')->minimum(1)->required(),
+                Schema::object('unit_price')->ref('#/definitions/money')->required(),
+                Schema::object('total_price')->ref('#/definitions/money')->required()
+            ),
+
+        'order' => Schema::object()
+            ->properties(
+                Schema::string('id')->ref('#/definitions/uuid')->required(),
+                Schema::string('order_number')->required(),
+                Schema::object('customer')->ref('#/definitions/customer')->required(),
+                Schema::array('items')
+                    ->items(Schema::object()->ref('#/definitions/order_item'))
+                    ->minItems(1)
+                    ->required(),
+                Schema::object('subtotal')->ref('#/definitions/money')->required(),
+                Schema::object('tax')->ref('#/definitions/money'),
+                Schema::object('shipping')->ref('#/definitions/money'),
+                Schema::object('total')->ref('#/definitions/money')->required(),
+                Schema::string('status')
+                    ->enum(['pending', 'processing', 'shipped', 'delivered', 'cancelled'])
+                    ->required(),
+                Schema::string('created_at')->ref('#/definitions/timestamp'),
+                Schema::string('updated_at')->ref('#/definitions/timestamp')
+            )
+    ])
+    // API endpoints can reference these definitions
+    ->properties(
+        Schema::object('create_order_request')
+            ->properties(
+                Schema::string('customer_id')->ref('#/definitions/uuid')->required(),
+                Schema::array('items')
+                    ->items(
+                        Schema::object()
+                            ->properties(
+                                Schema::string('product_id')->ref('#/definitions/uuid')->required(),
+                                Schema::integer('quantity')->minimum(1)->required()
+                            )
+                    )
+                    ->minItems(1)
+                    ->required(),
+                Schema::object('shipping_address')->ref('#/definitions/address')
+            ),
+
+        Schema::object('order_response')
+            ->ref('#/definitions/order')
+    );
+```
+
+## Benefits of Using Definitions
+
+<CardGroup cols={2}>
+  <Card title="Code Reuse" icon="recycle">
+    Define common schema patterns once and reuse them throughout your schema structure.
+  </Card>
+  <Card title="Maintainability" icon="wrench">
+    Update shared schemas in one place and have changes propagate throughout your API.
+  </Card>
+  <Card title="Consistency" icon="check-double">
+    Ensure consistent validation rules across different parts of your application.
+  </Card>
+  <Card title="Modularity" icon="cubes">
+    Break complex schemas into manageable, reusable components.
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+### 1. Use Descriptive Definition Names
+
+```php
+// Good: Clear, descriptive names
+$schema->addDefinitions([
+    'billing_address' => $addressSchema,
+    'shipping_address' => $addressSchema,
+    'iso_currency_code' => $currencySchema
+]);
+
+// Avoid: Generic or unclear names
+$schema->addDefinitions([
+    'addr' => $addressSchema,
+    'thing' => $someSchema
+]);
+```
+
+### 2. Group Related Definitions
+
+```php
+// Group by domain
+$schema->addDefinitions([
+    // User-related definitions
+    'user_profile' => $userProfileSchema,
+    'user_preferences' => $userPreferencesSchema,
+    'user_permissions' => $userPermissionsSchema,
+
+    // Order-related definitions
+    'order_item' => $orderItemSchema,
+    'order_status' => $orderStatusSchema,
+    'payment_method' => $paymentMethodSchema
+]);
+```
+
+### 3. Avoid Deep Nesting in References
+
+```php
+// Good: Flat reference structure
+$schema->addDefinition('contact_info', $contactSchema);
+$userSchema->properties(
+    Schema::object('contact')->ref('#/definitions/contact_info')
+);
+
+// Avoid: Deep nested references
+$userSchema->properties(
+    Schema::object('contact')
+        ->ref('#/definitions/user/definitions/personal/definitions/contact')
+);
+```
+
+### 4. Document Complex References
+
+```php
+$schema->addDefinition(
+    'recursive_menu_item',
+    Schema::object()
+        ->description('Menu item that can contain sub-menu items')
+        ->properties(
+            Schema::string('label')->required(),
+            Schema::string('url'),
+            Schema::array('children')
+                ->items(
+                    Schema::object()
+                        ->ref('#/definitions/recursive_menu_item')
+                        ->description('Nested menu items')
+                )
+        )
+);
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="API Schema Design" icon="api">
+    Create reusable components for API request/response schemas across multiple endpoints.
+  </Card>
+  <Card title="Domain Models" icon="cube">
+    Define common business objects like User, Product, Order that are used throughout your application.
+  </Card>
+  <Card title="Configuration Schemas" icon="gear">
+    Share configuration patterns across different parts of your application configuration.
+  </Card>
+  <Card title="Form Validation" icon="file-text">
+    Reuse field validation patterns across different forms and input structures.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Conditional Validation"
+    icon="code-branch"
+    href="/advanced/conditional-validation"
+  >
+    Learn how to use definitions with conditional validation logic
+  </Card>
+  <Card
+    title="Code Generation"
+    icon="code"
+    href="/code-generation/from-classes"
+  >
+    Generate schemas with definitions from PHP classes
+  </Card>
+</CardGroup>

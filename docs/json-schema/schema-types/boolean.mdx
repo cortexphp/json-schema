@@ -1,0 +1,421 @@
+---
+title: Boolean Schema
+description: 'Boolean validation for true/false values with defaults and constraints'
+icon: 'toggle-right'
+---
+
+Boolean schemas provide validation for true/false values with support for default values, read-only properties, and conditional logic.
+
+## Basic Boolean Schema
+
+```php
+use Cortex\JsonSchema\Schema;
+
+$activeSchema = Schema::boolean('active')
+    ->description('Whether the record is active')
+    ->required();
+
+$activeSchema->isValid(true);   // true
+$activeSchema->isValid(false);  // true
+$activeSchema->isValid(1);      // false (not a boolean)
+$activeSchema->isValid('true'); // false (string, not boolean)
+$activeSchema->isValid(null);   // false (null, not boolean)
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "boolean",
+    "title": "active",
+    "description": "Whether the record is active"
+}
+```
+</Accordion>
+
+## Default Values
+
+Set default boolean values for optional fields:
+
+```php
+$userPreferencesSchema = Schema::object('preferences')
+    ->properties(
+        Schema::boolean('email_notifications')
+            ->default(true)
+            ->description('Receive email notifications'),
+
+        Schema::boolean('sms_notifications')
+            ->default(false)
+            ->description('Receive SMS notifications'),
+
+        Schema::boolean('marketing_emails')
+            ->default(false)
+            ->description('Receive marketing emails'),
+
+        Schema::boolean('dark_mode')
+            ->default(false)
+            ->description('Use dark theme')
+    );
+
+// When validating data, missing boolean fields will use defaults
+$userPreferencesSchema->isValid([
+    'email_notifications' => true
+    // Other fields will use their defaults
+]); // true
+```
+
+## Read-Only Booleans
+
+Create read-only boolean fields for system-managed states:
+
+```php
+$accountSchema = Schema::object('account')
+    ->properties(
+        Schema::string('username')->required(),
+        Schema::string('email')->required(),
+
+        // System-managed boolean flags
+        Schema::boolean('is_verified')
+            ->readOnly()
+            ->description('Email verification status'),
+
+        Schema::boolean('is_suspended')
+            ->readOnly()
+            ->description('Account suspension status'),
+
+        Schema::boolean('has_premium')
+            ->readOnly()
+            ->description('Premium subscription status')
+    );
+```
+
+## Write-Only Booleans
+
+Use write-only for input-only boolean fields:
+
+```php
+$registrationSchema = Schema::object('registration')
+    ->properties(
+        Schema::string('username')->required(),
+        Schema::string('email')->required(),
+        Schema::string('password')->required(),
+
+        // Consent checkboxes (write-only)
+        Schema::boolean('accept_terms')
+            ->writeOnly()
+            ->required()
+            ->description('Must accept terms of service'),
+
+        Schema::boolean('accept_privacy')
+            ->writeOnly()
+            ->required()
+            ->description('Must accept privacy policy'),
+
+        Schema::boolean('subscribe_newsletter')
+            ->writeOnly()
+            ->default(false)
+            ->description('Subscribe to newsletter (optional)')
+    );
+```
+
+## Const Values
+
+Validate that a boolean has a specific constant value:
+
+```php
+// Must be true (for consent validation)
+$consentSchema = Schema::boolean('gdpr_consent')
+    ->const(true)
+    ->description('GDPR consent must be explicitly granted');
+
+$consentSchema->isValid(true);  // true
+$consentSchema->isValid(false); // false (must be true)
+
+// Must be false (for security checks)
+$securityFlagSchema = Schema::boolean('is_compromised')
+    ->const(false)
+    ->description('Account must not be compromised');
+```
+
+## Complex Boolean Examples
+
+### Feature Flags Configuration
+
+```php
+$featureFlagsSchema = Schema::object('feature_flags')
+    ->description('Application feature toggles')
+    ->properties(
+        // Core features
+        Schema::boolean('new_dashboard')
+            ->default(false)
+            ->description('Enable new dashboard interface'),
+
+        Schema::boolean('advanced_search')
+            ->default(true)
+            ->description('Enable advanced search functionality'),
+
+        Schema::boolean('real_time_notifications')
+            ->default(false)
+            ->description('Enable real-time push notifications'),
+
+        // Experimental features
+        Schema::boolean('experimental_ai')
+            ->default(false)
+            ->description('Enable experimental AI features'),
+
+        Schema::boolean('beta_mobile_app')
+            ->default(false)
+            ->description('Enable beta mobile app features'),
+
+        // System flags (read-only)
+        Schema::boolean('maintenance_mode')
+            ->readOnly()
+            ->description('System maintenance mode status'),
+
+        Schema::boolean('debug_enabled')
+            ->readOnly()
+            ->description('Debug mode status')
+    )
+    ->additionalProperties(false);
+```
+
+### User Permissions Schema
+
+```php
+$permissionsSchema = Schema::object('user_permissions')
+    ->description('User access permissions')
+    ->properties(
+        // Basic permissions
+        Schema::boolean('can_read')
+            ->default(true)
+            ->description('Can view content'),
+
+        Schema::boolean('can_write')
+            ->default(false)
+            ->description('Can create/edit content'),
+
+        Schema::boolean('can_delete')
+            ->default(false)
+            ->description('Can delete content'),
+
+        // Admin permissions
+        Schema::boolean('can_manage_users')
+            ->default(false)
+            ->description('Can manage other users'),
+
+        Schema::boolean('can_access_admin')
+            ->default(false)
+            ->description('Can access admin panel'),
+
+        // System permissions (read-only)
+        Schema::boolean('is_admin')
+            ->readOnly()
+            ->description('Has administrator privileges'),
+
+        Schema::boolean('is_owner')
+            ->readOnly()
+            ->description('Is account owner')
+    )
+    ->additionalProperties(false);
+```
+
+### Privacy Settings
+
+```php
+$privacySchema = Schema::object('privacy_settings')
+    ->description('User privacy preferences')
+    ->properties(
+        // Profile visibility
+        Schema::boolean('public_profile')
+            ->default(false)
+            ->description('Make profile publicly visible'),
+
+        Schema::boolean('searchable')
+            ->default(true)
+            ->description('Allow profile to appear in search results'),
+
+        Schema::boolean('show_online_status')
+            ->default(true)
+            ->description('Show when user is online'),
+
+        // Contact preferences
+        Schema::boolean('allow_friend_requests')
+            ->default(true)
+            ->description('Allow others to send friend requests'),
+
+        Schema::boolean('allow_messages')
+            ->default(true)
+            ->description('Allow direct messages from others'),
+
+        // Data usage
+        Schema::boolean('analytics_consent')
+            ->default(false)
+            ->description('Consent to usage analytics'),
+
+        Schema::boolean('personalization_consent')
+            ->default(false)
+            ->description('Consent to content personalization')
+    )
+    ->additionalProperties(false);
+```
+
+## Conditional Boolean Logic
+
+Use booleans in conditional schemas:
+
+```php
+$orderSchema = Schema::object('order')
+    ->properties(
+        Schema::number('total')->required(),
+        Schema::boolean('is_gift'),
+        Schema::string('gift_message'),
+        Schema::string('gift_recipient_email')
+    )
+    // If is_gift is true, require gift fields
+    ->if(
+        Schema::object()
+            ->properties(
+                Schema::boolean('is_gift')->const(true)
+            )
+    )
+    ->then(
+        Schema::object()
+            ->properties(
+                Schema::string('gift_message')
+                    ->minLength(1)
+                    ->required(),
+                Schema::string('gift_recipient_email')
+                    ->format(SchemaFormat::Email)
+                    ->required()
+            )
+    );
+```
+
+## Boolean Arrays
+
+Arrays of boolean values:
+
+```php
+$checklistSchema = Schema::array('checklist')
+    ->items(Schema::boolean())
+    ->description('Checklist completion status');
+
+$checklistSchema->isValid([true, false, true, true]); // true
+$checklistSchema->isValid([true, 'false', true]);     // false (contains string)
+
+// Named checklist items
+$namedChecklistSchema = Schema::object('task_completion')
+    ->properties(
+        Schema::boolean('task_1_completed')->default(false),
+        Schema::boolean('task_2_completed')->default(false),
+        Schema::boolean('task_3_completed')->default(false),
+        Schema::boolean('all_tasks_reviewed')->default(false)
+    );
+```
+
+## Version-Specific Features
+
+Boolean schemas work consistently across all JSON Schema versions:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Deprecated boolean (Draft 2019-09+)
+$legacyFeatureSchema = Schema::boolean('old_feature', SchemaVersion::Draft_2019_09)
+    ->deprecated()
+    ->default(false)
+    ->comment('Use new_feature instead');
+```
+
+## Validation Examples
+
+```php
+$schema = Schema::boolean('enabled');
+
+// Valid values
+$schema->isValid(true);   // true
+$schema->isValid(false);  // true
+
+// Invalid values
+$schema->isValid(1);      // false (integer, not boolean)
+$schema->isValid(0);      // false (integer, not boolean)
+$schema->isValid('true'); // false (string, not boolean)
+$schema->isValid('false');// false (string, not boolean)
+$schema->isValid(null);   // false (null, not boolean)
+$schema->isValid([]);     // false (array, not boolean)
+```
+
+## Error Messages
+
+Boolean validation provides clear error messages:
+
+```php
+try {
+    $schema->validate('true');
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must be a boolean"
+}
+
+try {
+    $consentSchema->validate(false); // Where const(true) is required
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must be true"
+}
+```
+
+## Boolean vs Other Types
+
+<Warning>
+Be careful with truthy/falsy values. JSON Schema boolean validation is strict and only accepts actual boolean values.
+</Warning>
+
+```php
+$booleanSchema = Schema::boolean('flag');
+
+// JavaScript-style truthy/falsy values are NOT valid
+$booleanSchema->isValid(1);        // false (not boolean)
+$booleanSchema->isValid(0);        // false (not boolean)
+$booleanSchema->isValid('');       // false (not boolean)
+$booleanSchema->isValid('false');  // false (not boolean)
+$booleanSchema->isValid(null);     // false (not boolean)
+
+// Only actual boolean values are valid
+$booleanSchema->isValid(true);     // true
+$booleanSchema->isValid(false);    // true
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Feature Toggles" icon="toggle-on">
+    Control application features and functionality with boolean flags and feature switches.
+  </Card>
+  <Card title="User Preferences" icon="user-gear">
+    Store user settings, notifications preferences, and privacy choices.
+  </Card>
+  <Card title="Permissions & Access" icon="lock">
+    Define user permissions, access rights, and security settings.
+  </Card>
+  <Card title="Status Flags" icon="flag">
+    Track record states, completion status, and operational flags.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Null Schema"
+    icon="circle-xmark"
+    href="/schema-types/null"
+  >
+    Learn about null value validation
+  </Card>
+  <Card
+    title="Conditional Validation"
+    icon="code-branch"
+    href="/advanced/conditional-validation"
+  >
+    Use booleans in conditional schema logic
+  </Card>
+</CardGroup>

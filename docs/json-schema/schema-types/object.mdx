@@ -1,0 +1,553 @@
+---
+title: Object Schema
+description: 'Object validation with properties, patterns, and constraints'
+icon: 'braces'
+---
+
+Object schemas provide comprehensive validation for JSON objects with support for property validation, pattern properties, additional properties control, and complex nested structures.
+
+## Basic Object Schema
+
+```php
+use Cortex\JsonSchema\Schema;
+
+$userSchema = Schema::object('user')
+    ->description('User profile object')
+    ->properties(
+        Schema::string('name')->required(),
+        Schema::string('email')->required(),
+        Schema::integer('age')
+    );
+
+$userSchema->isValid([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'age' => 30
+]); // true
+
+$userSchema->isValid([
+    'name' => 'John Doe'
+    // Missing required email
+]); // false
+```
+
+## Properties
+
+Define specific properties with their own validation schemas:
+
+```php
+$productSchema = Schema::object('product')
+    ->properties(
+        // Required string property
+        Schema::string('name')
+            ->minLength(1)
+            ->maxLength(100)
+            ->required(),
+
+        // Optional string with format
+        Schema::string('description')
+            ->maxLength(500),
+
+        // Required number with constraints
+        Schema::number('price')
+            ->minimum(0)
+            ->multipleOf(0.01)
+            ->required(),
+
+        // Boolean with default
+        Schema::boolean('in_stock')
+            ->default(true),
+
+        // Array of strings
+        Schema::array('tags')
+            ->items(Schema::string())
+            ->maxItems(10)
+    );
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "title": "product",
+    "properties": {
+        "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+        },
+        "description": {
+            "type": "string",
+            "maxLength": 500
+        },
+        "price": {
+            "type": "number",
+            "minimum": 0,
+            "multipleOf": 0.01
+        },
+        "in_stock": {
+            "type": "boolean",
+            "default": true
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "maxItems": 10
+        }
+    },
+    "required": ["name", "price"]
+}
+```
+</Accordion>
+
+## Required Properties
+
+Specify which properties are mandatory:
+
+```php
+$registrationSchema = Schema::object('registration')
+    ->properties(
+        Schema::string('username')
+            ->minLength(3)
+            ->required(),
+
+        Schema::string('email')
+            ->format(SchemaFormat::Email)
+            ->required(),
+
+        Schema::string('password')
+            ->minLength(8)
+            ->required(),
+
+        // Optional fields
+        Schema::string('full_name'),
+        Schema::string('phone')
+    );
+
+// This will fail validation - missing required fields
+$invalidData = [
+    'username' => 'john',
+    // Missing email and password
+];
+```
+
+## Object Inspection Methods
+
+Once you've defined an object schema, you can inspect its structure using several convenient methods:
+
+```php
+$userSchema = Schema::object('user')
+    ->properties(
+        Schema::string('name')->required(),
+        Schema::string('email')->required(),
+        Schema::integer('age'),
+        Schema::string('bio')
+    );
+
+// Get all properties as an array of schema objects
+$properties = $userSchema->getProperties();
+// Returns: ['name' => StringSchema, 'email' => StringSchema, 'age' => IntegerSchema, 'bio' => StringSchema]
+
+// Get list of required property names
+$requiredProps = $userSchema->getRequiredProperties();
+// Returns: ['name', 'email']
+
+// Check if schema has any properties defined
+$hasProperties = $userSchema->hasProperties();
+// Returns: true
+
+// Check if schema has any required properties
+$hasRequiredProperties = $userSchema->hasRequiredProperties();
+// Returns: true
+
+// Example with empty schema
+$emptySchema = Schema::object('empty');
+$emptySchema->hasProperties();         // false
+$emptySchema->hasRequiredProperties(); // false
+$emptySchema->getProperties();         // []
+$emptySchema->getRequiredProperties(); // []
+```
+
+These methods are particularly useful when:
+- **Building dynamic forms** - inspect required fields to add validation indicators
+- **Generating documentation** - list all available properties and their requirements
+- **Schema introspection** - programmatically analyze schema structure
+- **Conditional logic** - check if a schema has properties before processing
+
+## Additional Properties
+
+Control whether objects can have properties beyond those defined:
+
+```php
+// Strict object - no additional properties allowed
+$strictSchema = Schema::object('config')
+    ->properties(
+        Schema::string('host')->required(),
+        Schema::integer('port')->required()
+    )
+    ->additionalProperties(false);
+
+$strictSchema->isValid([
+    'host' => 'localhost',
+    'port' => 3000
+]); // true
+
+$strictSchema->isValid([
+    'host' => 'localhost',
+    'port' => 3000,
+    'extra' => 'not allowed'
+]); // false
+
+// Allow additional properties with validation
+$flexibleSchema = Schema::object('metadata')
+    ->properties(
+        Schema::string('title')->required()
+    )
+    ->additionalProperties(
+        Schema::string()->minLength(1)
+    );
+
+$flexibleSchema->isValid([
+    'title' => 'Document',
+    'author' => 'John Doe',  // Additional string property - OK
+    'version' => 'v1.0'      // Additional string property - OK
+]); // true
+
+$flexibleSchema->isValid([
+    'title' => 'Document',
+    'count' => 42           // Additional non-string property - fails
+]); // false
+```
+
+## Property Count Constraints
+
+Limit the number of properties in an object:
+
+```php
+$taggedSchema = Schema::object('tagged_item')
+    ->properties(
+        Schema::string('name')->required()
+    )
+    ->additionalProperties(Schema::string())
+    ->minProperties(2)  // At least name + 1 tag
+    ->maxProperties(10) // No more than 10 total properties
+    ->description('Item with 1-9 tags');
+
+$taggedSchema->isValid([
+    'name' => 'Item',
+    'category' => 'electronics'
+]); // true (2 properties)
+
+$taggedSchema->isValid([
+    'name' => 'Item'
+]); // false (only 1 property, need at least 2)
+```
+
+## Property Name Validation
+
+Validate property names against a pattern:
+
+```php
+$configSchema = Schema::object('config')
+    ->propertyNames(
+        Schema::string()->pattern('^[a-zA-Z][a-zA-Z0-9_]*$')
+    )
+    ->additionalProperties(Schema::string())
+    ->description('Config with valid identifier names');
+
+$configSchema->isValid([
+    'validName' => 'value',
+    'valid_name2' => 'value'
+]); // true
+
+$configSchema->isValid([
+    'invalid-name' => 'value',  // Contains hyphen
+    '123invalid' => 'value'     // Starts with number
+]); // false
+```
+
+## Pattern Properties
+
+Validate properties based on name patterns:
+
+```php
+$apiResponseSchema = Schema::object('api_response')
+    // Regular properties
+    ->properties(
+        Schema::string('status')->required(),
+        Schema::string('message')
+    )
+    // Pattern-based properties
+    ->patternProperty('^data_[a-z]+$',
+        Schema::object()->additionalProperties(true)
+    )
+    ->patternProperty('^meta_[a-z]+$',
+        Schema::string()
+    )
+    ->additionalProperties(false);
+
+$apiResponseSchema->isValid([
+    'status' => 'success',
+    'message' => 'Operation completed',
+    'data_users' => ['user1', 'user2'],  // Matches ^data_[a-z]+$
+    'meta_version' => 'v1.0'             // Matches ^meta_[a-z]+$
+]); // true
+
+$apiResponseSchema->isValid([
+    'status' => 'success',
+    'invalid_property' => 'value'        // Doesn't match any pattern
+]); // false
+```
+
+You can add multiple pattern properties:
+
+```php
+$schema = Schema::object('flexible_config')
+    ->patternProperties([
+        '^[A-Z][a-z]+$' => Schema::string(),      // CamelCase = string
+        '^\d+$' => Schema::number(),              // Numbers = number
+        '^prefix_' => Schema::boolean(),          // Prefixed = boolean
+    ])
+    ->additionalProperties(false);
+```
+
+## Nested Objects
+
+Create complex nested object structures:
+
+```php
+$orderSchema = Schema::object('order')
+    ->properties(
+        Schema::string('id')->required(),
+
+        // Nested customer object
+        Schema::object('customer')
+            ->properties(
+                Schema::string('name')->required(),
+                Schema::string('email')->required(),
+
+                // Nested address object
+                Schema::object('address')
+                    ->properties(
+                        Schema::string('street')->required(),
+                        Schema::string('city')->required(),
+                        Schema::string('postal_code')->required(),
+                        Schema::string('country')->required()
+                    )
+                    ->additionalProperties(false)
+                    ->required()
+            )
+            ->additionalProperties(false)
+            ->required(),
+
+        // Array of nested item objects
+        Schema::array('items')
+            ->items(
+                Schema::object('item')
+                    ->properties(
+                        Schema::string('sku')->required(),
+                        Schema::string('name')->required(),
+                        Schema::integer('quantity')
+                            ->minimum(1)
+                            ->required(),
+                        Schema::number('price')
+                            ->minimum(0)
+                            ->multipleOf(0.01)
+                            ->required()
+                    )
+                    ->additionalProperties(false)
+            )
+            ->minItems(1)
+            ->required()
+    )
+    ->additionalProperties(false);
+```
+
+## Complex Validation Example
+
+Here's a comprehensive user profile schema demonstrating various object features:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
+$userProfileSchema = Schema::object('user_profile')
+    ->description('Complete user profile with validation')
+
+    // Core required fields
+    ->properties(
+        Schema::string('username')
+            ->pattern('^[a-zA-Z0-9_]{3,20}$')
+            ->required(),
+
+        Schema::string('email')
+            ->format(SchemaFormat::Email)
+            ->required(),
+
+        Schema::string('full_name')
+            ->minLength(2)
+            ->maxLength(100)
+            ->required()
+    )
+
+    // Optional personal information
+    ->properties(
+        Schema::string('bio')
+            ->maxLength(500),
+
+        Schema::string('website')
+            ->format(SchemaFormat::Uri),
+
+        Schema::string('location')
+            ->maxLength(100),
+
+        // Nested preferences object
+        Schema::object('preferences')
+            ->properties(
+                Schema::string('theme')
+                    ->enum(['light', 'dark', 'auto'])
+                    ->default('auto'),
+
+                Schema::string('language')
+                    ->pattern('^[a-z]{2}(-[A-Z]{2})?$')
+                    ->default('en'),
+
+                Schema::boolean('notifications')
+                    ->default(true),
+
+                Schema::object('privacy')
+                    ->properties(
+                        Schema::boolean('public_profile')
+                            ->default(false),
+                        Schema::boolean('show_email')
+                            ->default(false)
+                    )
+                    ->additionalProperties(false)
+            )
+            ->additionalProperties(false),
+
+        // Social media links with pattern properties
+        Schema::object('social_links')
+            ->patternProperty('^(twitter|github|linkedin|instagram)$',
+                Schema::string()
+                    ->format(SchemaFormat::Uri)
+                    ->pattern('^https?://')
+            )
+            ->additionalProperties(false)
+            ->maxProperties(10)
+    )
+
+    // No additional properties at root level
+    ->additionalProperties(false)
+
+    // Validate property names
+    ->propertyNames(
+        Schema::string()
+            ->pattern('^[a-z][a-z_]*$')
+    );
+```
+
+## Version-Specific Features
+
+Some object features require specific JSON Schema versions:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Unevaluated properties (Draft 2019-09+)
+$strictSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
+    ->properties(
+        Schema::string('name')->required()
+    )
+    ->unevaluatedProperties(false)  // Strict validation
+    ->description('No properties beyond those explicitly defined');
+
+// Dependent schemas (Draft 2019-09+)
+$conditionalSchema = Schema::object('payment', SchemaVersion::Draft_2019_09)
+    ->properties(
+        Schema::string('method')->enum(['card', 'paypal']),
+        Schema::string('card_number'),
+        Schema::string('paypal_email')
+    )
+    ->dependentSchema('method',
+        Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::string('method')->const('card')
+            ))
+            ->then(Schema::object()->properties(
+                Schema::string('card_number')->required()
+            ))
+    );
+```
+
+## Validation Examples
+
+```php
+$schema = Schema::object('config')
+    ->properties(
+        Schema::string('name')->required(),
+        Schema::integer('port')->required()
+    )
+    ->additionalProperties(false);
+
+// Valid data
+$schema->isValid([
+    'name' => 'myapp',
+    'port' => 3000
+]); // true
+
+// Invalid data examples
+$schema->isValid([
+    'name' => 'myapp'
+    // Missing required 'port'
+]); // false
+
+$schema->isValid([
+    'name' => 'myapp',
+    'port' => 3000,
+    'extra' => 'not allowed'
+]); // false (additional properties disabled)
+
+$schema->isValid([
+    'name' => 'myapp',
+    'port' => '3000'  // String instead of integer
+]); // false
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="API Request/Response" icon="api">
+    Validate JSON API payloads with structured data and specific field requirements.
+  </Card>
+  <Card title="Configuration Files" icon="gear">
+    Validate application configuration with known properties and constraints.
+  </Card>
+  <Card title="Form Data" icon="file-text">
+    Validate complex form submissions with nested data and validation rules.
+  </Card>
+  <Card title="Database Models" icon="database">
+    Validate data models before persistence with property and constraint validation.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Array Schema"
+    icon="list"
+    href="/schema-types/array"
+  >
+    Learn about array validation and nested data structures
+  </Card>
+  <Card
+    title="Advanced Object Features"
+    icon="star"
+    href="/advanced/pattern-properties"
+  >
+    Explore pattern properties and advanced object validation
+  </Card>
+</CardGroup>

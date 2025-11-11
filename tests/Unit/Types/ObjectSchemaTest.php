@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
 use ReflectionClass;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\ObjectSchema;
+use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
+use Cortex\JsonSchema\Types\IntegerSchema;
 use Opis\JsonSchema\Errors\ValidationError;
-use Cortex\JsonSchema\SchemaFactory as Schema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 covers(ObjectSchema::class);
@@ -34,7 +36,7 @@ it('can create a basic object schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'http://json-schema.org/draft-07/schema#');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
     expect($schemaArray)->toHaveKey('type', 'object');
     expect($schemaArray)->toHaveKey('title', 'user');
     expect($schemaArray)->toHaveKey('description', 'User schema');
@@ -327,7 +329,6 @@ it('correctly collects used features from all sources', function (): void {
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($objectSchema);
 
@@ -353,7 +354,6 @@ it('collects unevaluated properties features when set', function (): void {
     // Use reflection to access protected methods
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUnevaluatedPropertiesFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $featuresWithUnevaluated = $reflectionMethod->invoke($objectSchema);
     $featuresWithoutUnevaluated = $reflectionMethod->invoke($objectWithoutUnevaluated);
@@ -378,7 +378,6 @@ it('collects dependent schemas features when set', function (): void {
     // Use reflection to access protected methods
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getDependentSchemasFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $featuresWithDependent = $reflectionMethod->invoke($objectSchema);
     $featuresWithoutDependent = $reflectionMethod->invoke($objectWithoutDependent);
@@ -402,7 +401,6 @@ it('properly deduplicates features in getUsedFeatures', function (): void {
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($objectSchema);
 
@@ -425,7 +423,6 @@ it('returns correct array structure from getUsedFeatures', function (): void {
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($objectSchema);
 
@@ -456,7 +453,6 @@ it('includes parent class features in getUsedFeatures', function (): void {
     // Use reflection to access the protected method
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($objectSchema);
     $featureValues = array_map(fn($feature) => $feature->value, $features);
@@ -479,4 +475,75 @@ it('includes parent class features in getUsedFeatures', function (): void {
     expect($simpleFeatureValues)->not->toContain('else');
 
     // This proves that parent::getUsedFeatures() is necessary to collect these parent features
+});
+
+it('returns correct properties with getProperties method', function (): void {
+    $objectSchema = Schema::object('user')
+        ->properties(
+            Schema::string('name')->required(),
+            Schema::integer('age'),
+            Schema::string('email')->required(),
+        );
+
+    $properties = $objectSchema->getProperties();
+
+    expect($properties)->toBeArray()
+        ->and($properties)->toHaveCount(3)
+        ->and($properties)->toHaveKey('name')
+        ->and($properties)->toHaveKey('age')
+        ->and($properties)->toHaveKey('email');
+
+    // Verify the returned schemas are correct types
+    expect($properties['name'])->toBeInstanceOf(StringSchema::class)
+        ->and($properties['age'])->toBeInstanceOf(IntegerSchema::class)
+        ->and($properties['email'])->toBeInstanceOf(StringSchema::class);
+});
+
+it('returns correct required properties with getRequiredProperties method', function (): void {
+    $objectSchema = Schema::object('user')
+        ->properties(
+            Schema::string('name')->required(),
+            Schema::integer('age'),
+            Schema::string('email')->required(),
+        );
+
+    $requiredProperties = $objectSchema->getRequiredProperties();
+
+    expect($requiredProperties)->toBeArray()
+        ->and($requiredProperties)->toHaveCount(2)
+        ->and($requiredProperties)->toContain('name')
+        ->and($requiredProperties)->toContain('email')
+        ->and($requiredProperties)->not->toContain('age');
+});
+
+it('correctly identifies when schema has properties with hasProperties method', function (): void {
+    $objectSchema = Schema::object('user')
+        ->properties(
+            Schema::string('name'),
+        );
+
+    $objectWithoutProperties = Schema::object('empty');
+
+    expect($objectSchema->hasProperties())->toBeTrue()
+        ->and($objectWithoutProperties->hasProperties())->toBeFalse();
+});
+
+it('correctly identifies when schema has required properties with hasRequiredProperties method', function (): void {
+    $objectSchema = Schema::object('user')
+        ->properties(
+            Schema::string('name')->required(),
+            Schema::integer('age'),
+        );
+
+    $objectWithoutRequired = Schema::object('user')
+        ->properties(
+            Schema::string('name'),
+            Schema::integer('age'),
+        );
+
+    $emptyObject = Schema::object('empty');
+
+    expect($objectSchema->hasRequiredProperties())->toBeTrue()
+        ->and($objectWithoutRequired->hasRequiredProperties())->toBeFalse()
+        ->and($emptyObject->hasRequiredProperties())->toBeFalse();
 });

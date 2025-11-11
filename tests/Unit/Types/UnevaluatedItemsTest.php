@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 it('can set unevaluatedItems to false', function (): void {
-    $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2019_09)
-        ->items(SchemaFactory::string())
+    $arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
+        ->items(Schema::string())
         ->unevaluatedItems(false);
 
     $schemaArray = $arraySchema->toArray();
@@ -25,8 +25,8 @@ it('can set unevaluatedItems to false', function (): void {
 });
 
 it('can set unevaluatedItems to true', function (): void {
-    $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2019_09)
-        ->items(SchemaFactory::string())
+    $arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
+        ->items(Schema::string())
         ->unevaluatedItems(true);
 
     $schemaArray = $arraySchema->toArray();
@@ -41,10 +41,10 @@ it('can set unevaluatedItems to true', function (): void {
 });
 
 it('can set unevaluatedItems to a schema', function (): void {
-    $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2019_09)
-        ->items(SchemaFactory::string())
+    $arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
+        ->items(Schema::string())
         ->unevaluatedItems(
-            SchemaFactory::integer()->minimum(0),
+            Schema::integer()->minimum(0),
         );
 
     $schemaArray = $arraySchema->toArray();
@@ -64,7 +64,7 @@ it('can set unevaluatedItems to a schema', function (): void {
 
 it('throws exception when using unevaluatedItems with Draft 07', function (): void {
     expect(
-        fn(): ArraySchema => SchemaFactory::array('items', SchemaVersion::Draft_07)
+        fn(): ArraySchema => Schema::array('items', SchemaVersion::Draft_07)
             ->unevaluatedItems(false),
     )->toThrow(
         SchemaException::class,
@@ -73,8 +73,8 @@ it('throws exception when using unevaluatedItems with Draft 07', function (): vo
 });
 
 it('works with Draft 2019-09', function (): void {
-    $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2019_09)
-        ->items(SchemaFactory::string())
+    $arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
+        ->items(Schema::string())
         ->unevaluatedItems(false);
 
     expect($arraySchema->toArray())->toHaveKey('unevaluatedItems', false);
@@ -82,8 +82,8 @@ it('works with Draft 2019-09', function (): void {
 });
 
 it('works with Draft 2020-12', function (): void {
-    $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2020_12)
-        ->items(SchemaFactory::string())
+    $arraySchema = Schema::array('items', SchemaVersion::Draft_2020_12)
+        ->items(Schema::string())
         ->unevaluatedItems(false);
 
     expect($arraySchema->toArray())->toHaveKey('unevaluatedItems', false);
@@ -91,14 +91,13 @@ it('works with Draft 2020-12', function (): void {
 });
 
 it('detects unevaluatedItems feature correctly', function (): void {
-    $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2019_09)
-        ->items(SchemaFactory::string())
+    $arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
+        ->items(Schema::string())
         ->unevaluatedItems(false);
 
     // Access the protected method via reflection to test feature detection
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($arraySchema);
 
@@ -107,13 +106,12 @@ it('detects unevaluatedItems feature correctly', function (): void {
 });
 
 it('does not include unevaluatedItems feature when not used', function (): void {
-    $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2019_09)
-        ->items(SchemaFactory::string());
+    $arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
+        ->items(Schema::string());
 
     // Access the protected method via reflection to test feature detection
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
-    $reflectionMethod->setAccessible(true);
 
     $features = $reflectionMethod->invoke($arraySchema);
 
@@ -122,9 +120,9 @@ it('does not include unevaluatedItems feature when not used', function (): void 
 });
 
 it('can combine with other array properties', function (): void {
-    $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2019_09)
-        ->items(SchemaFactory::string())
-        ->contains(SchemaFactory::string()->minLength(3))
+    $arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
+        ->items(Schema::string())
+        ->contains(Schema::string()->minLength(3))
         ->minContains(1)
         ->maxContains(5)
         ->unevaluatedItems(false)
@@ -144,8 +142,8 @@ it('can combine with other array properties', function (): void {
 
 it('validates version during schema output', function (): void {
     // Create schema with Draft 2019-09
-    $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2019_09)
-        ->items(SchemaFactory::string())
+    $arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
+        ->items(Schema::string())
         ->unevaluatedItems(false);
 
     // Change version to Draft 07 after setting unevaluatedItems
@@ -161,11 +159,11 @@ it('validates version during schema output', function (): void {
 
 it('generates correct schema structure for complex scenarios', function (): void {
     // Schema with items, contains, and unevaluatedItems
-    $arraySchema = SchemaFactory::array('complex', SchemaVersion::Draft_2019_09)
-        ->items(SchemaFactory::string())
-        ->contains(SchemaFactory::string()->minLength(3))
+    $arraySchema = Schema::array('complex', SchemaVersion::Draft_2019_09)
+        ->items(Schema::string())
+        ->contains(Schema::string()->minLength(3))
         ->minContains(1)
-        ->unevaluatedItems(SchemaFactory::integer()->minimum(0));
+        ->unevaluatedItems(Schema::integer()->minimum(0));
 
     $schemaArray = $arraySchema->toArray();
 

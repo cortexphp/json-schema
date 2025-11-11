@@ -1,0 +1,349 @@
+---
+title: Number Schema
+description: 'Number validation with ranges, multiples, and precision constraints'
+icon: 'hash'
+---
+
+Number schemas handle validation for floating-point numbers with support for range constraints, multiple validation, and precision control.
+
+## Basic Number Schema
+
+```php
+use Cortex\JsonSchema\Schema;
+
+$priceSchema = Schema::number('price')
+    ->description('Product price in USD')
+    ->required();
+
+$priceSchema->isValid(99.99);  // true
+$priceSchema->isValid(0);      // true
+$priceSchema->isValid(-10.5);  // true
+$priceSchema->isValid('99.99'); // false (string, not number)
+```
+
+## Range Constraints
+
+Set minimum and maximum values for numbers:
+
+```php
+// Product price between 0 and 1000
+$priceSchema = Schema::number('price')
+    ->minimum(0)
+    ->maximum(1000)
+    ->description('Price must be between $0 and $1000');
+
+$priceSchema->isValid(50.99);   // true
+$priceSchema->isValid(1000);    // true (inclusive)
+$priceSchema->isValid(-1);      // false (below minimum)
+$priceSchema->isValid(1000.01); // false (above maximum)
+
+// Temperature with wider range
+$temperatureSchema = Schema::number('temperature')
+    ->minimum(-273.15)  // Absolute zero
+    ->maximum(1000)
+    ->description('Temperature in Celsius');
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "number",
+    "title": "price",
+    "description": "Price must be between $0 and $1000",
+    "minimum": 0,
+    "maximum": 1000
+}
+```
+</Accordion>
+
+## Exclusive Boundaries
+
+Use exclusive minimum and maximum for strict range validation:
+
+```php
+// Percentage between 0 and 100 (exclusive)
+$percentageSchema = Schema::number('percentage')
+    ->exclusiveMinimum(0)    // Greater than 0
+    ->exclusiveMaximum(100)  // Less than 100
+    ->description('Percentage value (0-100 exclusive)');
+
+$percentageSchema->isValid(50);    // true
+$percentageSchema->isValid(0.001); // true
+$percentageSchema->isValid(99.999); // true
+$percentageSchema->isValid(0);     // false (not exclusive)
+$percentageSchema->isValid(100);   // false (not exclusive)
+
+// Positive numbers only
+$positiveSchema = Schema::number('value')
+    ->exclusiveMinimum(0)
+    ->description('Must be a positive number');
+```
+
+## Multiple Validation
+
+Ensure numbers are multiples of a specific value:
+
+```php
+// Price in cents (multiples of 0.01)
+$priceSchema = Schema::number('price')
+    ->minimum(0)
+    ->multipleOf(0.01)
+    ->description('Price with cent precision');
+
+$priceSchema->isValid(9.99);   // true
+$priceSchema->isValid(10.00);  // true
+$priceSchema->isValid(9.999);  // false (not multiple of 0.01)
+
+// Ratings in half-star increments
+$ratingSchema = Schema::number('rating')
+    ->minimum(0)
+    ->maximum(5)
+    ->multipleOf(0.5)
+    ->description('Rating from 0 to 5 in half-star increments');
+
+$ratingSchema->isValid(4.5);   // true
+$ratingSchema->isValid(3.0);   // true
+$ratingSchema->isValid(4.25);  // false (not multiple of 0.5)
+```
+
+## Combining Constraints
+
+Combine multiple validation rules for comprehensive number validation:
+
+```php
+// Discount percentage
+$discountSchema = Schema::number('discount')
+    ->minimum(0)
+    ->maximum(100)
+    ->multipleOf(0.01)  // Penny precision
+    ->description('Discount percentage (0-100%)');
+
+$discountSchema->isValid(15.25);  // true
+$discountSchema->isValid(100);    // true
+$discountSchema->isValid(-5);     // false (below minimum)
+$discountSchema->isValid(15.255); // false (not penny precision)
+
+// Weight with constraints
+$weightSchema = Schema::number('weight')
+    ->exclusiveMinimum(0)    // Must be positive
+    ->maximum(1000)          // Max 1000 kg
+    ->multipleOf(0.1)        // 100g precision
+    ->description('Weight in kilograms');
+```
+
+## Default Values
+
+Set default values for optional number fields:
+
+```php
+$configSchema = Schema::object('config')
+    ->properties(
+        Schema::number('timeout')
+            ->minimum(0.1)
+            ->maximum(30)
+            ->default(5.0)
+            ->description('Request timeout in seconds'),
+
+        Schema::number('retry_delay')
+            ->minimum(0)
+            ->default(1.0)
+            ->description('Delay between retries in seconds')
+    );
+```
+
+## Read-Only Numbers
+
+Create read-only number fields for calculated or system-generated values:
+
+```php
+$orderSchema = Schema::object('order')
+    ->properties(
+        Schema::number('subtotal')
+            ->minimum(0)
+            ->multipleOf(0.01)
+            ->required(),
+
+        Schema::number('tax_rate')
+            ->minimum(0)
+            ->maximum(1)
+            ->multipleOf(0.0001)
+            ->required(),
+
+        // Calculated field
+        Schema::number('total')
+            ->minimum(0)
+            ->multipleOf(0.01)
+            ->readOnly()
+            ->description('Calculated total including tax')
+    );
+```
+
+## Complex Validation Example
+
+Here's a comprehensive example for an e-commerce product:
+
+```php
+$productSchema = Schema::object('product')
+    ->properties(
+        // Base price
+        Schema::number('price')
+            ->minimum(0.01)
+            ->maximum(999999.99)
+            ->multipleOf(0.01)
+            ->required()
+            ->description('Product price in USD'),
+
+        // Weight for shipping
+        Schema::number('weight')
+            ->exclusiveMinimum(0)
+            ->maximum(1000)
+            ->multipleOf(0.001)  // Gram precision
+            ->description('Product weight in kilograms'),
+
+        // Dimensions
+        Schema::number('length')
+            ->exclusiveMinimum(0)
+            ->maximum(500)
+            ->multipleOf(0.1)
+            ->description('Length in centimeters'),
+
+        Schema::number('width')
+            ->exclusiveMinimum(0)
+            ->maximum(500)
+            ->multipleOf(0.1),
+
+        Schema::number('height')
+            ->exclusiveMinimum(0)
+            ->maximum(500)
+            ->multipleOf(0.1),
+
+        // Rating
+        Schema::number('average_rating')
+            ->minimum(0)
+            ->maximum(5)
+            ->multipleOf(0.01)
+            ->readOnly()
+            ->description('Average customer rating'),
+
+        // Discount
+        Schema::number('discount_percentage')
+            ->minimum(0)
+            ->exclusiveMaximum(100)
+            ->multipleOf(0.01)
+            ->default(0)
+            ->description('Discount percentage (0-100 exclusive)')
+    );
+```
+
+## Special Number Values
+
+Handle special floating-point values:
+
+```php
+// Allow infinite values (not recommended for most use cases)
+$scientificSchema = Schema::number('measurement')
+    ->description('Scientific measurement (may include infinity)');
+
+// Most practical schemas should have bounds
+$practicalSchema = Schema::number('practical_value')
+    ->minimum(-1e6)
+    ->maximum(1e6)
+    ->description('Practical number with reasonable bounds');
+```
+
+## Validation Examples
+
+```php
+$schema = Schema::number('price')
+    ->minimum(0)
+    ->maximum(1000)
+    ->multipleOf(0.01);
+
+// Valid values
+$schema->isValid(0);        // true
+$schema->isValid(15.99);    // true
+$schema->isValid(1000);     // true
+$schema->isValid(0.01);     // true
+
+// Invalid values
+$schema->isValid(-1);       // false (below minimum)
+$schema->isValid(1000.01);  // false (above maximum)
+$schema->isValid(15.999);   // false (not multiple of 0.01)
+$schema->isValid('15.99');  // false (string, not number)
+$schema->isValid(null);     // false (not a number)
+```
+
+## Error Messages
+
+When validation fails, you get descriptive error messages:
+
+```php
+try {
+    $schema->validate(1000.01);
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must be less than or equal to 1000"
+}
+
+try {
+    $schema->validate(15.999);
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must be a multiple of 0.01"
+}
+```
+
+## Number vs Integer
+
+<Info>
+Numbers can be integers or floating-point values. If you specifically need integer validation, use [Integer Schema](/schema-types/integer) instead.
+</Info>
+
+```php
+// This accepts both integers and floats
+$numberSchema = Schema::number('value');
+$numberSchema->isValid(42);    // true (integer)
+$numberSchema->isValid(42.0);  // true (float)
+$numberSchema->isValid(42.5);  // true (float)
+
+// This only accepts integers
+$integerSchema = Schema::integer('count');
+$integerSchema->isValid(42);    // true
+$integerSchema->isValid(42.0);  // true (whole number)
+$integerSchema->isValid(42.5);  // false (not whole number)
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Financial Data" icon="dollar-sign">
+    Validate prices, amounts, percentages with appropriate precision and range constraints.
+  </Card>
+  <Card title="Measurements" icon="ruler">
+    Validate physical measurements like weight, dimensions, temperature with realistic bounds.
+  </Card>
+  <Card title="Ratings & Scores" icon="star">
+    Validate user ratings, test scores, and other numeric feedback with defined scales.
+  </Card>
+  <Card title="Configuration Values" icon="sliders">
+    Validate numeric configuration parameters with appropriate ranges and precision.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Integer Schema"
+    icon="hashtag"
+    href="/schema-types/integer"
+  >
+    Learn about integer-specific validation and constraints
+  </Card>
+  <Card
+    title="Array Schema"
+    icon="list"
+    href="/schema-types/array"
+  >
+    Validate arrays of numbers and other complex data structures
+  </Card>
+</CardGroup>

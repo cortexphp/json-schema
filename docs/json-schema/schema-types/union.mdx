@@ -1,0 +1,434 @@
+---
+title: Union Schema
+description: 'Multi-type validation with union schemas and nullable types'
+icon: 'handshake'
+---
+
+Union schemas allow validation against multiple types, enabling flexible data structures that can accept different value types while maintaining type safety.
+
+## Basic Union Schema
+
+```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaType;
+
+$idSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'id')
+    ->description('ID can be either a string or integer');
+
+$idSchema->isValid('abc123');  // true (string)
+$idSchema->isValid(12345);     // true (integer)
+$idSchema->isValid(true);      // false (boolean not allowed)
+$idSchema->isValid(null);      // false (null not allowed)
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": ["string", "integer"],
+    "title": "id",
+    "description": "ID can be either a string or integer"
+}
+```
+</Accordion>
+
+## Nullable Types
+
+The most common use of union schemas is creating nullable types:
+
+```php
+// Nullable string
+$nullableStringSchema = Schema::string('optional_name')
+    ->nullable()
+    ->description('Name or null if not provided');
+
+// Equivalent to:
+$explicitNullableSchema = Schema::union([SchemaType::String, SchemaType::Null], 'optional_name');
+
+$nullableStringSchema->isValid('John Doe');  // true
+$nullableStringSchema->isValid(null);        // true
+$nullableStringSchema->isValid(123);         // false (not string or null)
+
+// Nullable with constraints
+$nullableEmailSchema = Schema::string('email')
+    ->format(SchemaFormat::Email)
+    ->nullable()
+    ->description('Email address or null');
+```
+
+## Union with Constraints
+
+Apply constraints to union schemas:
+
+```php
+$flexibleIdSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'flexible_id')
+    ->enum(['auto', 'manual', 1, 2, 3, 42])
+    ->description('Predefined string values or specific integers');
+
+$flexibleIdSchema->isValid('auto');   // true
+$flexibleIdSchema->isValid(42);       // true
+$flexibleIdSchema->isValid('custom'); // false (not in enum)
+$flexibleIdSchema->isValid(99);       // false (not in enum)
+
+// Union with pattern (applies to string types)
+$codeSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'code')
+    ->pattern('^[A-Z]{3}-\d{3}$')  // Only applies to string values
+    ->minimum(100)                  // Only applies to integer values
+    ->maximum(999);                 // Only applies to integer values
+
+$codeSchema->isValid('ABC-123');  // true (string matches pattern)
+$codeSchema->isValid(500);        // true (integer in range)
+$codeSchema->isValid('invalid');  // false (string doesn't match pattern)
+$codeSchema->isValid(50);         // false (integer below minimum)
+```
+
+## Multi-Type Unions
+
+Create unions with multiple different types:
+
+```php
+// String, number, or boolean
+$mixedValueSchema = Schema::union([
+    SchemaType::String,
+    SchemaType::Number,
+    SchemaType::Boolean
+], 'mixed_value')
+    ->description('Flexible value type');
+
+$mixedValueSchema->isValid('text');    // true
+$mixedValueSchema->isValid(42.5);      // true
+$mixedValueSchema->isValid(true);      // true
+$mixedValueSchema->isValid([]);        // false (array not allowed)
+
+// Complex union with objects and arrays
+$responseDataSchema = Schema::union([
+    SchemaType::Object,
+    SchemaType::Array,
+    SchemaType::String,
+    SchemaType::Null
+], 'response_data')
+    ->description('API response data in various formats');
+```
+
+## Union with Specific Schemas
+
+Use `oneOf` to define specific schemas for each type:
+
+```php
+$paymentMethodSchema = Schema::union([SchemaType::Object], 'payment_method')
+    ->oneOf(
+        // Credit card payment
+        Schema::object()
+            ->properties(
+                Schema::string('type')->const('credit_card'),
+                Schema::string('card_number')
+                    ->pattern('^\d{16}$')
+                    ->required(),
+                Schema::string('expiry')
+                    ->pattern('^\d{2}/\d{2}$')
+                    ->required(),
+                Schema::string('cvv')
+                    ->pattern('^\d{3,4}$')
+                    ->required()
+            )
+            ->additionalProperties(false),
+
+        // PayPal payment
+        Schema::object()
+            ->properties(
+                Schema::string('type')->const('paypal'),
+                Schema::string('email')
+                    ->format(SchemaFormat::Email)
+                    ->required()
+            )
+            ->additionalProperties(false),
+
+        // Bank transfer
+        Schema::object()
+            ->properties(
+                Schema::string('type')->const('bank_transfer'),
+                Schema::string('account_number')
+                    ->pattern('^\d{8,20}$')
+                    ->required(),
+                Schema::string('routing_number')
+                    ->pattern('^\d{9}$')
+                    ->required()
+            )
+            ->additionalProperties(false)
+    )
+    ->description('Payment method details');
+```
+
+## Discriminated Unions
+
+Create unions that use a discriminator field:
+
+```php
+$eventSchema = Schema::union([SchemaType::Object], 'event')
+    ->oneOf(
+        // User event
+        Schema::object()
+            ->properties(
+                Schema::string('type')->const('user'),
+                Schema::string('action')->enum(['login', 'logout', 'register']),
+                Schema::string('user_id')->required(),
+                Schema::string('timestamp')->required()
+            )
+            ->additionalProperties(false),
+
+        // System event
+        Schema::object()
+            ->properties(
+                Schema::string('type')->const('system'),
+                Schema::string('level')->enum(['info', 'warning', 'error']),
+                Schema::string('message')->required(),
+                Schema::string('timestamp')->required()
+            )
+            ->additionalProperties(false),
+
+        // Custom event
+        Schema::object()
+            ->properties(
+                Schema::string('type')->const('custom'),
+                Schema::string('name')->required(),
+                Schema::object('data')->additionalProperties(true),
+                Schema::string('timestamp')->required()
+            )
+            ->additionalProperties(false)
+    )
+    ->description('Different types of application events');
+```
+
+## Complex Union Examples
+
+### Configuration Value
+
+```php
+$configValueSchema = Schema::union([
+    SchemaType::String,
+    SchemaType::Number,
+    SchemaType::Boolean,
+    SchemaType::Array,
+    SchemaType::Null
+], 'config_value')
+    ->description('Configuration value of various types')
+    ->examples(['debug', 3000, true, ['option1', 'option2'], null]);
+
+// Usage in configuration object
+$configSchema = Schema::object('configuration')
+    ->additionalProperties($configValueSchema)
+    ->properties(
+        Schema::string('app_name')->required(),
+        Schema::string('version')->required()
+    );
+
+$configSchema->isValid([
+    'app_name' => 'MyApp',
+    'version' => '1.0.0',
+    'debug' => true,
+    'port' => 3000,
+    'features' => ['auth', 'logging'],
+    'maintenance_mode' => null
+]); // true
+```
+
+### Database Field Value
+
+```php
+$dbFieldSchema = Schema::union([
+    SchemaType::String,
+    SchemaType::Integer,
+    SchemaType::Number,
+    SchemaType::Boolean,
+    SchemaType::Null
+], 'db_field')
+    ->description('Database field value (supports common SQL types)');
+
+$recordSchema = Schema::object('database_record')
+    ->properties(
+        Schema::integer('id')->required(),
+        Schema::additionalProperties($dbFieldSchema)
+    )
+    ->description('Flexible database record with typed fields');
+```
+
+### API Response Data
+
+```php
+$apiDataSchema = Schema::union([SchemaType::Object, SchemaType::Array, SchemaType::Null], 'data')
+    ->oneOf(
+        // Single object response
+        Schema::object()
+            ->additionalProperties(true)
+            ->description('Single resource'),
+
+        // Array of objects response
+        Schema::array()
+            ->items(Schema::object()->additionalProperties(true))
+            ->description('Collection of resources'),
+
+        // Null for empty responses
+        Schema::null()
+            ->description('No data')
+    )
+    ->description('API response data in various formats');
+
+$apiResponseSchema = Schema::object('api_response')
+    ->properties(
+        Schema::boolean('success')->required(),
+        Schema::string('message'),
+        $apiDataSchema,
+        Schema::object('meta')
+            ->additionalProperties(true)
+    );
+```
+
+## Union with anyOf vs oneOf
+
+Choose between `anyOf` and `oneOf` based on your validation needs:
+
+```php
+// anyOf: Value must match at least one schema
+$anyOfSchema = Schema::union([SchemaType::Object], 'flexible')
+    ->anyOf(
+        Schema::object()->properties(
+            Schema::string('name')->required()
+        ),
+        Schema::object()->properties(
+            Schema::string('id')->required()
+        )
+    )
+    ->description('Must have either name or id (or both)');
+
+$anyOfSchema->isValid(['name' => 'John']);           // true
+$anyOfSchema->isValid(['id' => '123']);              // true
+$anyOfSchema->isValid(['name' => 'John', 'id' => '123']); // true (matches both)
+
+// oneOf: Value must match exactly one schema
+$oneOfSchema = Schema::union([SchemaType::Object], 'exclusive')
+    ->oneOf(
+        Schema::object()->properties(
+            Schema::string('name')->required()
+        ),
+        Schema::object()->properties(
+            Schema::string('id')->required()
+        )
+    )
+    ->description('Must have either name or id (but not both)');
+
+$oneOfSchema->isValid(['name' => 'John']);           // true
+$oneOfSchema->isValid(['id' => '123']);              // true
+$oneOfSchema->isValid(['name' => 'John', 'id' => '123']); // false (matches both schemas)
+```
+
+## Validation Examples
+
+```php
+$unionSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'flexible_id')
+    ->enum(['auto', 'manual', 1, 2, 3]);
+
+// Valid values
+$unionSchema->isValid('auto');    // true (string in enum)
+$unionSchema->isValid(2);         // true (integer in enum)
+
+// Invalid values
+$unionSchema->isValid('custom');  // false (string not in enum)
+$unionSchema->isValid(99);        // false (integer not in enum)
+$unionSchema->isValid(true);      // false (boolean not in union)
+$unionSchema->isValid(null);      // false (null not in union)
+$unionSchema->isValid([]);        // false (array not in union)
+```
+
+## Error Messages
+
+Union schema validation provides helpful error messages:
+
+```php
+try {
+    $unionSchema->validate(true);
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must be one of: string, integer"
+}
+
+try {
+    $oneOfSchema->validate(['name' => 'John', 'id' => '123']);
+} catch (SchemaException $e) {
+    echo $e->getMessage(); // "Value must match exactly one schema"
+}
+```
+
+## Best Practices
+
+### 1. Use Specific Types When Possible
+
+```php
+// Good: Specific type when you know what you need
+$ageSchema = Schema::integer('age')->minimum(0);
+
+// Less ideal: Union when not necessary
+$unnecessaryUnion = Schema::union([SchemaType::Integer], 'age');
+```
+
+### 2. Document Union Semantics
+
+```php
+$statusSchema = Schema::union([SchemaType::String, SchemaType::Integer], 'status')
+    ->description('Status: string code ("active", "pending") or numeric code (1, 2, 3)')
+    ->examples(['active', 'pending', 1, 2, 3]);
+```
+
+### 3. Use Discriminated Unions for Complex Objects
+
+```php
+// Good: Clear discriminator field
+$shapeSchema = Schema::union([SchemaType::Object], 'shape')
+    ->oneOf(
+        Schema::object()
+            ->properties(
+                Schema::string('type')->const('circle'),
+                Schema::number('radius')->required()
+            ),
+        Schema::object()
+            ->properties(
+                Schema::string('type')->const('rectangle'),
+                Schema::number('width')->required(),
+                Schema::number('height')->required()
+            )
+    );
+```
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Flexible IDs" icon="fingerprint">
+    Support both string and numeric identifiers in APIs and databases.
+  </Card>
+  <Card title="Configuration Values" icon="sliders">
+    Handle configuration values that can be different types (string, number, boolean).
+  </Card>
+  <Card title="API Responses" icon="server">
+    Represent API data that can be objects, arrays, or null depending on the response.
+  </Card>
+  <Card title="Polymorphic Data" icon="shapes">
+    Model data structures with multiple possible shapes or types.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Conditional Validation"
+    icon="code-branch"
+    href="/advanced/conditional-validation"
+  >
+    Learn advanced conditional logic with anyOf, oneOf, and allOf
+  </Card>
+  <Card
+    title="Data Validation"
+    icon="check-circle"
+    href="/validation/data-validation"
+  >
+    Master validation techniques for complex union types
+  </Card>
+</CardGroup>

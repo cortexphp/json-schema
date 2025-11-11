@@ -78,6 +78,14 @@ class DocParser
     }
 
     /**
+     * Determine if the docblock is marked as deprecated.
+     */
+    public function isDeprecated(): bool
+    {
+        return $this->parse()->getTagsByName('@deprecated') !== [];
+    }
+
+    /**
      * Map the value node to its types.
      *
      * @return array<array-key, string>
@@ -91,7 +99,7 @@ class DocParser
 
         return match (true) {
             $param->type instanceof UnionTypeNode => array_map(
-                fn(TypeNode $typeNode): string => (string) $typeNode,
+                static fn(TypeNode $typeNode): string => (string) $typeNode,
                 $param->type->types,
             ),
             $param->type instanceof NullableTypeNode => [

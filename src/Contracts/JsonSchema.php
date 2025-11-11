@@ -6,7 +6,7 @@ namespace Cortex\JsonSchema\Contracts;
 
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
-interface Schema
+interface JsonSchema
 {
     /**
      * Set the title
@@ -42,6 +42,11 @@ interface Schema
      * Set the default value
      */
     public function default(mixed $value): static;
+
+    /**
+     * Mark the schema as deprecated.
+     */
+    public function deprecated(bool $deprecated = true): static;
 
     /**
      * Set the allowed enum values.

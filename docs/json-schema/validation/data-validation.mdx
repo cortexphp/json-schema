@@ -1,0 +1,595 @@
+---
+title: Data Validation
+description: 'Master data validation techniques with validate() and isValid() methods'
+icon: 'check'
+---
+
+Data validation is the core functionality of JSON Schema. Learn how to validate data against your schemas, handle validation results, and work with validation errors effectively.
+
+## Basic Validation Methods
+
+Every schema provides two primary validation methods:
+
+```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Exceptions\SchemaException;
+
+$schema = Schema::string('name')
+    ->minLength(2)
+    ->maxLength(50)
+    ->required();
+
+// Method 1: isValid() - returns boolean
+$isValid = $schema->isValid('John Doe');  // true
+$isValid = $schema->isValid('J');         // false
+
+// Method 2: validate() - throws exception on failure
+try {
+    $schema->validate('John Doe');
+    echo "Valid!";
+} catch (SchemaException $e) {
+    echo "Invalid: " . $e->getMessage();
+}
+```
+
+## Using isValid() for Boolean Checks
+
+The `isValid()` method is perfect for simple true/false validation:
+
+```php
+$emailSchema = Schema::string('email')
+    ->format(SchemaFormat::Email)
+    ->required();
+
+$emails = [
+    'valid@example.com',
+    'invalid-email',
+    'another@test.org'
+];
+
+$validEmails = [];
+foreach ($emails as $email) {
+    if ($emailSchema->isValid($email)) {
+        $validEmails[] = $email;
+    }
+}
+
+// $validEmails contains: ['valid@example.com', 'another@test.org']
+```
+
+### Conditional Logic with isValid()
+
+```php
+$userSchema = Schema::object('user')
+    ->properties(
+        Schema::string('name')->required(),
+        Schema::integer('age')->minimum(18)->required(),
+        Schema::string('email')->format(SchemaFormat::Email)->required()
+    );
+
+$userData = [
+    'name' => 'John Doe',
+    'age' => 25,
+    'email' => 'john@example.com'
+];
+
+if ($userSchema->isValid($userData)) {
+    // Process valid user data
+    echo "Processing user: " . $userData['name'];
+} else {
+    // Handle invalid data
+    echo "User data is invalid";
+}
+```
+
+## Using validate() for Detailed Error Information
+
+The `validate()` method throws descriptive exceptions when validation fails:
+
+```php
+$productSchema = Schema::object('product')
+    ->properties(
+        Schema::string('name')
+            ->minLength(1)
+            ->maxLength(100)
+            ->required(),
+        Schema::number('price')
+            ->minimum(0)
+            ->multipleOf(0.01)
+            ->required(),
+        Schema::array('tags')
+            ->items(Schema::string())
+            ->maxItems(10)
+    )
+    ->additionalProperties(false);
+
+$productData = [
+    'name' => '',  // Too short
+    'price' => -10,  // Below minimum
+    'tags' => ['electronics', 'mobile', /* 9 more tags */],  // Too many items
+    'invalid_field' => 'not allowed'  // Additional property
+];
+
+try {
+    $productSchema->validate($productData);
+} catch (SchemaException $e) {
+    echo "Validation error: " . $e->getMessage();
+    // "String must have minimum length of 1"
+
+    // Additional error information
+    echo "Error code: " . $e->getCode();
+    echo "Failed field: " . $e->getProperty();  // If available
+}
+```
+
+## Validating Complex Data Structures
+
+### Object Validation
+
+```php
+$orderSchema = Schema::object('order')
+    ->properties(
+        Schema::string('id')->required(),
+        Schema::object('customer')
+            ->properties(
+                Schema::string('name')->required(),
+                Schema::string('email')->format(SchemaFormat::Email)->required()
+            )
+            ->required(),
+        Schema::array('items')
+            ->items(
+                Schema::object()
+                    ->properties(
+                        Schema::string('sku')->required(),
+                        Schema::integer('quantity')->minimum(1)->required(),
+                        Schema::number('price')->minimum(0)->required()
+                    )
+            )
+            ->minItems(1)
+            ->required()
+    );
+
+$orderData = [
+    'id' => 'ORD-123',
+    'customer' => [
+        'name' => 'John Doe',
+        'email' => 'john@example.com'
+    ],
+    'items' => [
+        [
+            'sku' => 'PROD-001',
+            'quantity' => 2,
+            'price' => 29.99
+        ],
+        [
+            'sku' => 'PROD-002',
+            'quantity' => 1,
+            'price' => 15.50
+        ]
+    ]
+];
+
+if ($orderSchema->isValid($orderData)) {
+    echo "Order is valid";
+} else {
+    try {
+        $orderSchema->validate($orderData);
+    } catch (SchemaException $e) {
+        echo "Order validation failed: " . $e->getMessage();
+    }
+}
+```
+
+### Array Validation
+
+```php
+$scoresSchema = Schema::array('test_scores')
+    ->items(
+        Schema::object()
+            ->properties(
+                Schema::string('student_id')->required(),
+                Schema::integer('score')
+                    ->minimum(0)
+                    ->maximum(100)
+                    ->required(),
+                Schema::string('subject')
+                    ->enum(['math', 'science', 'english', 'history'])
+                    ->required()
+            )
+    )
+    ->minItems(1)
+    ->uniqueItems(true);
+
+$scoresData = [
+    [
+        'student_id' => 'STU-001',
+        'score' => 95,
+        'subject' => 'math'
+    ],
+    [
+        'student_id' => 'STU-002',
+        'score' => 87,
+        'subject' => 'science'
+    ]
+];
+
+try {
+    $scoresSchema->validate($scoresData);
+    echo "All scores are valid";
+} catch (SchemaException $e) {
+    echo "Score validation error: " . $e->getMessage();
+}
+```
+
+## Validation in Different Contexts
+
+### Form Data Validation
+
+```php
+function validateRegistrationForm(array $formData): array {
+    $registrationSchema = Schema::object('registration')
+        ->properties(
+            Schema::string('username')
+                ->pattern('^[a-zA-Z0-9_]{3,20}$')
+                ->required(),
+            Schema::string('email')
+                ->format(SchemaFormat::Email)
+                ->required(),
+            Schema::string('password')
+                ->minLength(8)
+                ->pattern('(?=.*[a-z])(?=.*[A-Z])(?=.*\d)')
+                ->required(),
+            Schema::string('confirm_password')
+                ->required(),
+            Schema::boolean('accept_terms')
+                ->const(true)
+                ->required()
+        );
+
+    $errors = [];
+
+    if (!$registrationSchema->isValid($formData)) {
+        try {
+            $registrationSchema->validate($formData);
+        } catch (SchemaException $e) {
+            $errors[] = $e->getMessage();
+        }
+    }
+
+    // Additional business logic validation
+    if (isset($formData['password']) && isset($formData['confirm_password'])) {
+        if ($formData['password'] !== $formData['confirm_password']) {
+            $errors[] = 'Passwords do not match';
+        }
+    }
+
+    return $errors;
+}
+
+// Usage
+$formData = [
+    'username' => 'john_doe',
+    'email' => 'john@example.com',
+    'password' => 'SecurePass123',
+    'confirm_password' => 'SecurePass123',
+    'accept_terms' => true
+];
+
+$errors = validateRegistrationForm($formData);
+if (empty($errors)) {
+    echo "Registration data is valid";
+} else {
+    echo "Validation errors: " . implode(', ', $errors);
+}
+```
+
+### API Request Validation
+
+```php
+function validateApiRequest(string $endpoint, array $requestData): bool {
+    $schemas = [
+        'POST:/users' => Schema::object('create_user')
+            ->properties(
+                Schema::string('name')->required(),
+                Schema::string('email')->format(SchemaFormat::Email)->required(),
+                Schema::string('role')->enum(['user', 'admin'])->default('user')
+            ),
+
+        'PUT:/users/{id}' => Schema::object('update_user')
+            ->properties(
+                Schema::string('name'),
+                Schema::string('email')->format(SchemaFormat::Email),
+                Schema::string('role')->enum(['user', 'admin'])
+            )
+            ->minProperties(1),  // At least one field must be provided
+
+        'POST:/orders' => Schema::object('create_order')
+            ->properties(
+                Schema::string('customer_id')->required(),
+                Schema::array('items')
+                    ->items(
+                        Schema::object()
+                            ->properties(
+                                Schema::string('product_id')->required(),
+                                Schema::integer('quantity')->minimum(1)->required()
+                            )
+                    )
+                    ->minItems(1)
+                    ->required()
+            )
+    ];
+
+    if (!isset($schemas[$endpoint])) {
+        throw new InvalidArgumentException("Unknown endpoint: $endpoint");
+    }
+
+    return $schemas[$endpoint]->isValid($requestData);
+}
+
+// Usage
+try {
+    $isValid = validateApiRequest('POST:/users', [
+        'name' => 'John Doe',
+        'email' => 'john@example.com'
+    ]);
+
+    if ($isValid) {
+        echo "API request is valid";
+    } else {
+        echo "API request validation failed";
+    }
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}
+```
+
+### Configuration Validation
+
+```php
+function validateConfiguration(array $config): void {
+    $configSchema = Schema::object('app_config')
+        ->properties(
+            Schema::string('app_name')
+                ->minLength(1)
+                ->required(),
+            Schema::string('environment')
+                ->enum(['development', 'staging', 'production'])
+                ->required(),
+            Schema::object('database')
+                ->properties(
+                    Schema::string('host')->required(),
+                    Schema::integer('port')
+                        ->minimum(1)
+                        ->maximum(65535)
+                        ->default(3306),
+                    Schema::string('username')->required(),
+                    Schema::string('password')->required(),
+                    Schema::string('database')->required()
+                )
+                ->required(),
+            Schema::object('cache')
+                ->properties(
+                    Schema::string('driver')
+                        ->enum(['redis', 'memcached', 'file'])
+                        ->default('file'),
+                    Schema::string('host')->default('localhost'),
+                    Schema::integer('port')->minimum(1)
+                )
+                ->default([]),
+            Schema::boolean('debug')
+                ->default(false)
+        )
+        ->additionalProperties(false);
+
+    try {
+        $configSchema->validate($config);
+        echo "Configuration is valid";
+    } catch (SchemaException $e) {
+        throw new InvalidArgumentException("Invalid configuration: " . $e->getMessage());
+    }
+}
+
+// Usage
+$config = [
+    'app_name' => 'MyApplication',
+    'environment' => 'production',
+    'database' => [
+        'host' => 'localhost',
+        'port' => 3306,
+        'username' => 'app_user',
+        'password' => 'secure_password',
+        'database' => 'my_app_db'
+    ],
+    'debug' => false
+];
+
+try {
+    validateConfiguration($config);
+} catch (InvalidArgumentException $e) {
+    echo $e->getMessage();
+}
+```
+
+## Batch Validation
+
+Validate multiple items efficiently:
+
+```php
+function validateBatch(Schema $schema, array $items): array {
+    $results = [];
+
+    foreach ($items as $index => $item) {
+        $results[$index] = [
+            'valid' => $schema->isValid($item),
+            'data' => $item,
+            'error' => null
+        ];
+
+        if (!$results[$index]['valid']) {
+            try {
+                $schema->validate($item);
+            } catch (SchemaException $e) {
+                $results[$index]['error'] = $e->getMessage();
+            }
+        }
+    }
+
+    return $results;
+}
+
+$userSchema = Schema::object('user')
+    ->properties(
+        Schema::string('name')->required(),
+        Schema::integer('age')->minimum(0)->required()
+    );
+
+$users = [
+    ['name' => 'John', 'age' => 30],        // Valid
+    ['name' => 'Jane'],                     // Invalid - missing age
+    ['name' => 'Bob', 'age' => -5],         // Invalid - negative age
+    ['name' => 'Alice', 'age' => 25]        // Valid
+];
+
+$results = validateBatch($userSchema, $users);
+
+foreach ($results as $index => $result) {
+    if ($result['valid']) {
+        echo "User $index: Valid\n";
+    } else {
+        echo "User $index: Invalid - {$result['error']}\n";
+    }
+}
+```
+
+## Performance Considerations
+
+### Schema Reuse
+
+```php
+// Good: Reuse schema objects
+$userSchema = Schema::object('user')
+    ->properties(
+        Schema::string('name')->required(),
+        Schema::string('email')->format(SchemaFormat::Email)->required()
+    );
+
+// Validate multiple users with the same schema
+foreach ($users as $user) {
+    if ($userSchema->isValid($user)) {
+        // Process valid user
+    }
+}
+
+// Avoid: Creating new schemas for each validation
+foreach ($users as $user) {
+    $schema = Schema::object('user')...;  // Inefficient
+    if ($schema->isValid($user)) {
+        // Process user
+    }
+}
+```
+
+### Early Validation Exit
+
+```php
+function quickValidation(array $data): bool {
+    // Check required fields first (fastest)
+    if (empty($data['name']) || empty($data['email'])) {
+        return false;
+    }
+
+    // Then check formats (slower)
+    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+
+    // Finally, full schema validation (comprehensive)
+    return $fullSchema->isValid($data);
+}
+```
+
+## Error Handling Best Practices
+
+### Graceful Error Handling
+
+```php
+function safeValidation(Schema $schema, $data): array {
+    try {
+        $schema->validate($data);
+        return ['valid' => true, 'error' => null];
+    } catch (SchemaException $e) {
+        return [
+            'valid' => false,
+            'error' => $e->getMessage(),
+            'code' => $e->getCode()
+        ];
+    } catch (Throwable $e) {
+        // Handle unexpected errors
+        return [
+            'valid' => false,
+            'error' => 'Validation system error',
+            'debug' => $e->getMessage()
+        ];
+    }
+}
+```
+
+### User-Friendly Error Messages
+
+```php
+function getUserFriendlyError(SchemaException $e): string {
+    $message = $e->getMessage();
+
+    $friendlyMessages = [
+        'must match the \'email\' format' => 'Please enter a valid email address',
+        'must have minimum length' => 'This field is too short',
+        'must have maximum length' => 'This field is too long',
+        'is required' => 'This field is required',
+        'must be a number' => 'Please enter a valid number',
+    ];
+
+    foreach ($friendlyMessages as $pattern => $friendly) {
+        if (strpos($message, $pattern) !== false) {
+            return $friendly;
+        }
+    }
+
+    return $message;  // Fallback to original message
+}
+```
+
+## Common Validation Patterns
+
+<CardGroup cols={2}>
+  <Card title="Form Validation" icon="file-text">
+    Validate user input from forms with comprehensive field-level validation and user-friendly error messages.
+  </Card>
+  <Card title="API Validation" icon="server">
+    Validate API requests and responses to ensure data integrity and proper error handling.
+  </Card>
+  <Card title="Configuration Validation" icon="gear">
+    Validate application configuration files and environment settings for deployment safety.
+  </Card>
+  <Card title="Data Import Validation" icon="file-import">
+    Validate bulk data imports with batch processing and detailed error reporting.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Error Handling"
+    icon="exclamation-triangle"
+    href="/validation/error-handling"
+  >
+    Learn advanced error handling and custom exception management
+  </Card>
+  <Card
+    title="Schema Factory"
+    icon="factory"
+    href="/api-reference/schema-factory"
+  >
+    Explore the complete Schema Factory API reference
+  </Card>
+</CardGroup>

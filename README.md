@@ -41,30 +41,30 @@ composer require cortexphp/json-schema
 ## Usage
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
-// Create a basic user schema using the SchemaFactory
-$schema = SchemaFactory::object('user')
+// Create a basic user schema using the Schema class
+$schema = Schema::object('user')
     ->description('User schema')
     ->properties(
-        SchemaFactory::string('name')
+        Schema::string('name')
             ->minLength(2)
             ->maxLength(100)
             ->required(),
-        SchemaFactory::string('email')
+        Schema::string('email')
             ->format(SchemaFormat::Email)
             ->required(),
-        SchemaFactory::integer('age')
+        Schema::integer('age')
             ->minimum(18)
             ->maximum(150),
-        SchemaFactory::boolean('active')
+        Schema::boolean('active')
             ->default(true),
-        SchemaFactory::object('settings')
+        Schema::object('settings')
             ->additionalProperties(false)
             ->properties(
-                SchemaFactory::string('theme')
+                Schema::string('theme')
                     ->enum(['light', 'dark']),
             ),
     );
@@ -130,14 +130,14 @@ $schema->isValid($data); // false
 You can specify the JSON Schema version when creating schemas:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // Create schema with specific version
-$schema = SchemaFactory::string('name', SchemaVersion::Draft_2020_12);
+$schema = Schema::string('name', SchemaVersion::Draft_2020_12);
 
 // Set global default version for all new schemas
-SchemaFactory::setDefaultVersion(SchemaVersion::Draft_2019_09);
+Schema::setDefaultVersion(SchemaVersion::Draft_2019_09);
 
 // Change version on existing schema
 $schema->version(SchemaVersion::Draft_07);
@@ -149,31 +149,31 @@ The package automatically validates that features are only used with compatible 
 
 ```php
 // ✅ This works - deprecated is supported in Draft 2019-09+
-$schema = SchemaFactory::string('oldField', SchemaVersion::Draft_2019_09)
+$schema = Schema::string('oldField', SchemaVersion::Draft_2019_09)
     ->deprecated();
 
 // ❌ This throws an exception - deprecated requires Draft 2019-09+
-$schema = SchemaFactory::string('oldField', SchemaVersion::Draft_07)
+$schema = Schema::string('oldField', SchemaVersion::Draft_07)
     ->deprecated(); // SchemaException: Feature not supported in Draft 7
 
 // ✅ Array contains count features work in Draft 2019-09+
-$arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2019_09)
+$arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
     ->minContains(2)
     ->maxContains(5);
 
 // ✅ Format validation for newer formats
-$schema = SchemaFactory::string('duration', SchemaVersion::Draft_2019_09)
+$schema = Schema::string('duration', SchemaVersion::Draft_2019_09)
     ->format(SchemaFormat::Duration); // ISO 8601 duration format
 
 // ✅ Unevaluated properties/items for advanced validation
-$objectSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$objectSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('name')->required()
+        Schema::string('name')->required()
     )
     ->unevaluatedProperties(false); // Strict validation
 
-$arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_2019_09)
-    ->items(SchemaFactory::string())
+$arraySchema = Schema::array('items', SchemaVersion::Draft_2019_09)
+    ->items(Schema::string())
     ->unevaluatedItems(false); // Strict array validation
 ```
 
@@ -183,12 +183,12 @@ Schemas automatically use the correct keywords for their version:
 
 ```php
 // Draft-07 uses 'definitions'
-$draft07Schema = SchemaFactory::object('user', SchemaVersion::Draft_07)
+$draft07Schema = Schema::object('user', SchemaVersion::Draft_07)
     ->addDefinition('address', $addressSchema);
 // Output: { "definitions": { "address": {...} } }
 
 // Draft 2019-09+ uses '$defs'
-$modernSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$modernSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->addDefinition('address', $addressSchema);
 // Output: { "$defs": { "address": {...} } }
 ```
@@ -236,21 +236,21 @@ echo $feature->getMinimumVersion()->name; // "Draft201909"
 
 ```php
 // Create a schema using modern JSON Schema features
-$modernSchema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$modernSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->description('Modern user schema with advanced features')
     ->properties(
-        SchemaFactory::string('username')
+        Schema::string('username')
             ->minLength(3)
             ->required(),
-        SchemaFactory::string('legacyEmail')
+        Schema::string('legacyEmail')
             ->format(SchemaFormat::Email)
             ->deprecated() // Only available in Draft 2019-09+
             ->comment('Use contactInfo.email instead'),
-        SchemaFactory::array('tags')
-            ->items(SchemaFactory::string())
+        Schema::array('tags')
+            ->items(Schema::string())
             ->minContains(1) // Only available in Draft 2019-09+
             ->maxContains(10),
-        SchemaFactory::string('uuid')
+        Schema::string('uuid')
             ->format(SchemaFormat::Uuid) // Only available in Draft 2019-09+
     );
 
@@ -264,9 +264,9 @@ $modernSchema->toJson();
 ### String Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$schema = SchemaFactory::string('name')
+$schema = Schema::string('name')
     ->minLength(2)
     ->maxLength(100)
     ->pattern('^[A-Za-z]+$')
@@ -301,9 +301,9 @@ $schema->isValid('J'); // false (too short)
 ### Number Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$schema = SchemaFactory::number('price')
+$schema = Schema::number('price')
     ->minimum(0)
     ->maximum(1000)
     ->multipleOf(0.01);
@@ -337,9 +337,9 @@ $schema->isValid(1.011); // false (not a multiple of 0.01)
 ### Integer Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$schema = SchemaFactory::integer('age')
+$schema = Schema::integer('age')
     ->exclusiveMinimum(0)
     ->exclusiveMaximum(150)
     ->multipleOf(1);
@@ -373,9 +373,9 @@ $schema->isValid(150.01); // false (not an integer)
 ### Boolean Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$schema = SchemaFactory::boolean('active')
+$schema = Schema::boolean('active')
     ->default(true)
     ->readOnly();
 ```
@@ -406,9 +406,9 @@ $schema->isValid(null); // false
 ### Null Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$schema = SchemaFactory::null('deleted_at');
+$schema = Schema::null('deleted_at');
 ```
 
 ```php
@@ -435,11 +435,11 @@ $schema->isValid(false); // false
 ### Array Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
 // Simple array of strings
-$schema = SchemaFactory::array('tags')
-    ->items(SchemaFactory::string())
+$schema = Schema::array('tags')
+    ->items(Schema::string())
     ->minItems(1)
     ->maxItems(3)
     ->uniqueItems(true);
@@ -474,12 +474,12 @@ $schema->isValid(['foo', 'bar', 'baz', 'qux']); // false (too many items)
 Arrays also support validation of specific items using `contains`:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
 // Array must contain at least one number between 10 and 20
-$schema = SchemaFactory::array('numbers')
+$schema = Schema::array('numbers')
     ->contains(
-        SchemaFactory::number()
+        Schema::number()
             ->minimum(10)
             ->maximum(20)
     )
@@ -496,12 +496,12 @@ $schema->isValid([15, 12, 18, 19]); // false (contains 4 numbers between 10-20)
 You can also validate tuple-like arrays with different schemas for specific positions:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$schema = SchemaFactory::array('coordinates')
+$schema = Schema::array('coordinates')
     ->items(
-        SchemaFactory::number()->description('latitude'),
-        SchemaFactory::number()->description('longitude'),
+        Schema::number()->description('latitude'),
+        Schema::number()->description('longitude'),
     );
 ```
 
@@ -515,15 +515,15 @@ $schema->isValid(['invalid', -0.1278]); // false (first item must be number)
 ### Object Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 
-$schema = SchemaFactory::object('user')
+$schema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->format(SchemaFormat::Email)->required(),
-        SchemaFactory::object('settings')->properties(
-            SchemaFactory::string('theme')->enum(['light', 'dark'])
+        Schema::string('name')->required(),
+        Schema::string('email')->format(SchemaFormat::Email)->required(),
+        Schema::object('settings')->properties(
+            Schema::string('theme')->enum(['light', 'dark'])
         ),
     )
     ->additionalProperties(false);
@@ -556,12 +556,12 @@ $schema->isValid([
 Objects support additional validation features:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$schema = SchemaFactory::object('config')
+$schema = Schema::object('config')
     // Validate property names against a pattern
     ->propertyNames(
-        SchemaFactory::string()->pattern('^[a-zA-Z]+$')
+        Schema::string()->pattern('^[a-zA-Z]+$')
     )
     // Control number of properties
     ->minProperties(1)
@@ -570,13 +570,13 @@ $schema = SchemaFactory::object('config')
     ->additionalProperties(false); // Disallow additional properties
 
 // Or validate additional properties against a schema
-$schema = SchemaFactory::object('config')
+$schema = Schema::object('config')
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('type')->required(),
+        Schema::string('name')->required(),
+        Schema::string('type')->required(),
     )
     ->additionalProperties(
-        SchemaFactory::string()->minLength(3)
+        Schema::string()->minLength(3)
     );
 ```
 
@@ -608,17 +608,17 @@ $schema->isValid([
 Objects also support pattern-based property validation using `patternProperties`:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$schema = SchemaFactory::object('config')
+$schema = Schema::object('config')
     // Add a single pattern property
     ->patternProperty('^prefix_',
-        SchemaFactory::string()->minLength(5)
+        Schema::string()->minLength(5)
     )
     // Add multiple pattern properties
     ->patternProperties([
-        '^[A-Z][a-z]+$' => SchemaFactory::string(), // CamelCase properties
-        '^\d+$' => SchemaFactory::number(),         // Numeric properties
+        '^[A-Z][a-z]+$' => Schema::string(), // CamelCase properties
+        '^\d+$' => Schema::number(),         // Numeric properties
     ]);
 
 // Valid data
@@ -639,12 +639,12 @@ $schema->isValid([
 Pattern properties can be combined with regular properties and `additionalProperties`:
 
 ```php
-$schema = SchemaFactory::object('user')
+$schema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::integer('age')->required(),
+        Schema::string('name')->required(),
+        Schema::integer('age')->required(),
     )
-    ->patternProperty('^custom_', SchemaFactory::string())
+    ->patternProperty('^custom_', Schema::string())
     ->additionalProperties(false);
 
 // Valid:
@@ -697,36 +697,36 @@ $schema->isValid([
 For advanced validation, you can use `unevaluatedProperties` and `unevaluatedItems` to control properties and items that weren't explicitly defined:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // Strict object validation - no unevaluated properties allowed
-$schema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$schema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->required(),
+        Schema::string('name')->required(),
+        Schema::string('email')->required(),
     )
     ->unevaluatedProperties(false);
 
 // Allow unevaluated properties with schema validation
-$schema = SchemaFactory::object('metadata', SchemaVersion::Draft_2019_09)
+$schema = Schema::object('metadata', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('title')->required(),
+        Schema::string('title')->required(),
     )
     ->unevaluatedProperties(
-        SchemaFactory::string()->minLength(1) // Any extra properties must be non-empty strings
+        Schema::string()->minLength(1) // Any extra properties must be non-empty strings
     );
 
 // Strict array validation - no unevaluated items allowed
-$arraySchema = SchemaFactory::array('tags', SchemaVersion::Draft_2019_09)
-    ->items(SchemaFactory::string())
+$arraySchema = Schema::array('tags', SchemaVersion::Draft_2019_09)
+    ->items(Schema::string())
     ->unevaluatedItems(false);
 
 // Allow unevaluated items with schema validation
-$arraySchema = SchemaFactory::array('mixed', SchemaVersion::Draft_2019_09)
-    ->items(SchemaFactory::string())
+$arraySchema = Schema::array('mixed', SchemaVersion::Draft_2019_09)
+    ->items(Schema::string())
     ->unevaluatedItems(
-        SchemaFactory::integer()->minimum(0) // Extra items must be non-negative integers
+        Schema::integer()->minimum(0) // Extra items must be non-negative integers
     );
 ```
 
@@ -778,44 +778,44 @@ $arraySchema->isValid(['hello', 'world', 'extra']); // false (unevaluatedItems: 
 Use `dependentSchemas` to define conditional schemas based on property presence:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // Simple dependent schema - when credit_card is present, billing_address is required
-$schema = SchemaFactory::object('user', SchemaVersion::Draft_2019_09)
+$schema = Schema::object('user', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('credit_card'),
+        Schema::string('name')->required(),
+        Schema::string('credit_card'),
     )
     ->dependentSchema('credit_card',
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('billing_address')->required()
+        Schema::object()->properties(
+            Schema::string('billing_address')->required()
         )
     );
 
 // Multiple dependent schemas
-$schema = SchemaFactory::object('registration', SchemaVersion::Draft_2019_09)
+$schema = Schema::object('registration', SchemaVersion::Draft_2019_09)
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::string('email')->required(),
-        SchemaFactory::string('payment_method')->enum(['credit_card', 'paypal']),
-        SchemaFactory::boolean('is_premium'),
+        Schema::string('name')->required(),
+        Schema::string('email')->required(),
+        Schema::string('payment_method')->enum(['credit_card', 'paypal']),
+        Schema::boolean('is_premium'),
     )
     ->dependentSchemas([
-        'payment_method' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::string('payment_method')->const('credit_card')
+        'payment_method' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::string('payment_method')->const('credit_card')
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('card_number')->required(),
-                SchemaFactory::string('cvv')->required(),
+            ->then(Schema::object()->properties(
+                Schema::string('card_number')->required(),
+                Schema::string('cvv')->required(),
             )),
-        'is_premium' => SchemaFactory::object()
-            ->if(SchemaFactory::object()->properties(
-                SchemaFactory::boolean('is_premium')->const(true)
+        'is_premium' => Schema::object()
+            ->if(Schema::object()->properties(
+                Schema::boolean('is_premium')->const(true)
             ))
-            ->then(SchemaFactory::object()->properties(
-                SchemaFactory::string('premium_tier')->enum(['gold', 'platinum'])->required()
+            ->then(Schema::object()->properties(
+                Schema::string('premium_tier')->enum(['gold', 'platinum'])->required()
             )),
     ]);
 ```
@@ -858,10 +858,10 @@ $schema = SchemaFactory::object('registration', SchemaVersion::Draft_2019_09)
 ### Union Schema
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
 
-$schema = SchemaFactory::union([SchemaType::String, SchemaType::Integer], 'id')
+$schema = Schema::union([SchemaType::String, SchemaType::Integer], 'id')
     ->description('ID can be either a string or an integer')
     ->enum(['abc123', 'def456', 1, 2, 3])
     ->nullable();
@@ -897,27 +897,27 @@ $schema->isValid('invalid'); // false (not in enum)
 Strings can be validated against various formats:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 
-$schema = SchemaFactory::object('user')
+$schema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('email')->format(SchemaFormat::Email),
-        SchemaFactory::string('website')->format(SchemaFormat::Uri),
-        SchemaFactory::string('hostname')->format(SchemaFormat::Hostname),
-        SchemaFactory::string('ipv4')->format(SchemaFormat::Ipv4),
-        SchemaFactory::string('ipv6')->format(SchemaFormat::Ipv6),
-        SchemaFactory::string('date')->format(SchemaFormat::Date),
-        SchemaFactory::string('time')->format(SchemaFormat::Time),
-        SchemaFactory::string('date_time')->format(SchemaFormat::DateTime),
-        SchemaFactory::string('duration')->format(SchemaFormat::Duration),
-        SchemaFactory::string('json_pointer')->format(SchemaFormat::JsonPointer),
-        SchemaFactory::string('relative_json_pointer')->format(SchemaFormat::RelativeJsonPointer),
-        SchemaFactory::string('uri_template')->format(SchemaFormat::UriTemplate),
-        SchemaFactory::string('idn_email')->format(SchemaFormat::IdnEmail),
-        SchemaFactory::string('idn_hostname')->format(SchemaFormat::Hostname),
-        SchemaFactory::string('iri')->format(SchemaFormat::Iri),
-        SchemaFactory::string('iri_reference')->format(SchemaFormat::IriReference),
+        Schema::string('email')->format(SchemaFormat::Email),
+        Schema::string('website')->format(SchemaFormat::Uri),
+        Schema::string('hostname')->format(SchemaFormat::Hostname),
+        Schema::string('ipv4')->format(SchemaFormat::Ipv4),
+        Schema::string('ipv6')->format(SchemaFormat::Ipv6),
+        Schema::string('date')->format(SchemaFormat::Date),
+        Schema::string('time')->format(SchemaFormat::Time),
+        Schema::string('date_time')->format(SchemaFormat::DateTime),
+        Schema::string('duration')->format(SchemaFormat::Duration),
+        Schema::string('json_pointer')->format(SchemaFormat::JsonPointer),
+        Schema::string('relative_json_pointer')->format(SchemaFormat::RelativeJsonPointer),
+        Schema::string('uri_template')->format(SchemaFormat::UriTemplate),
+        Schema::string('idn_email')->format(SchemaFormat::IdnEmail),
+        Schema::string('idn_hostname')->format(SchemaFormat::Hostname),
+        Schema::string('iri')->format(SchemaFormat::Iri),
+        Schema::string('iri_reference')->format(SchemaFormat::IriReference),
     );
 ```
 
@@ -928,86 +928,86 @@ $schema = SchemaFactory::object('user')
 The schema specification supports several types of conditional validation:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
 // if/then/else condition
-$schema = SchemaFactory::object('user')
+$schema = Schema::object('user')
     ->properties(
-        SchemaFactory::string('type')->enum(['personal', 'business']),
-        SchemaFactory::string('company_name'),
-        SchemaFactory::string('tax_id'),
+        Schema::string('type')->enum(['personal', 'business']),
+        Schema::string('company_name'),
+        Schema::string('tax_id'),
     )
     ->if(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('type')->const('business'),
+        Schema::object()->properties(
+            Schema::string('type')->const('business'),
         ),
     )
     ->then(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('company_name')->required(),
-            SchemaFactory::string('tax_id')->required(),
+        Schema::object()->properties(
+            Schema::string('company_name')->required(),
+            Schema::string('tax_id')->required(),
         ),
     )
     ->else(
-        SchemaFactory::object()->properties(
-            SchemaFactory::string('company_name')->const(null),
-            SchemaFactory::string('tax_id')->const(null),
+        Schema::object()->properties(
+            Schema::string('company_name')->const(null),
+            Schema::string('tax_id')->const(null),
         ),
     );
 
 // allOf - all schemas must match
-$schema = SchemaFactory::object()
+$schema = Schema::object()
     ->allOf(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('name')->required(),
+                Schema::string('name')->required(),
             ),
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::integer('age')
+                Schema::integer('age')
                     ->minimum(18)
                     ->required(),
             ),
     );
 
 // anyOf - at least one schema must match
-$schema = SchemaFactory::object('payment')
+$schema = Schema::object('payment')
     ->anyOf(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('credit_card')
+                Schema::string('credit_card')
                     ->pattern('^\d{16}$')
                     ->required(),
             ),
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('bank_transfer')
+                Schema::string('bank_transfer')
                     ->pattern('^\w{8,}$')
                     ->required(),
             ),
     );
 
 // oneOf - exactly one schema must match
-$schema = SchemaFactory::object('contact')
+$schema = Schema::object('contact')
     ->oneOf(
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('email')
+                Schema::string('email')
                     ->format(SchemaFormat::Email)
                     ->required(),
             ),
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('phone')
+                Schema::string('phone')
                     ->pattern('^\+\d{10,}$')
                     ->required(),
             ),
     );
 
 // not - schema must not match
-$schema = SchemaFactory::string('status')
+$schema = Schema::string('status')
     ->not(
-        SchemaFactory::string()
+        Schema::string()
             ->enum(['deleted', 'banned']),
     );
 ```
@@ -1019,26 +1019,26 @@ $schema = SchemaFactory::string('status')
 You can define reusable schema components using definitions and reference them using `$ref`:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
-$schema = SchemaFactory::object('user')
+$schema = Schema::object('user')
     // Define a reusable address schema
     ->addDefinition(
         'address',
-        SchemaFactory::object()
+        Schema::object()
             ->properties(
-                SchemaFactory::string('street')->required(),
-                SchemaFactory::string('city')->required(),
-                SchemaFactory::string('country')->required(),
+                Schema::string('street')->required(),
+                Schema::string('city')->required(),
+                Schema::string('country')->required(),
             ),
     )
     // Use the address schema multiple times via $ref
     ->properties(
-        SchemaFactory::string('name')->required(),
-        SchemaFactory::object('billing_address')
+        Schema::string('name')->required(),
+        Schema::object('billing_address')
             ->ref('#/definitions/address')
             ->required(),
-        SchemaFactory::object('shipping_address')
+        Schema::object('shipping_address')
             ->ref('#/definitions/address')
             ->required(),
     );
@@ -1047,19 +1047,19 @@ $schema = SchemaFactory::object('user')
 You can also add multiple definitions at once:
 
 ```php
-$schema = SchemaFactory::object('user')
+$schema = Schema::object('user')
     ->addDefinitions([
-        'address' => SchemaFactory::object()
+        'address' => Schema::object()
             ->properties(
-                SchemaFactory::string('street')->required(),
-                SchemaFactory::string('city')->required(),
+                Schema::string('street')->required(),
+                Schema::string('city')->required(),
             ),
-        'contact' => SchemaFactory::object()
+        'contact' => Schema::object()
             ->properties(
-                SchemaFactory::string('email')
+                Schema::string('email')
                     ->format(SchemaFormat::Email)
                     ->required(),
-                SchemaFactory::string('phone'),
+                Schema::string('phone'),
             ),
     ]);
 ```
@@ -1128,7 +1128,7 @@ The package automatically validates that features are compatible with the specif
 ```php
 try {
     // This will throw an exception because 'deprecated' requires Draft 2019-09+
-    $schema = SchemaFactory::string('oldField', SchemaVersion::Draft_07)
+    $schema = Schema::string('oldField', SchemaVersion::Draft_07)
         ->deprecated();
 } catch (SchemaException $e) {
     echo $e->getMessage();
@@ -1138,7 +1138,7 @@ try {
 
 try {
     // This will throw an exception because minContains requires Draft 2019-09+
-    $arraySchema = SchemaFactory::array('items', SchemaVersion::Draft_07)
+    $arraySchema = Schema::array('items', SchemaVersion::Draft_07)
         ->minContains(2);
 } catch (SchemaException $e) {
     echo $e->getMessage();
@@ -1169,7 +1169,7 @@ This uses reflection to infer the schema from the parameters and docblocks.
 ### From a Closure
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
 /**
  * This is the description of the closure
@@ -1181,7 +1181,7 @@ use Cortex\JsonSchema\SchemaFactory;
 $closure = function (string $name, array $meta, ?int $age = null): void {};
 
 // Build the schema from the closure
-$schema = SchemaFactory::fromClosure($closure);
+$schema = Schema::fromClosure($closure);
 
 // Convert to JSON Schema
 $schema->toJson();
@@ -1213,7 +1213,7 @@ $schema->toJson();
 ### From a Class
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
 /**
  * This is the description of the class
@@ -1237,7 +1237,7 @@ class User
 }
 
 // Build the schema from the class with specific version
-$schema = SchemaFactory::fromClass(User::class, version: SchemaVersion::Draft_2019_09);
+$schema = Schema::fromClass(User::class, version: SchemaVersion::Draft_2019_09);
 
 // Convert to JSON Schema
 $schema->toJson();
@@ -1275,7 +1275,7 @@ $schema->toJson();
 ### From an Backed Enum
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 
 /**
  * This is the description of the enum
@@ -1288,7 +1288,7 @@ enum PostType: int
 }
 
 // Build the schema from the enum
-$schema = SchemaFactory::fromEnum(PostType::class);
+$schema = Schema::fromEnum(PostType::class);
 
 // Convert to JSON Schema
 $schema->toJson();
@@ -1309,7 +1309,7 @@ $schema->toJson();
 You can also create schema objects from existing JSON Schema definitions:
 
 ```php
-use Cortex\JsonSchema\SchemaFactory;
+use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
 // From a JSON string
@@ -1324,7 +1324,7 @@ $jsonString = '{
     "required": ["name", "email"]
 }';
 
-$schema = SchemaFactory::fromJson($jsonString);
+$schema = Schema::fromJson($jsonString);
 
 // From an array representation
 $jsonArray = [
@@ -1334,7 +1334,7 @@ $jsonArray = [
     'examples' => ['ABC-1234', 'XYZ-5678']
 ];
 
-$schema = SchemaFactory::fromJson($jsonArray, SchemaVersion::Draft_2019_09);
+$schema = Schema::fromJson($jsonArray, SchemaVersion::Draft_2019_09);
 
 // The resulting schema objects work the same as any other schema
 $schema->isValid('ABC-1234'); // true
@@ -1355,7 +1355,7 @@ This is particularly useful when:
 ```php
 // Load from a file
 $jsonSchema = file_get_contents('user-schema.json');
-$schema = SchemaFactory::fromJson($jsonSchema);
+$schema = Schema::fromJson($jsonSchema);
 
 // Validate some data
 $userData = [

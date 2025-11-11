@@ -11,7 +11,7 @@ use Opis\JsonSchema\Errors\ValidationError;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 use Opis\JsonSchema\Exceptions\SchemaException as OpisSchemaException;
 
-/** @mixin \Cortex\JsonSchema\Contracts\Schema */
+/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
 trait HasValidation
 {
     /**
@@ -22,7 +22,7 @@ trait HasValidation
     public function validate(mixed $value): void
     {
         $validator = new Validator();
-        $validator->parser()->setOption('defaultDraft', '07');
+        $validator->parser()->setOption('defaultDraft', '2020-12');
 
         try {
             $result = $validator->validate(

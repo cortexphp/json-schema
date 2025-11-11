@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Types\Concerns;
 
-use Cortex\JsonSchema\Contracts\Schema;
 use Cortex\JsonSchema\Enums\SchemaFeature;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-/** @mixin \Cortex\JsonSchema\Contracts\Schema */
+/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
 trait HasProperties
 {
     /**
-     * @var array<string, \Cortex\JsonSchema\Contracts\Schema>
+     * @var array<string, \Cortex\JsonSchema\Contracts\JsonSchema>
      */
     protected array $properties = [];
 
@@ -22,7 +22,7 @@ trait HasProperties
     protected array $requiredProperties = [];
 
     /**
-     * @var bool|\Cortex\JsonSchema\Contracts\Schema|null
+     * @var bool|\Cortex\JsonSchema\Contracts\JsonSchema|null
      */
     protected mixed $additionalProperties = null;
 
@@ -30,20 +30,20 @@ trait HasProperties
 
     protected ?int $maxProperties = null;
 
-    protected ?Schema $propertyNames = null;
+    protected ?JsonSchema $propertyNames = null;
 
     /**
-     * @var array<string, \Cortex\JsonSchema\Contracts\Schema>
+     * @var array<string, \Cortex\JsonSchema\Contracts\JsonSchema>
      */
     protected array $patternProperties = [];
 
     /**
-     * @var bool|\Cortex\JsonSchema\Contracts\Schema|null
+     * @var bool|\Cortex\JsonSchema\Contracts\JsonSchema|null
      */
     protected mixed $unevaluatedProperties = null;
 
     /**
-     * @var array<string, \Cortex\JsonSchema\Contracts\Schema>
+     * @var array<string, \Cortex\JsonSchema\Contracts\JsonSchema>
      */
     protected array $dependentSchemas = [];
 
@@ -52,7 +52,7 @@ trait HasProperties
      *
      * @throws \Cortex\JsonSchema\Exceptions\SchemaException
      */
-    public function properties(Schema ...$properties): static
+    public function properties(JsonSchema ...$properties): static
     {
         foreach ($properties as $property) {
             $title = $property->getTitle();
@@ -74,9 +74,9 @@ trait HasProperties
     /**
      * Set whether additional properties are allowed and optionally their schema
      *
-     * @param bool|\Cortex\JsonSchema\Contracts\Schema $allowed Whether additional properties are allowed, or a schema they must match
+     * @param bool|\Cortex\JsonSchema\Contracts\JsonSchema $allowed Whether additional properties are allowed, or a schema they must match
      */
-    public function additionalProperties(bool|Schema $allowed): static
+    public function additionalProperties(bool|JsonSchema $allowed): static
     {
         $this->additionalProperties = $allowed;
 
@@ -87,11 +87,11 @@ trait HasProperties
      * Set whether unevaluated properties are allowed and optionally their schema.
      * This feature is only available in Draft 2019-09 and later.
      *
-     * @param bool|\Cortex\JsonSchema\Contracts\Schema $allowed Whether unevaluated properties are allowed, or a schema they must match
+     * @param bool|\Cortex\JsonSchema\Contracts\JsonSchema $allowed Whether unevaluated properties are allowed, or a schema they must match
      *
      * @throws \Cortex\JsonSchema\Exceptions\SchemaException
      */
-    public function unevaluatedProperties(bool|Schema $allowed): static
+    public function unevaluatedProperties(bool|JsonSchema $allowed): static
     {
         $this->validateFeatureSupport(SchemaFeature::UnevaluatedProperties);
 
@@ -106,11 +106,11 @@ trait HasProperties
      *
      * @throws \Cortex\JsonSchema\Exceptions\SchemaException
      */
-    public function dependentSchema(string $property, Schema $schema): static
+    public function dependentSchema(string $property, JsonSchema $jsonSchema): static
     {
         $this->validateFeatureSupport(SchemaFeature::DependentSchemas);
 
-        $this->dependentSchemas[$property] = $schema;
+        $this->dependentSchemas[$property] = $jsonSchema;
 
         return $this;
     }
@@ -119,7 +119,7 @@ trait HasProperties
      * Set multiple dependent schemas at once.
      * This feature is only available in Draft 2019-09 and later.
      *
-     * @param array<string, \Cortex\JsonSchema\Contracts\Schema> $schemas
+     * @param array<string, \Cortex\JsonSchema\Contracts\JsonSchema> $schemas
      *
      * @throws \Cortex\JsonSchema\Exceptions\SchemaException
      */
@@ -175,9 +175,9 @@ trait HasProperties
     /**
      * Set the schema for property names
      */
-    public function propertyNames(Schema $schema): static
+    public function propertyNames(JsonSchema $jsonSchema): static
     {
-        $this->propertyNames = $schema;
+        $this->propertyNames = $jsonSchema;
 
         return $this;
     }
@@ -185,9 +185,9 @@ trait HasProperties
     /**
      * Add a pattern property schema.
      */
-    public function patternProperty(string $pattern, Schema $schema): static
+    public function patternProperty(string $pattern, JsonSchema $jsonSchema): static
     {
-        $this->patternProperties[$pattern] = $schema;
+        $this->patternProperties[$pattern] = $jsonSchema;
 
         return $this;
     }
@@ -195,7 +195,7 @@ trait HasProperties
     /**
      * Add multiple pattern property schemas.
      *
-     * @param array<string, \Cortex\JsonSchema\Contracts\Schema> $patterns
+     * @param array<string, \Cortex\JsonSchema\Contracts\JsonSchema> $patterns
      *
      * @throws \Cortex\JsonSchema\Exceptions\SchemaException
      */
@@ -214,6 +214,38 @@ trait HasProperties
     public function getPropertyKeys(): array
     {
         return array_keys($this->properties);
+    }
+
+    /**
+     * @return array<string, \Cortex\JsonSchema\Contracts\JsonSchema>
+     */
+    public function getProperties(): array
+    {
+        return $this->properties;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getRequiredProperties(): array
+    {
+        return $this->requiredProperties;
+    }
+
+    /**
+     * Determine if the schema has properties
+     */
+    public function hasProperties(): bool
+    {
+        return $this->properties !== [];
+    }
+
+    /**
+     * Determine if the schema has required properties
+     */
+    public function hasRequiredProperties(): bool
+    {
+        return $this->requiredProperties !== [];
     }
 
     /**
@@ -246,7 +278,7 @@ trait HasProperties
         }
 
         if ($this->additionalProperties !== null) {
-            $schema['additionalProperties'] = $this->additionalProperties instanceof Schema
+            $schema['additionalProperties'] = $this->additionalProperties instanceof JsonSchema
                 ? $this->additionalProperties->toArray(includeSchemaRef: false, includeTitle: false)
                 : $this->additionalProperties;
         }
@@ -264,7 +296,7 @@ trait HasProperties
         }
 
         if ($this->unevaluatedProperties !== null) {
-            $schema['unevaluatedProperties'] = $this->unevaluatedProperties instanceof Schema
+            $schema['unevaluatedProperties'] = $this->unevaluatedProperties instanceof JsonSchema
                 ? $this->unevaluatedProperties->toArray(includeSchemaRef: false, includeTitle: false)
                 : $this->unevaluatedProperties;
         }
