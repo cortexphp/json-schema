@@ -102,9 +102,18 @@ class Schema
     /**
      * Create a schema from a given closure.
      */
-    public static function fromClosure(Closure $closure, ?SchemaVersion $schemaVersion = null): ObjectSchema
-    {
-        return (new ClosureConverter($closure, $schemaVersion ?? self::getDefaultVersion()))->convert();
+    public static function fromClosure(
+        Closure $closure,
+        ?SchemaVersion $schemaVersion = null,
+        bool $ignoreUnknownTypes = false,
+    ): ObjectSchema {
+        $closureConverter = new ClosureConverter(
+            $closure,
+            $schemaVersion ?? self::getDefaultVersion(),
+            $ignoreUnknownTypes,
+        );
+
+        return $closureConverter->convert();
     }
 
     /**
@@ -117,7 +126,13 @@ class Schema
         bool $publicOnly = true,
         ?SchemaVersion $schemaVersion = null,
     ): ObjectSchema {
-        return (new ClassConverter($class, $publicOnly, $schemaVersion ?? self::getDefaultVersion()))->convert();
+        $classConverter = new ClassConverter(
+            $class,
+            $publicOnly,
+            $schemaVersion ?? self::getDefaultVersion(),
+        );
+
+        return $classConverter->convert();
     }
 
     /**
@@ -127,18 +142,26 @@ class Schema
      */
     public static function fromEnum(string $enum, ?SchemaVersion $schemaVersion = null): StringSchema|IntegerSchema
     {
-        return (new EnumConverter($enum, $schemaVersion ?? self::getDefaultVersion()))->convert();
+        $enumConverter = new EnumConverter(
+            $enum,
+            $schemaVersion ?? self::getDefaultVersion(),
+        );
+
+        return $enumConverter->convert();
     }
 
     /**
      * Create a schema from a given value.
      */
-    public static function from(mixed $value, ?SchemaVersion $version = null): JsonSchema
-    {
+    public static function from(
+        mixed $value,
+        ?SchemaVersion $version = null,
+        bool $ignoreUnknownTypes = false,
+    ): JsonSchema {
         $schemaVersion = $version ?? self::getDefaultVersion();
 
         return match (true) {
-            $value instanceof Closure => self::fromClosure($value, $schemaVersion),
+            $value instanceof Closure => self::fromClosure($value, $schemaVersion, $ignoreUnknownTypes),
             is_string($value) && enum_exists($value) && is_subclass_of($value, BackedEnum::class) => self::fromEnum(
                 $value,
                 $schemaVersion,
