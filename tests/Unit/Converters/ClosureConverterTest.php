@@ -6,8 +6,8 @@ namespace Cortex\JsonSchema\Tests\Unit\Converters;
 
 use Deprecated;
 use Cortex\JsonSchema\Types\ObjectSchema;
-use Cortex\JsonSchema\Converters\ClosureConverter;
 use Cortex\JsonSchema\Exceptions\SchemaException;
+use Cortex\JsonSchema\Converters\ClosureConverter;
 use Cortex\JsonSchema\Exceptions\UnknownTypeException;
 
 covers(ClosureConverter::class);
@@ -130,11 +130,13 @@ it('throws an exception if the enum is not a backed enum', function (): void {
 );
 
 it('can ignore unknown types', function (): void {
-    class UnknownType {
+    class UnknownType
+    {
         public function __construct(
             public mixed $unknown,
         ) {}
     }
+
     $closure = function (UnknownType $unknownType): void {};
     $objectSchema = (new ClosureConverter($closure, ignoreUnknownTypes: true))->convert();
 
@@ -146,11 +148,13 @@ it('can ignore unknown types', function (): void {
 });
 
 it('can ignore unknown types while preserving known types', function (): void {
-    class CustomClass {
+    class CustomClass
+    {
         public function __construct(
             public mixed $data,
         ) {}
     }
+
     $closure = function (string $name, CustomClass $customClass, int $age): void {};
     $objectSchema = (new ClosureConverter($closure, ignoreUnknownTypes: true))->convert();
 
@@ -174,12 +178,14 @@ it('can ignore unknown types while preserving known types', function (): void {
 });
 
 it('throws an exception for unknown types by default', function (): void {
-    class AnotherCustomClass {
+    class AnotherCustomClass
+    {
         public function __construct(
             public mixed $data,
         ) {}
     }
-    $closure = function (AnotherCustomClass $customClass): void {};
+
+    $closure = function (AnotherCustomClass $anotherCustomClass): void {};
     (new ClosureConverter($closure))->convert();
 })->throws(UnknownTypeException::class, 'Unknown type:');
 

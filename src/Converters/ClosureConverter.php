@@ -16,8 +16,8 @@ use Cortex\JsonSchema\Contracts\Converter;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Support\NodeCollection;
-use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
 use Cortex\JsonSchema\Exceptions\UnknownTypeException;
+use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
 
 class ClosureConverter implements Converter
 {
@@ -56,9 +56,9 @@ class ClosureConverter implements Converter
         $params = $docParser?->params();
 
         // Add the parameters to the objectschema
-        foreach ($this->reflection->getParameters() as $parameter) {
+        foreach ($this->reflection->getParameters() as $reflectionParameter) {
             try {
-                $objectSchema->properties(self::getSchemaFromReflectionParameter($parameter, $params));
+                $objectSchema->properties(self::getSchemaFromReflectionParameter($reflectionParameter, $params));
             } catch (UnknownTypeException $e) {
                 // If ignoreUnknownTypes is true, skip this parameter
                 if ($this->ignoreUnknownTypes) {

@@ -79,7 +79,7 @@ abstract class AbstractSchema implements JsonSchema
         }
 
         if (is_array($this->type)) {
-            $this->type[] = SchemaType::Null; // @phpstan-ignore assign.propertyType
+            $this->type[] = SchemaType::Null;
         } else {
             $this->type = [
                 $this->type,

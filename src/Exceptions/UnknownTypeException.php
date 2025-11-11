@@ -8,7 +8,6 @@ class UnknownTypeException extends SchemaException
 {
     public static function forType(string $type): self
     {
-        return new self("Unknown type: {$type}");
+        return new self('Unknown type: ' . $type);
     }
 }
-
