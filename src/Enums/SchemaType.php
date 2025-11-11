@@ -12,7 +12,7 @@ use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Contracts\JsonSchema;
-use Cortex\JsonSchema\Exceptions\SchemaException;
+use Cortex\JsonSchema\Exceptions\UnknownTypeException;
 
 enum SchemaType: string
 {
@@ -53,7 +53,7 @@ enum SchemaType: string
             'bool' => self::Boolean,
             'object' => self::Object,
             'null' => self::Null,
-            default => throw new SchemaException('Unknown type: ' . $type),
+            default => throw UnknownTypeException::forType($type),
         };
     }
 }

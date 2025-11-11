@@ -17,6 +17,7 @@ use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Support\NodeCollection;
 use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
+use Cortex\JsonSchema\Exceptions\UnknownTypeException;
 
 class ClosureConverter implements Converter
 {
@@ -27,6 +28,7 @@ class ClosureConverter implements Converter
     public function __construct(
         protected Closure $closure,
         protected ?SchemaVersion $version = null,
+        protected bool $ignoreUnknownTypes = false,
     ) {
         $this->reflection = new ReflectionFunction($this->closure);
         $this->version = $version ?? SchemaVersion::default();
@@ -55,7 +57,17 @@ class ClosureConverter implements Converter
 
         // Add the parameters to the objectschema
         foreach ($this->reflection->getParameters() as $parameter) {
-            $objectSchema->properties(self::getSchemaFromReflectionParameter($parameter, $params));
+            try {
+                $objectSchema->properties(self::getSchemaFromReflectionParameter($parameter, $params));
+            } catch (UnknownTypeException $e) {
+                // If ignoreUnknownTypes is true, skip this parameter
+                if ($this->ignoreUnknownTypes) {
+                    continue;
+                }
+
+                // Otherwise, re-throw the exception
+                throw $e;
+            }
         }
 
         return $objectSchema;
