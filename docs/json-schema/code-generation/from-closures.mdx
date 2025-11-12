@@ -34,7 +34,7 @@ $jsonSchema = $schema->toJson(JSON_PRETTY_PRINT);
 <Accordion title="View Generated JSON Schema">
 ```json
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "description": "Process user registration data",
     "properties": {
@@ -86,7 +86,7 @@ $schema = Schema::fromClosure($createProductClosure);
 <Accordion title="View Generated JSON Schema">
 ```json
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "description": "Create a new product listing",
     "properties": {
@@ -148,8 +148,11 @@ $schema = Schema::fromClosure($updateUserClosure);
 
 The generated schema will include nullable types:
 
+<Accordion title="View Generated JSON Schema">
 ```json
 {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
     "properties": {
         "user_id": {
             "type": "string",
@@ -179,6 +182,7 @@ The generated schema will include nullable types:
     "required": ["user_id"]
 }
 ```
+</Accordion>
 
 ## Advanced Parameter Documentation
 

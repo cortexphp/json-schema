@@ -34,7 +34,7 @@ $jsonSchema = $schema->toJson(JSON_PRETTY_PRINT);
 <Accordion title="View Generated JSON Schema">
 ```json
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "string",
     "title": "UserStatus",
     "description": "User account status levels",
@@ -71,7 +71,7 @@ $prioritySchema = Schema::fromEnum(Priority::class);
 <Accordion title="View Generated JSON Schema">
 ```json
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "integer",
     "title": "Priority",
     "description": "Priority levels for task management",

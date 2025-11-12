@@ -49,7 +49,7 @@ $jsonSchema = $schema->toJson(JSON_PRETTY_PRINT);
 <Accordion title="View Generated JSON Schema">
 ```json
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "title": "User",
     "description": "User profile information",
@@ -124,7 +124,7 @@ $schema = Schema::fromClass(Product::class);
 <Accordion title="View Generated JSON Schema">
 ```json
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "title": "Product",
     "description": "Product information",
@@ -289,8 +289,11 @@ $schema = Schema::fromClass(Task::class);
 
 The generated schema will automatically include enum constraints:
 
+<Accordion title="View Generated JSON Schema">
 ```json
 {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
     "properties": {
         "status": {
             "type": "string",
@@ -300,9 +303,11 @@ The generated schema will automatically include enum constraints:
             "type": "integer",
             "enum": [1, 2, 3, 4]
         }
-    }
+    },
+    "required": ["status", "priority"]
 }
 ```
+</Accordion>
 
 ## Inheritance and Trait Support
 
