@@ -34,7 +34,7 @@ $jsonSchema = $schema->toJson(JSON_PRETTY_PRINT);
 <Accordion title="View Generated JSON Schema">
 ```json
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "description": "Process user registration data",
     "properties": {
@@ -86,7 +86,7 @@ $schema = Schema::fromClosure($createProductClosure);
 <Accordion title="View Generated JSON Schema">
 ```json
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "description": "Create a new product listing",
     "properties": {
@@ -148,8 +148,11 @@ $schema = Schema::fromClosure($updateUserClosure);
 
 The generated schema will include nullable types:
 
+<Accordion title="View Generated JSON Schema">
 ```json
 {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
     "properties": {
         "user_id": {
             "type": "string",
@@ -179,6 +182,7 @@ The generated schema will include nullable types:
     "required": ["user_id"]
 }
 ```
+</Accordion>
 
 ## Advanced Parameter Documentation
 
@@ -212,88 +216,6 @@ $processPaymentClosure = function (
 // Generate with advanced validation rules
 $schema = Schema::fromClosure($processPaymentClosure);
 ```
-
-## Enhanced Docblock Annotations
-
-Add validation constraints using docblock tags:
-
-```php
-/**
- * Register new user account
- *
- * @param string $username Username for the account
- *   - @minLength 3
- *   - @maxLength 20
- *   - @pattern ^[a-zA-Z0-9_]+$
- * @param string $email Email address
- *   - @format email
- * @param string $password Account password
- *   - @minLength 8
- *   - @maxLength 128
- * @param int $age User's age
- *   - @minimum 13
- *   - @maximum 120
- * @param array $interests User interests
- *   - @maxItems 10
- *   - @uniqueItems
- */
-$advancedRegistrationClosure = function (
-    string $username,
-    string $email,
-    string $password,
-    int $age,
-    array $interests = []
-): bool {
-    // Register user...
-    return true;
-};
-
-$schema = Schema::fromClosure($advancedRegistrationClosure);
-```
-
-<Accordion title="View Enhanced JSON Schema">
-```json
-{
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "description": "Register new user account",
-    "properties": {
-        "username": {
-            "type": "string",
-            "description": "Username for the account",
-            "minLength": 3,
-            "maxLength": 20,
-            "pattern": "^[a-zA-Z0-9_]+$"
-        },
-        "email": {
-            "type": "string",
-            "description": "Email address",
-            "format": "email"
-        },
-        "password": {
-            "type": "string",
-            "description": "Account password",
-            "minLength": 8,
-            "maxLength": 128
-        },
-        "age": {
-            "type": "integer",
-            "description": "User's age",
-            "minimum": 13,
-            "maximum": 120
-        },
-        "interests": {
-            "type": "array",
-            "description": "User interests",
-            "maxItems": 10,
-            "uniqueItems": true,
-            "default": []
-        }
-    },
-    "required": ["username", "email", "password", "age"]
-}
-```
-</Accordion>
 
 ## Complex Parameter Types
 
@@ -336,29 +258,14 @@ Real-world example for API endpoint validation:
  * Searches for users based on various criteria with pagination support.
  *
  * @param ?string $query Search query string
- *   - @minLength 2
- *   - @maxLength 100
  * @param ?string $email Email filter
- *   - @format email
  * @param ?int $age_min Minimum age filter
- *   - @minimum 0
- *   - @maximum 150
  * @param ?int $age_max Maximum age filter
- *   - @minimum 0
- *   - @maximum 150
  * @param array $roles Role filter
- *   - @maxItems 5
- *   - @uniqueItems
  * @param int $page Page number for pagination
- *   - @minimum 1
- *   - @maximum 1000
  * @param int $per_page Items per page
- *   - @minimum 1
- *   - @maximum 100
  * @param string $sort_by Sort field
- *   - @enum name,email,created_at,last_login
  * @param string $sort_direction Sort direction
- *   - @enum asc,desc
  * @param bool $include_inactive Include inactive users
  */
 $userSearchClosure = function (
@@ -399,10 +306,7 @@ use Cortex\JsonSchema\Enums\SchemaVersion;
  *
  * @param string $data Main data parameter
  * @param ?string $legacy_param Legacy parameter
- *   - @deprecated Use 'data' parameter instead
  * @param array $tags Data tags
- *   - @minContains 1
- *   - @maxContains 5
  */
 $modernApiClosure = function (
     string $data,
@@ -412,10 +316,17 @@ $modernApiClosure = function (
     // Process modern API request
 };
 
-// Generate with Draft 2019-09 for deprecated and contains support
+// Generate with Draft 2019-09 for deprecated support
 $modernSchema = Schema::fromClosure(
     $modernApiClosure,
     version: SchemaVersion::Draft_2019_09
+);
+
+// Apply validation rules programmatically after generation
+$modernSchema->properties(
+    Schema::array('tags')
+        ->minContains(1)
+        ->maxContains(5)
 );
 ```
 
@@ -429,16 +340,9 @@ Use generated schemas to validate function inputs:
  * Process contact form submission
  *
  * @param string $name Contact name
- *   - @minLength 2
- *   - @maxLength 100
  * @param string $email Contact email
- *   - @format email
  * @param string $subject Message subject
- *   - @minLength 5
- *   - @maxLength 200
  * @param string $message Message content
- *   - @minLength 10
- *   - @maxLength 2000
  * @param ?string $phone Contact phone number
  */
 $contactFormClosure = function (
@@ -483,117 +387,6 @@ if ($contactSchema->isValid($formData)) {
 }
 ```
 
-## Function Wrapper for Automatic Validation
-
-Create a wrapper that automatically validates inputs:
-
-```php
-function createValidatedFunction(callable $closure): callable
-{
-    $schema = Schema::fromClosure($closure);
-
-    return function (array $data) use ($closure, $schema) {
-        // Validate input data
-        $schema->validate($data);
-
-        // Extract parameters in correct order
-        $reflection = new ReflectionFunction($closure);
-        $parameters = $reflection->getParameters();
-
-        $args = [];
-        foreach ($parameters as $param) {
-            $name = $param->getName();
-            if (array_key_exists($name, $data)) {
-                $args[] = $data[$name];
-            } elseif ($param->isDefaultValueAvailable()) {
-                $args[] = $param->getDefaultValue();
-            } else {
-                throw new InvalidArgumentException("Missing required parameter: {$name}");
-            }
-        }
-
-        // Call original function with validated data
-        return $closure(...$args);
-    };
-}
-
-// Usage
-$validateUserRegistration = createValidatedFunction($registrationClosure);
-
-try {
-    $result = $validateUserRegistration([
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'age' => 30
-    ]);
-    echo "Registration successful";
-} catch (Exception $e) {
-    echo "Error: " . $e->getMessage();
-}
-```
-
-## Microservice API Example
-
-Complete microservice endpoint definition:
-
-```php
-/**
- * Order management microservice endpoint
- *
- * Handles order creation, updates, and status tracking for the e-commerce platform.
- *
- * @param string $action Action to perform
- *   - @enum create,update,cancel,ship,deliver
- * @param string $order_id Order identifier (required for update actions)
- *   - @pattern ^[A-Z]{3}-\d{6}$
- * @param ?array $order_data Order data for creation/updates
- * @param ?string $tracking_number Shipping tracking number
- * @param ?string $notes Additional notes
- *   - @maxLength 500
- * @param bool $send_notification Send customer notification
- * @param string $user_id User performing the action
- *   - @format uuid
- * @param array $metadata Additional metadata
- */
-$orderServiceClosure = function (
-    string $action,
-    string $order_id,
-    ?array $order_data = null,
-    ?string $tracking_number = null,
-    ?string $notes = null,
-    bool $send_notification = true,
-    string $user_id,
-    array $metadata = []
-): array {
-    // Process order service request
-    return [
-        'success' => true,
-        'order_id' => $order_id,
-        'status' => 'processed'
-    ];
-};
-
-$orderServiceSchema = Schema::fromClosure(
-    $orderServiceClosure,
-    version: SchemaVersion::Draft_2019_09
-);
-
-// Use for API validation
-$apiRequest = [
-    'action' => 'ship',
-    'order_id' => 'ORD-123456',
-    'tracking_number' => 'TRACK123456789',
-    'notes' => 'Express shipping requested',
-    'send_notification' => true,
-    'user_id' => '550e8400-e29b-41d4-a716-446655440000',
-    'metadata' => ['warehouse' => 'west_coast']
-];
-
-if ($orderServiceSchema->isValid($apiRequest)) {
-    echo "API request is valid";
-}
-```
-
 ## Best Practices
 
 ### 1. Write Comprehensive Function Documentation
@@ -626,18 +419,18 @@ function processData(
 function processData($name, $age, $tags, $date) {}
 ```
 
-### 3. Leverage Docblock Validation
+### 3. Write Clear Documentation
 
 ```php
 /**
  * @param string $email Email address
- *   - @format email
- *   - @maxLength 255
  * @param string $password Password
- *   - @minLength 8
- *   - @pattern (?=.*[a-z])(?=.*[A-Z])(?=.*\d)
  */
 ```
+
+<Note>
+Validation rules like format, minLength, pattern are not extracted from docblocks. Generic array syntax (e.g., `array<string>`, `array<OrderItem>`) in docblocks is not parsed - arrays are treated as generic arrays without item type information. Only parameter types and descriptions are extracted. Apply validation rules and array item schemas programmatically using the fluent API after schema generation.
+</Note>
 
 ### 4. Design Functions for Schema Generation
 

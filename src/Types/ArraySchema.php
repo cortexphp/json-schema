@@ -24,6 +24,11 @@ final class ArraySchema extends AbstractSchema
 
     protected JsonSchema|bool|null $unevaluatedItems = null;
 
+    /**
+     * @var array<int, JsonSchema>
+     */
+    protected array $prefixItems = [];
+
     public function __construct(?string $title = null, ?SchemaVersion $schemaVersion = null)
     {
         parent::__construct(SchemaType::Array, $title, $schemaVersion);
@@ -99,6 +104,23 @@ final class ArraySchema extends AbstractSchema
     }
 
     /**
+     * Set prefix items for tuple validation.
+     * This feature is only available in Draft 2020-12 and later.
+     *
+     * @param array<int, \Cortex\JsonSchema\Contracts\JsonSchema> $schemas Array of schemas for tuple validation
+     *
+     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
+     */
+    public function prefixItems(array $schemas): static
+    {
+        $this->validateFeatureSupport(SchemaFeature::PrefixItems);
+
+        $this->prefixItems = array_values($schemas);
+
+        return $this;
+    }
+
+    /**
      * Convert the schema to an array.
      *
      * @return array<string, mixed>
@@ -109,6 +131,13 @@ final class ArraySchema extends AbstractSchema
         $schema = parent::toArray($includeSchemaRef, $includeTitle);
 
         $schema = $this->addItemsToSchema($schema);
+
+        if ($this->prefixItems !== []) {
+            $schema['prefixItems'] = array_map(
+                static fn(JsonSchema $item): array => $item->toArray(includeSchemaRef: false, includeTitle: false),
+                $this->prefixItems,
+            );
+        }
 
         if ($this->contains instanceof JsonSchema) {
             $schema['contains'] = $this->contains->toArray();
@@ -139,6 +168,10 @@ final class ArraySchema extends AbstractSchema
     protected function getArrayFeatures(): array
     {
         $features = [];
+
+        if ($this->prefixItems !== []) {
+            $features[] = SchemaFeature::PrefixItems;
+        }
 
         if ($this->minContains !== null) {
             $features[] = SchemaFeature::MinContains;

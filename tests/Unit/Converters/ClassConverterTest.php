@@ -357,3 +357,121 @@ it('can create a schema from a deprecated class without description', function (
         ],
     ]);
 });
+
+it('can create a schema from a class with inheritance', function (): void {
+    /**
+     * Base entity with common fields
+     */
+    abstract class BaseEntityInheritanceTest
+    {
+        /**
+         * @var string Unique identifier
+         */
+        public string $id;
+
+        /**
+         * @var int Creation timestamp
+         */
+        public int $created_at;
+    }
+
+    /**
+     * Complete user entity
+     */
+    class CompleteUserInheritanceTest extends BaseEntityInheritanceTest
+    {
+        public string $name;
+        public string $email;
+    }
+
+    $objectSchema = (new ClassConverter(CompleteUserInheritanceTest::class))->convert();
+
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    $array = $objectSchema->toArray();
+
+    // Should include properties from both base class and child class
+    expect($array['properties'])->toHaveKey('id');
+    expect($array['properties'])->toHaveKey('created_at');
+    expect($array['properties'])->toHaveKey('name');
+    expect($array['properties'])->toHaveKey('email');
+    expect($array['properties']['id']['description'])->toBe('Unique identifier');
+    expect($array['properties']['created_at']['description'])->toBe('Creation timestamp');
+});
+
+it('can create a schema from a class with traits', function (): void {
+    /**
+     * Timestamping functionality
+     */
+    trait TimestampableTraitTest
+    {
+        /**
+         * @var ?int Deletion timestamp (soft delete)
+         */
+        public ?int $deleted_at = null;
+    }
+
+    /**
+     * Complete user entity with trait
+     */
+    class UserWithTraitTest
+    {
+        use TimestampableTraitTest;
+
+        public string $name;
+        public string $email;
+    }
+
+    $objectSchema = (new ClassConverter(UserWithTraitTest::class))->convert();
+
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    $array = $objectSchema->toArray();
+
+    // Should include properties from trait and class
+    expect($array['properties'])->toHaveKey('deleted_at');
+    expect($array['properties'])->toHaveKey('name');
+    expect($array['properties'])->toHaveKey('email');
+    expect($array['properties']['deleted_at']['description'])->toBe('Deletion timestamp (soft delete)');
+    expect($array['properties']['deleted_at']['default'])->toBe(null);
+});
+
+it('can create a schema from a class with inheritance and traits', function (): void {
+    /**
+     * Base entity with common fields
+     */
+    abstract class BaseEntityCombinedTest
+    {
+        public string $id;
+        public int $created_at;
+    }
+
+    /**
+     * Timestamping functionality
+     */
+    trait TimestampableCombinedTest
+    {
+        public ?int $deleted_at = null;
+    }
+
+    /**
+     * Complete user entity
+     */
+    class CompleteUserCombinedTest extends BaseEntityCombinedTest
+    {
+        use TimestampableCombinedTest;
+
+        public string $name;
+        public string $email;
+    }
+
+    $objectSchema = (new ClassConverter(CompleteUserCombinedTest::class))->convert();
+
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    $array = $objectSchema->toArray();
+
+    // Should include properties from base class, trait, and child class
+    expect($array['properties'])->toHaveKey('id');
+    expect($array['properties'])->toHaveKey('created_at');
+    expect($array['properties'])->toHaveKey('deleted_at');
+    expect($array['properties'])->toHaveKey('name');
+    expect($array['properties'])->toHaveKey('email');
+});

@@ -359,3 +359,122 @@ it('handles toArray parameters correctly for unevaluated items', function (): vo
     expect($schemaArray['unevaluatedItems'])->not->toHaveKey('title');
     expect($schemaArray['unevaluatedItems'])->toHaveKey('type', 'number');
 });
+
+it('can set prefixItems for tuple validation', function (): void {
+    $arraySchema = Schema::array('tuple', SchemaVersion::Draft_2020_12)
+        ->prefixItems([
+            Schema::string(),
+            Schema::integer(),
+            Schema::boolean(),
+        ]);
+
+    $schemaArray = $arraySchema->toArray();
+
+    expect($schemaArray)->toHaveKey('prefixItems');
+    expect($schemaArray['prefixItems'])->toBeArray();
+    expect($schemaArray['prefixItems'])->toHaveCount(3);
+    expect($schemaArray['prefixItems'][0])->toHaveKey('type', 'string');
+    expect($schemaArray['prefixItems'][1])->toHaveKey('type', 'integer');
+    expect($schemaArray['prefixItems'][2])->toHaveKey('type', 'boolean');
+
+    // Test basic validation
+    expect($arraySchema->isValid(['hello', 42, true]))->toBeTrue();
+    expect($arraySchema->isValid(['hello', 42]))->toBeTrue(); // Prefix items are positional
+});
+
+it('can combine prefixItems with items for additional items', function (): void {
+    $arraySchema = Schema::array('tuple_with_additional', SchemaVersion::Draft_2020_12)
+        ->prefixItems([
+            Schema::string(),
+            Schema::integer(),
+        ])
+        ->items(Schema::boolean()); // Additional items after prefix must be boolean
+
+    $schemaArray = $arraySchema->toArray();
+
+    expect($schemaArray)->toHaveKey('prefixItems');
+    expect($schemaArray)->toHaveKey('items');
+    expect($schemaArray['prefixItems'])->toHaveCount(2);
+    expect($schemaArray['items'])->toHaveKey('type', 'boolean');
+
+    // Valid: prefix items match, additional items match items schema
+    expect($arraySchema->isValid(['name', 42]))->toBeTrue();
+    expect($arraySchema->isValid(['name', 42, true, false]))->toBeTrue();
+
+    // Invalid: additional items don't match items schema
+    expect($arraySchema->isValid(['name', 42, 'extra']))->toBeFalse();
+});
+
+it('throws exception when using prefixItems with Draft 07', function (): void {
+    expect(
+        fn(): ArraySchema => Schema::array('tuple', SchemaVersion::Draft_07)
+            ->prefixItems([Schema::string()]),
+    )->toThrow(
+        SchemaException::class,
+        'Feature "Prefix items for tuple validation" is not supported in Draft 7. Minimum version required: Draft 2020-12.',
+    );
+});
+
+it('throws exception when using prefixItems with Draft 2019-09', function (): void {
+    expect(
+        fn(): ArraySchema => Schema::array('tuple', SchemaVersion::Draft_2019_09)
+            ->prefixItems([Schema::string()]),
+    )->toThrow(
+        SchemaException::class,
+        'Feature "Prefix items for tuple validation" is not supported in Draft 2019-09. Minimum version required: Draft 2020-12.',
+    );
+});
+
+it('works with Draft 2020-12', function (): void {
+    $arraySchema = Schema::array('tuple', SchemaVersion::Draft_2020_12)
+        ->prefixItems([Schema::string()]);
+
+    expect($arraySchema->toArray())->toHaveKey('prefixItems');
+    expect($arraySchema->toArray())->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
+});
+
+it('detects prefixItems feature correctly', function (): void {
+    $arraySchema = Schema::array('tuple', SchemaVersion::Draft_2020_12)
+        ->prefixItems([Schema::string()]);
+
+    // Access the protected method via reflection to test feature detection
+    $reflection = new ReflectionClass($arraySchema);
+    $reflectionMethod = $reflection->getMethod('getUsedFeatures');
+
+    $features = $reflectionMethod->invoke($arraySchema);
+
+    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    expect($featureValues)->toContain('prefixItems');
+});
+
+it('does not include prefixItems feature when not used', function (): void {
+    $arraySchema = Schema::array('items', SchemaVersion::Draft_2020_12)
+        ->items(Schema::string());
+
+    // Access the protected method via reflection to test feature detection
+    $reflection = new ReflectionClass($arraySchema);
+    $reflectionMethod = $reflection->getMethod('getUsedFeatures');
+
+    $features = $reflectionMethod->invoke($arraySchema);
+
+    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    expect($featureValues)->not->toContain('prefixItems');
+});
+
+it('handles toArray parameters correctly for prefixItems', function (): void {
+    $arraySchema = Schema::array('test', SchemaVersion::Draft_2020_12)
+        ->prefixItems([
+            Schema::string('string-title'),
+            Schema::integer('integer-title'),
+        ]);
+
+    $schemaArray = $arraySchema->toArray();
+
+    // PrefixItems schemas should not include $schema or title
+    expect($schemaArray['prefixItems'][0])->not->toHaveKey('$schema');
+    expect($schemaArray['prefixItems'][0])->not->toHaveKey('title');
+    expect($schemaArray['prefixItems'][0])->toHaveKey('type', 'string');
+    expect($schemaArray['prefixItems'][1])->not->toHaveKey('$schema');
+    expect($schemaArray['prefixItems'][1])->not->toHaveKey('title');
+    expect($schemaArray['prefixItems'][1])->toHaveKey('type', 'integer');
+});

@@ -47,7 +47,7 @@ $configSchema->isValid([
 <Accordion title="View JSON Schema Output">
 ```json
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "title": "config",
     "properties": {
@@ -76,6 +76,9 @@ $configSchema->isValid([
 Define multiple patterns for different types of dynamic properties:
 
 ```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaType;
+
 $flexibleApiSchema = Schema::object('api_config')
     ->properties(
         Schema::string('name')->required(),
@@ -121,6 +124,9 @@ $flexibleApiSchema->isValid([
 Create sophisticated validation rules for pattern-matched properties:
 
 ```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaType;
+
 $dynamicFormSchema = Schema::object('dynamic_form')
     ->properties(
         Schema::string('form_id')->required(),
@@ -179,6 +185,7 @@ $dynamicFormSchema = Schema::object('dynamic_form')
                     ->required(),
                 Schema::string('message')->required(),
                 Schema::union([SchemaType::String, SchemaType::Number], 'parameter')
+                    ->description('Validation parameter value')
             )
             ->additionalProperties(false)
     ])
@@ -223,6 +230,10 @@ $dynamicFormSchema->isValid([
 Pattern properties work alongside regular properties and additional properties:
 
 ```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
 $userProfileSchema = Schema::object('user_profile')
     // Fixed properties
     ->properties(
@@ -401,7 +412,7 @@ Understanding property validation order:
 ```php
 $prioritySchema = Schema::object('priority_example')
     ->properties(
-        'exact_match' => Schema::string()->maxLength(10)  // 1. Exact match
+        Schema::string('exact_match')->maxLength(10)  // 1. Exact match
     )
     ->patternProperty('^exact_',  // 2. Pattern match (won't match 'exact_match')
         Schema::string()->maxLength(20)
