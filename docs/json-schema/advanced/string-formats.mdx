@@ -20,329 +20,81 @@ $emailSchema->isValid('user@example.com');  // true
 $emailSchema->isValid('invalid-email');     // false
 ```
 
-## Email Formats
+## Common String Formats
 
-### Standard Email (`Email`)
+The package supports all standard JSON Schema string formats. Here are examples of the most commonly used ones:
+
+### Email and URI Formats
 
 ```php
+// Email validation
 $emailSchema = Schema::string('email')
-    ->format(SchemaFormat::Email)
-    ->description('Standard email address');
+    ->format(SchemaFormat::Email);
 
-// Valid emails
-$emailSchema->isValid('user@example.com');      // true
-$emailSchema->isValid('user.name@example.com'); // true
-$emailSchema->isValid('user+tag@example.org');  // true
+$emailSchema->isValid('user@example.com');  // true
+$emailSchema->isValid('invalid-email');     // false
 
-// Invalid emails
-$emailSchema->isValid('invalid-email');         // false
-$emailSchema->isValid('user@');                 // false
-$emailSchema->isValid('@example.com');          // false
-```
-
-### Internationalized Email (`IdnEmail`)
-
-<Note>
-Available in JSON Schema Draft 2019-09 and later.
-</Note>
-
-```php
-use Cortex\JsonSchema\Enums\SchemaVersion;
-
-$idnEmailSchema = Schema::string('idn_email', SchemaVersion::Draft_2019_09)
-    ->format(SchemaFormat::IdnEmail)
-    ->description('Internationalized email address');
-
-// Valid internationalized emails
-$idnEmailSchema->isValid('用户@example.com');       // true
-$idnEmailSchema->isValid('user@例え.テスト');        // true
-$idnEmailSchema->isValid('user@example.com');      // true (regular emails work too)
-```
-
-## URI and URL Formats
-
-### URI (`Uri`)
-
-```php
+// URI validation
 $uriSchema = Schema::string('website')
-    ->format(SchemaFormat::Uri)
-    ->description('URI reference');
+    ->format(SchemaFormat::Uri);
 
-// Valid URIs
-$uriSchema->isValid('https://example.com');           // true
-$uriSchema->isValid('http://example.com/path');       // true
-$uriSchema->isValid('ftp://files.example.com');       // true
-$uriSchema->isValid('mailto:user@example.com');       // true
-$uriSchema->isValid('/relative/path');                // true
-$uriSchema->isValid('#fragment');                     // true
-
-// Invalid URIs
-$uriSchema->isValid('not a uri');                     // false
-$uriSchema->isValid('http://');                       // false
+$uriSchema->isValid('https://example.com'); // true
+$uriSchema->isValid('not a uri');           // false
 ```
 
-### Internationalized URI (`Iri`)
-
-<Note>
-Available in JSON Schema Draft 2019-09 and later.
-</Note>
+### Network Formats
 
 ```php
-$iriSchema = Schema::string('iri', SchemaVersion::Draft_2019_09)
-    ->format(SchemaFormat::Iri)
-    ->description('Internationalized Resource Identifier');
-
-// Valid IRIs
-$iriSchema->isValid('https://例え.テスト');            // true
-$iriSchema->isValid('https://пример.рф');            // true
-$iriSchema->isValid('https://example.com');          // true
-```
-
-### IRI Reference (`IriReference`)
-
-```php
-$iriRefSchema = Schema::string('iri_ref', SchemaVersion::Draft_2019_09)
-    ->format(SchemaFormat::IriReference)
-    ->description('IRI reference including relative IRIs');
-
-// Valid IRI references
-$iriRefSchema->isValid('//例え.テスト/path');          // true
-$iriRefSchema->isValid('/relative/path');            // true
-$iriRefSchema->isValid('https://例え.テスト');         // true
-```
-
-## Network Formats
-
-### Hostname (`Hostname`)
-
-```php
+// Hostname
 $hostnameSchema = Schema::string('hostname')
-    ->format(SchemaFormat::Hostname)
-    ->description('Internet hostname');
+    ->format(SchemaFormat::Hostname);
 
-// Valid hostnames
-$hostnameSchema->isValid('example.com');             // true
-$hostnameSchema->isValid('sub.example.com');         // true
-$hostnameSchema->isValid('localhost');               // true
-$hostnameSchema->isValid('my-server.local');         // true
+$hostnameSchema->isValid('example.com');    // true
 
-// Invalid hostnames
-$hostnameSchema->isValid('invalid_hostname');        // false (underscore)
-$hostnameSchema->isValid('example.com:8080');        // false (includes port)
-$hostnameSchema->isValid('192.168.1.1');            // false (IP address)
+// IPv4 and IPv6
+$ipv4Schema = Schema::string('ipv4')->format(SchemaFormat::Ipv4);
+$ipv6Schema = Schema::string('ipv6')->format(SchemaFormat::Ipv6);
+
+$ipv4Schema->isValid('192.168.1.1');        // true
+$ipv6Schema->isValid('2001:db8::1');        // true
 ```
 
-### Internationalized Hostname (`IdnHostname`)
+### Date and Time Formats
 
 ```php
-$idnHostnameSchema = Schema::string('idn_hostname', SchemaVersion::Draft_2019_09)
-    ->format(SchemaFormat::IdnHostname)
-    ->description('Internationalized hostname');
-
-// Valid internationalized hostnames
-$idnHostnameSchema->isValid('例え.テスト');           // true
-$idnHostnameSchema->isValid('пример.рф');           // true
-$idnHostnameSchema->isValid('example.com');         // true
-```
-
-### IPv4 Address (`Ipv4`)
-
-```php
-$ipv4Schema = Schema::string('ipv4')
-    ->format(SchemaFormat::Ipv4)
-    ->description('IPv4 address');
-
-// Valid IPv4 addresses
-$ipv4Schema->isValid('192.168.1.1');                // true
-$ipv4Schema->isValid('10.0.0.1');                   // true
-$ipv4Schema->isValid('127.0.0.1');                  // true
-$ipv4Schema->isValid('0.0.0.0');                    // true
-
-// Invalid IPv4 addresses
-$ipv4Schema->isValid('256.1.1.1');                  // false (out of range)
-$ipv4Schema->isValid('192.168.1');                  // false (incomplete)
-$ipv4Schema->isValid('192.168.1.1.1');              // false (too many octets)
-```
-
-### IPv6 Address (`Ipv6`)
-
-```php
-$ipv6Schema = Schema::string('ipv6')
-    ->format(SchemaFormat::Ipv6)
-    ->description('IPv6 address');
-
-// Valid IPv6 addresses
-$ipv6Schema->isValid('2001:db8:85a3::8a2e:370:7334'); // true
-$ipv6Schema->isValid('::1');                          // true (localhost)
-$ipv6Schema->isValid('::');                           // true (all zeros)
-$ipv6Schema->isValid('2001:db8::1');                  // true (compressed)
-
-// Invalid IPv6 addresses
-$ipv6Schema->isValid('192.168.1.1');                 // false (IPv4)
-$ipv6Schema->isValid('invalid');                     // false
-```
-
-## Date and Time Formats
-
-### Date (`Date`)
-
-```php
+// Date (YYYY-MM-DD)
 $dateSchema = Schema::string('birth_date')
-    ->format(SchemaFormat::Date)
-    ->description('Full date (RFC 3339)');
+    ->format(SchemaFormat::Date);
 
-// Valid dates (YYYY-MM-DD)
-$dateSchema->isValid('2023-12-25');                  // true
-$dateSchema->isValid('1990-01-01');                  // true
-$dateSchema->isValid('2024-02-29');                  // true (leap year)
+$dateSchema->isValid('2023-12-25');         // true
 
-// Invalid dates
-$dateSchema->isValid('2023-13-01');                  // false (invalid month)
-$dateSchema->isValid('2023-02-30');                  // false (invalid day)
-$dateSchema->isValid('23-12-25');                    // false (wrong format)
-$dateSchema->isValid('2023/12/25');                  // false (wrong separator)
-```
-
-### Time (`Time`)
-
-```php
-$timeSchema = Schema::string('appointment_time')
-    ->format(SchemaFormat::Time)
-    ->description('Time (RFC 3339)');
-
-// Valid times (HH:MM:SS or HH:MM:SS.sss)
-$timeSchema->isValid('14:30:00');                    // true
-$timeSchema->isValid('09:15:30');                    // true
-$timeSchema->isValid('23:59:59');                    // true
-$timeSchema->isValid('14:30:00.123');                // true (with milliseconds)
-
-// Invalid times
-$timeSchema->isValid('24:00:00');                    // false (invalid hour)
-$timeSchema->isValid('14:60:00');                    // false (invalid minute)
-$timeSchema->isValid('14:30');                       // false (missing seconds)
-$timeSchema->isValid('2:30:00');                     // false (single digit hour)
-```
-
-### Date-Time (`DateTime`)
-
-```php
+// Date-Time (RFC 3339)
 $dateTimeSchema = Schema::string('created_at')
-    ->format(SchemaFormat::DateTime)
-    ->description('Date and time (RFC 3339)');
+    ->format(SchemaFormat::DateTime);
 
-// Valid date-times
-$dateTimeSchema->isValid('2023-12-25T14:30:00Z');           // true (UTC)
-$dateTimeSchema->isValid('2023-12-25T14:30:00+05:30');      // true (with timezone)
-$dateTimeSchema->isValid('2023-12-25T14:30:00.123Z');       // true (with milliseconds)
-$dateTimeSchema->isValid('2023-12-25T14:30:00-08:00');      // true (negative timezone)
+$dateTimeSchema->isValid('2023-12-25T14:30:00Z'); // true
 
-// Invalid date-times
-$dateTimeSchema->isValid('2023-12-25 14:30:00');            // false (space instead of T)
-$dateTimeSchema->isValid('2023-12-25T14:30:00');            // false (missing timezone)
-$dateTimeSchema->isValid('2023-12-25T25:30:00Z');           // false (invalid hour)
-```
-
-### Duration (`Duration`)
-
-<Note>
-Available in JSON Schema Draft 2019-09 and later.
-</Note>
-
-```php
+// Duration (ISO 8601) - Draft 2019-09+
 $durationSchema = Schema::string('duration', SchemaVersion::Draft_2019_09)
-    ->format(SchemaFormat::Duration)
-    ->description('ISO 8601 duration');
+    ->format(SchemaFormat::Duration);
 
-// Valid durations
-$durationSchema->isValid('P1Y2M3DT4H5M6S');          // true (1 year, 2 months, 3 days, 4 hours, 5 minutes, 6 seconds)
-$durationSchema->isValid('P1D');                     // true (1 day)
-$durationSchema->isValid('PT30M');                   // true (30 minutes)
-$durationSchema->isValid('P1W');                     // true (1 week)
-$durationSchema->isValid('PT0.5S');                  // true (0.5 seconds)
-
-// Invalid durations
-$durationSchema->isValid('1 hour');                  // false (not ISO 8601)
-$durationSchema->isValid('P');                       // false (empty duration)
-$durationSchema->isValid('PT');                      // false (empty time part)
+$durationSchema->isValid('PT30M');          // true (30 minutes)
 ```
 
-## JSON Schema Specific Formats
-
-### JSON Pointer (`JsonPointer`)
+### JSON Schema Formats
 
 ```php
-$jsonPointerSchema = Schema::string('json_pointer')
-    ->format(SchemaFormat::JsonPointer)
-    ->description('JSON Pointer reference');
+// JSON Pointer
+$jsonPointerSchema = Schema::string('pointer')
+    ->format(SchemaFormat::JsonPointer);
 
-// Valid JSON Pointers
-$jsonPointerSchema->isValid('/users/123/name');      // true
-$jsonPointerSchema->isValid('/items/0');             // true
-$jsonPointerSchema->isValid('');                     // true (root document)
-$jsonPointerSchema->isValid('/users/~1name');        // true (escaped slash)
+$jsonPointerSchema->isValid('/users/123/name'); // true
 
-// Invalid JSON Pointers
-$jsonPointerSchema->isValid('users/123');            // false (missing leading slash)
-$jsonPointerSchema->isValid('/users/123/');          // false (trailing slash)
-```
-
-### Relative JSON Pointer (`RelativeJsonPointer`)
-
-```php
-$relativeJsonPointerSchema = Schema::string('relative_json_pointer')
-    ->format(SchemaFormat::RelativeJsonPointer)
-    ->description('Relative JSON Pointer');
-
-// Valid relative JSON Pointers
-$relativeJsonPointerSchema->isValid('1/name');       // true
-$relativeJsonPointerSchema->isValid('0');            // true
-$relativeJsonPointerSchema->isValid('2/items/0');    // true
-
-// Invalid relative JSON Pointers
-$relativeJsonPointerSchema->isValid('/name');        // false (absolute pointer)
-$relativeJsonPointerSchema->isValid('-1/name');      // false (negative index)
-```
-
-### URI Template (`UriTemplate`)
-
-```php
-$uriTemplateSchema = Schema::string('uri_template')
-    ->format(SchemaFormat::UriTemplate)
-    ->description('URI Template (RFC 6570)');
-
-// Valid URI templates
-$uriTemplateSchema->isValid('/users/{id}');          // true
-$uriTemplateSchema->isValid('/search{?q,limit}');    // true
-$uriTemplateSchema->isValid('/users{/id}{?format}'); // true
-
-// Invalid URI templates
-$uriTemplateSchema->isValid('/users/{id');           // false (unclosed brace)
-$uriTemplateSchema->isValid('/users/id}');           // false (unmatched brace)
-```
-
-## Unique Identifiers
-
-### UUID (`Uuid`)
-
-<Note>
-Available in JSON Schema Draft 2019-09 and later.
-</Note>
-
-```php
+// UUID - Draft 2019-09+
 $uuidSchema = Schema::string('id', SchemaVersion::Draft_2019_09)
-    ->format(SchemaFormat::Uuid)
-    ->description('Universally Unique Identifier');
+    ->format(SchemaFormat::Uuid);
 
-// Valid UUIDs
-$uuidSchema->isValid('123e4567-e89b-12d3-a456-426614174000'); // true (v1)
-$uuidSchema->isValid('6ba7b810-9dad-11d1-80b4-00c04fd430c8'); // true (v1)
-$uuidSchema->isValid('6ba7b811-9dad-11d1-80b4-00c04fd430c8'); // true (v2)
-$uuidSchema->isValid('6ba7b812-9dad-11d1-80b4-00c04fd430c8'); // true (v4)
-
-// Invalid UUIDs
-$uuidSchema->isValid('123e4567-e89b-12d3-a456');             // false (too short)
-$uuidSchema->isValid('123e4567e89b12d3a456426614174000');     // false (no hyphens)
-$uuidSchema->isValid('not-a-uuid');                          // false
+$uuidSchema->isValid('123e4567-e89b-12d3-a456-426614174000'); // true
 ```
 
 ## Format Validation Examples
@@ -411,49 +163,6 @@ $validProfile = [
 ];
 
 $userProfileSchema->isValid($validProfile); // true
-```
-
-## Format vs Pattern
-
-<Tip>
-Use formats for standard data types and patterns for custom validation rules.
-</Tip>
-
-```php
-// Good: Use format for standard email validation
-$emailSchema = Schema::string('email')
-    ->format(SchemaFormat::Email);
-
-// Less ideal: Custom email pattern (unless you need specific rules)
-$customEmailSchema = Schema::string('email')
-    ->pattern('^[^@]+@[^@]+\.[^@]+$');  // Simplified, less robust
-
-// Good: Use pattern for custom formats
-$productCodeSchema = Schema::string('product_code')
-    ->pattern('^[A-Z]{3}-\d{4}-[A-Z]{2}$')  // Custom business format
-    ->description('Product code format: ABC-1234-XY');
-```
-
-## Error Messages
-
-Format validation provides specific error messages:
-
-```php
-$emailSchema = Schema::string('email')->format(SchemaFormat::Email);
-
-try {
-    $emailSchema->validate('invalid-email');
-} catch (SchemaException $e) {
-    echo $e->getMessage(); // "Value must match the 'email' format"
-}
-
-$dateSchema = Schema::string('date')->format(SchemaFormat::Date);
-
-try {
-    $dateSchema->validate('2023-13-01');
-} catch (SchemaException $e) {
-    echo $e->getMessage(); // "Value must match the 'date' format"
-}
 ```
 
 ## Format Support by Version

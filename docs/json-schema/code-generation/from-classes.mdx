@@ -210,166 +210,40 @@ class Order
     public string $id;
 
     /**
-     * @var array<OrderItem> List of order items
+     * @var array List of order items
      */
     public array $items;
 
     /**
-     * @var Address Shipping address
+     * @var object Shipping address
      */
-    public Address $shipping_address;
+    public object $shipping_address;
 
     /**
-     * @var ?Address Billing address (same as shipping if null)
+     * @var ?object Billing address (same as shipping if null)
      */
-    public ?Address $billing_address = null;
+    public ?object $billing_address = null;
 
     /**
-     * @var array<string> Additional notes
+     * @var array Additional notes
      */
     public array $notes = [];
 
     /**
-     * @var array<string, mixed> Metadata key-value pairs
+     * @var array Metadata key-value pairs
      */
     public array $metadata = [];
 }
 
-/**
- * Order item details
- */
-class OrderItem
-{
-    public string $product_id;
-    public int $quantity;
-    public float $unit_price;
-}
-
-/**
- * Address information
- */
-class Address
-{
-    public string $street;
-    public string $city;
-    public string $state;
-    public string $postal_code;
-    public string $country = 'US';
-}
-
 $schema = Schema::fromClass(Order::class);
-// This will analyze the entire object graph and create definitions for nested classes
+// Custom class types (like Address) are treated as generic 'object' type
+// Generic array syntax (e.g., array<OrderItem>) in docblocks is not parsed
+// Arrays are treated as generic arrays without item type information
 ```
 
-## Validation Attributes and Docblock Tags
-
-Use docblock tags to specify validation rules:
-
-```php
-/**
- * User registration data
- */
-class UserRegistration
-{
-    /**
-     * @var string Username (3-20 characters, alphanumeric and underscore only)
-     * @minLength 3
-     * @maxLength 20
-     * @pattern ^[a-zA-Z0-9_]+$
-     */
-    public string $username;
-
-    /**
-     * @var string Email address
-     * @format email
-     */
-    public string $email;
-
-    /**
-     * @var string Password (minimum 8 characters)
-     * @minLength 8
-     */
-    public string $password;
-
-    /**
-     * @var int Age (must be 18 or older)
-     * @minimum 18
-     * @maximum 120
-     */
-    public int $age;
-
-    /**
-     * @var float Height in meters
-     * @minimum 0.5
-     * @maximum 3.0
-     * @multipleOf 0.01
-     */
-    public float $height;
-
-    /**
-     * @var array<string> Interests (max 10 items)
-     * @maxItems 10
-     * @uniqueItems
-     */
-    public array $interests = [];
-}
-
-$schema = Schema::fromClass(UserRegistration::class);
-```
-
-<Accordion title="View Generated JSON Schema with Validation">
-```json
-{
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "title": "UserRegistration",
-    "description": "User registration data",
-    "properties": {
-        "username": {
-            "type": "string",
-            "description": "Username (3-20 characters, alphanumeric and underscore only)",
-            "minLength": 3,
-            "maxLength": 20,
-            "pattern": "^[a-zA-Z0-9_]+$"
-        },
-        "email": {
-            "type": "string",
-            "description": "Email address",
-            "format": "email"
-        },
-        "password": {
-            "type": "string",
-            "description": "Password (minimum 8 characters)",
-            "minLength": 8
-        },
-        "age": {
-            "type": "integer",
-            "description": "Age (must be 18 or older)",
-            "minimum": 18,
-            "maximum": 120
-        },
-        "height": {
-            "type": "number",
-            "description": "Height in meters",
-            "minimum": 0.5,
-            "maximum": 3.0,
-            "multipleOf": 0.01
-        },
-        "interests": {
-            "type": "array",
-            "description": "Interests (max 10 items)",
-            "items": {
-                "type": "string"
-            },
-            "maxItems": 10,
-            "uniqueItems": true,
-            "default": []
-        }
-    },
-    "required": ["username", "email", "password", "age", "height"]
-}
-```
-</Accordion>
+<Note>
+Custom class types (non-built-in PHP types) are converted to generic `object` schemas. The converter does not recursively analyze nested classes or parse generic array syntax from docblocks. To create schemas for nested objects, generate them separately and combine them using the fluent API.
+</Note>
 
 ## Enum Integration
 
@@ -487,251 +361,45 @@ $schema = Schema::fromClass(CompleteUser::class);
 // Schema will include properties from base class and traits
 ```
 
-## Advanced Configuration Options
-
-Customize schema generation with options:
-
-```php
-/**
- * Configuration class for API settings
- */
-class ApiConfig
-{
-    /**
-     * @var string API base URL
-     * @format uri
-     */
-    public string $base_url;
-
-    /**
-     * @var int Request timeout in seconds
-     * @minimum 1
-     * @maximum 300
-     */
-    public int $timeout = 30;
-
-    /**
-     * @var bool Enable debug mode
-     */
-    public bool $debug = false;
-
-    /**
-     * @var array<string, mixed> Custom headers
-     */
-    public array $headers = [];
-
-    /**
-     * @ignore This field should not appear in the schema
-     */
-    public string $internal_secret;
-}
-
-// Generate schema with custom options
-$schema = Schema::fromClass(
-    ApiConfig::class,
-    version: SchemaVersion::Draft_2019_09,
-    options: [
-        'respectIgnoreAnnotations' => true,    // Skip @ignore properties
-        'includePrivateProperties' => false,   // Only public properties
-        'generateDefinitions' => true,         // Create reusable definitions
-        'strictTypes' => true                  // Strict type validation
-    ]
-);
-```
-
-## Real-World E-commerce Example
-
-Complete e-commerce schema generation:
-
-```php
-/**
- * Customer information
- */
-class Customer
-{
-    /**
-     * @var string Customer unique ID
-     * @format uuid
-     */
-    public string $id;
-
-    /**
-     * @var string First name
-     * @minLength 1
-     * @maxLength 50
-     */
-    public string $first_name;
-
-    /**
-     * @var string Last name
-     * @minLength 1
-     * @maxLength 50
-     */
-    public string $last_name;
-
-    /**
-     * @var string Email address
-     * @format email
-     */
-    public string $email;
-
-    /**
-     * @var ?string Phone number
-     * @pattern ^\+\d{1,3}-\d{3,4}-\d{6,8}$
-     */
-    public ?string $phone = null;
-
-    /**
-     * @var DateTime Registration date
-     * @format date-time
-     */
-    public DateTime $created_at;
-}
-
-/**
- * Product in the catalog
- */
-class CatalogProduct
-{
-    /**
-     * @var string Product SKU
-     * @pattern ^[A-Z]{3}-\d{4}$
-     */
-    public string $sku;
-
-    /**
-     * @var string Product name
-     * @minLength 1
-     * @maxLength 200
-     */
-    public string $name;
-
-    /**
-     * @var string Product description
-     * @maxLength 2000
-     */
-    public string $description;
-
-    /**
-     * @var float Price in USD
-     * @minimum 0.01
-     * @multipleOf 0.01
-     */
-    public float $price;
-
-    /**
-     * @var int Available quantity
-     * @minimum 0
-     */
-    public int $stock_quantity;
-
-    /**
-     * @var array<string> Product categories
-     * @maxItems 5
-     */
-    public array $categories = [];
-
-    /**
-     * @var bool Whether product is active
-     */
-    public bool $active = true;
-}
-
-/**
- * Shopping cart item
- */
-class CartItem
-{
-    /**
-     * @var string Product SKU
-     */
-    public string $product_sku;
-
-    /**
-     * @var int Quantity
-     * @minimum 1
-     * @maximum 99
-     */
-    public int $quantity;
-
-    /**
-     * @var float Unit price at time of adding to cart
-     * @minimum 0.01
-     * @multipleOf 0.01
-     */
-    public float $unit_price;
-}
-
-/**
- * Complete order
- */
-class Order
-{
-    /**
-     * @var string Order ID
-     * @format uuid
-     */
-    public string $id;
-
-    /**
-     * @var Customer Order customer
-     */
-    public Customer $customer;
-
-    /**
-     * @var array<CartItem> Order items
-     * @minItems 1
-     */
-    public array $items;
-
-    /**
-     * @var string Order status
-     * @enum pending,processing,shipped,delivered,cancelled
-     */
-    public string $status = 'pending';
-
-    /**
-     * @var float Order total
-     * @minimum 0.01
-     * @multipleOf 0.01
-     */
-    public float $total;
-
-    /**
-     * @var DateTime Order creation time
-     * @format date-time
-     */
-    public DateTime $created_at;
-}
-
-// Generate comprehensive order schema
-$orderSchema = Schema::fromClass(Order::class, SchemaVersion::Draft_2019_09);
-
-// The schema will include definitions for all nested classes
-// and proper validation rules from docblock annotations
-```
-
 ## Validation and Usage
 
 Use the generated schema to validate data:
 
 ```php
+/**
+ * User profile class
+ */
+class UserProfile
+{
+    /**
+     * @var string User's full name
+     */
+    public string $name;
+
+    /**
+     * @var string Email address
+     */
+    public string $email;
+
+    /**
+     * @var int User's age
+     */
+    public int $age;
+}
+
 // Generate schema from class
-$userSchema = Schema::fromClass(UserRegistration::class);
+$userSchema = Schema::fromClass(UserProfile::class);
 
 // Test data
 $userData = [
-    'username' => 'john_doe',
+    'name' => 'John Doe',
     'email' => 'john@example.com',
-    'password' => 'securepass123',
-    'age' => 25,
-    'height' => 1.75,
-    'interests' => ['programming', 'music', 'travel']
+    'age' => 30
 ];
 
 // Validate
 if ($userSchema->isValid($userData)) {
-    echo "User registration data is valid";
+    echo "User data is valid";
 } else {
     try {
         $userSchema->validate($userData);
@@ -741,25 +409,18 @@ if ($userSchema->isValid($userData)) {
 }
 ```
 
-## Supported Docblock Annotations
+## What Gets Extracted from Docblocks
 
-| Annotation | Applies To | Description | Example |
-|------------|------------|-------------|---------|
-| `@minLength` | string | Minimum string length | `@minLength 3` |
-| `@maxLength` | string | Maximum string length | `@maxLength 100` |
-| `@pattern` | string | Regex pattern | `@pattern ^[a-zA-Z]+$` |
-| `@format` | string | String format | `@format email` |
-| `@minimum` | number/integer | Minimum value | `@minimum 0` |
-| `@maximum` | number/integer | Maximum value | `@maximum 100` |
-| `@exclusiveMinimum` | number/integer | Exclusive minimum | `@exclusiveMinimum 0` |
-| `@exclusiveMaximum` | number/integer | Exclusive maximum | `@exclusiveMaximum 100` |
-| `@multipleOf` | number/integer | Multiple constraint | `@multipleOf 0.01` |
-| `@minItems` | array | Minimum array items | `@minItems 1` |
-| `@maxItems` | array | Maximum array items | `@maxItems 10` |
-| `@uniqueItems` | array | Unique array items | `@uniqueItems` |
-| `@enum` | any | Enumerated values | `@enum value1,value2,value3` |
-| `@deprecated` | any | Mark as deprecated | `@deprecated` |
-| `@ignore` | any | Skip in schema generation | `@ignore` |
+The schema generator automatically extracts the following from your docblocks:
+
+- **Description text** - From the docblock summary and description
+- **Property types** - From `@var` annotations (combined with native PHP types)
+- **Parameter types** - From `@param` annotations
+- **Deprecation status** - Using the `@deprecated` tag
+
+<Note>
+Validation rules (like minLength, pattern, format) are **not** extracted from docblocks. You need to apply them programmatically using the fluent API after generation, or define them in your actual PHP code using native types and enums.
+</Note>
 
 ## Best Practices
 
@@ -797,26 +458,7 @@ public ?DateTime $last_login;     // Optional datetime
 public $data;                     // Type unknown
 ```
 
-### 3. Use Validation Annotations Appropriately
-
-```php
-/**
- * @var string Email address
- * @format email           // Use built-in formats
- * @maxLength 255         // Reasonable database limits
- */
-public string $email;
-
-/**
- * @var string Username
- * @minLength 3           // Business rules
- * @maxLength 20
- * @pattern ^[a-zA-Z0-9_]+$  // Clear patterns
- */
-public string $username;
-```
-
-### 4. Handle Enums and Complex Types
+### 3. Use Type Hints and Enums for Validation
 
 ```php
 // Good: Use backed enums for clear validation
@@ -827,13 +469,27 @@ enum Status: string {
 
 public Status $status;
 
+// Good: Document types clearly
+/**
+ * @var string Email address
+ */
+public string $email;
+
+/**
+ * @var string Username
+ */
+public string $username;
+
 // Good: Document complex array types
 /**
  * @var array<string> List of user roles
- * @maxItems 5
  */
 public array $roles;
 ```
+
+<Note>
+Validation rules like minLength, pattern, format are not extracted from docblocks. Generic array syntax (e.g., `array<string>`, `array<OrderItem>`) in docblocks is not parsed - arrays are treated as generic arrays without item type information. Apply validation rules and array item schemas programmatically using the fluent API after schema generation, or use native PHP types and enums for type validation.
+</Note>
 
 ## Common Use Cases
 

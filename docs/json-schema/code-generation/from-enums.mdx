@@ -145,21 +145,21 @@ enum OrderStatus: string
     case Shipped = 'shipped';
     case Delivered = 'delivered';
     case Cancelled = 'cancelled';
-
-    /**
-     * @deprecated Use 'cancelled' instead
-     */
     case Rejected = 'rejected';
 }
 
-// Generate with Draft 2019-09 for deprecated support
+// Generate with Draft 2019-09 for advanced features
 $schema = Schema::fromEnum(
     OrderStatus::class,
     version: SchemaVersion::Draft_2019_09
 );
 
-// The generated schema can include deprecation information for specific values
+// The generated schema includes all enum values in the enum array
 ```
+
+<Note>
+Enum case-level deprecation is not currently supported. The `@deprecated` tag on individual enum cases is not extracted. Only the enum class-level description is extracted from docblocks.
+</Note>
 
 ## Complex Business Enums
 
@@ -253,17 +253,17 @@ $userAccountSchema = Schema::object('user_account')
         Schema::string('username')->required(),
         Schema::string('email')->required(),
 
-        // Use enum schemas for validation
-        Schema::fromEnum(UserRole::class)
-            ->propertyName('role')
+        // Use enum values for validation
+        Schema::string('role')
+            ->enum(['admin', 'manager', 'employee', 'customer', 'guest'])
             ->required(),
 
-        Schema::fromEnum(VerificationStatus::class)
-            ->propertyName('verification_status')
+        Schema::string('verification_status')
+            ->enum(['unverified', 'pending', 'verified', 'rejected'])
             ->default('unverified'),
 
-        Schema::fromEnum(UserStatus::class)
-            ->propertyName('status')
+        Schema::string('status')
+            ->enum(['active', 'inactive', 'suspended', 'pending_verification'])
             ->default('pending_verification')
     );
 
@@ -329,12 +329,12 @@ enum ValidationResult: string
 // Create comprehensive API response schema
 $apiResponseSchema = Schema::object('api_response')
     ->properties(
-        Schema::fromEnum(ApiResponseCode::class)
-            ->propertyName('code')
+        Schema::integer('code')
+            ->enum([200, 201, 202, 204, 400, 401, 403, 404, 405, 409, 422, 500, 503])
             ->required(),
 
-        Schema::fromEnum(OperationStatus::class)
-            ->propertyName('status')
+        Schema::string('status')
+            ->enum(['success', 'partial_success', 'failed', 'timeout', 'cancelled'])
             ->required(),
 
         Schema::string('message'),
@@ -347,8 +347,8 @@ $apiResponseSchema = Schema::object('api_response')
                 Schema::object()
                     ->properties(
                         Schema::string('field')->required(),
-                        Schema::fromEnum(ValidationResult::class)
-                            ->propertyName('result')
+                        Schema::string('result')
+                            ->enum(['valid', 'invalid', 'warning', 'skipped'])
                             ->required(),
                         Schema::string('message')
                     )
@@ -415,18 +415,18 @@ $configSchema = Schema::object('app_config')
     ->properties(
         Schema::string('app_name')->required(),
 
-        Schema::fromEnum(Environment::class)
-            ->propertyName('environment')
+        Schema::string('environment')
+            ->enum(['development', 'testing', 'staging', 'production'])
             ->required(),
 
-        Schema::fromEnum(LogLevel::class)
-            ->propertyName('log_level')
+        Schema::string('log_level')
+            ->enum(['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'])
             ->default('info'),
 
         Schema::object('cache')
             ->properties(
-                Schema::fromEnum(CacheDriver::class)
-                    ->propertyName('driver')
+                Schema::string('driver')
+                    ->enum(['redis', 'memcached', 'file', 'database', 'array'])
                     ->default('file'),
                 Schema::integer('ttl')
                     ->minimum(60)
@@ -435,8 +435,8 @@ $configSchema = Schema::object('app_config')
 
         Schema::object('database')
             ->properties(
-                Schema::fromEnum(DatabaseDriver::class)
-                    ->propertyName('driver')
+                Schema::string('driver')
+                    ->enum(['mysql', 'pgsql', 'sqlite', 'sqlsrv'])
                     ->required(),
                 Schema::string('host')->required(),
                 Schema::integer('port')
@@ -483,14 +483,14 @@ $taskSchema = Schema::object('task')
     ->properties(
         Schema::string('title')->required(),
         Schema::string('description'),
-        Schema::fromEnum(Priority::class)
-            ->propertyName('priority')
+        Schema::integer('priority')
+            ->enum([1, 2, 3, 4, 5])
             ->required(),
-        Schema::fromEnum(UserStatus::class)
-            ->propertyName('status')
+        Schema::string('status')
+            ->enum(['active', 'inactive', 'suspended', 'pending_verification'])
             ->default('pending_verification'),
-        Schema::fromEnum(UserRole::class)
-            ->propertyName('assigned_role')
+        Schema::string('assigned_role')
+            ->enum(['admin', 'manager', 'employee', 'customer', 'guest'])
             ->required()
     );
 
@@ -500,113 +500,6 @@ try {
 } catch (SchemaException $e) {
     echo "Validation error: " . $e->getMessage();
 }
-```
-
-## Dynamic Enum Handling
-
-Work with enums dynamically in applications:
-
-```php
-/**
- * Get all possible values from an enum schema
- */
-function getEnumValues(string $enumClass): array
-{
-    $schema = Schema::fromEnum($enumClass);
-    $schemaArray = $schema->toArray();
-
-    return $schemaArray['enum'] ?? [];
-}
-
-/**
- * Validate enum value and provide suggestions
- */
-function validateEnumWithSuggestions(string $enumClass, mixed $value): array
-{
-    $schema = Schema::fromEnum($enumClass);
-
-    if ($schema->isValid($value)) {
-        return ['valid' => true, 'suggestions' => []];
-    }
-
-    $validValues = getEnumValues($enumClass);
-    $suggestions = [];
-
-    // Find similar values (simple string similarity)
-    if (is_string($value)) {
-        foreach ($validValues as $validValue) {
-            if (is_string($validValue) &&
-                levenshtein($value, $validValue) <= 2) {
-                $suggestions[] = $validValue;
-            }
-        }
-    }
-
-    return [
-        'valid' => false,
-        'suggestions' => $suggestions,
-        'valid_values' => $validValues
-    ];
-}
-
-// Usage examples
-$priorityValues = getEnumValues(Priority::class);
-// Returns: [1, 2, 3, 4, 5]
-
-$validation = validateEnumWithSuggestions(UserStatus::class, 'activ');
-// Returns: ['valid' => false, 'suggestions' => ['active'], 'valid_values' => [...]]
-
-$validation = validateEnumWithSuggestions(Priority::class, 3);
-// Returns: ['valid' => true, 'suggestions' => []]
-```
-
-## Form Generation from Enums
-
-Generate HTML form options from enum schemas:
-
-```php
-/**
- * Generate HTML select options from enum
- */
-function generateSelectOptions(string $enumClass, ?string $selected = null): string
-{
-    $schema = Schema::fromEnum($enumClass);
-    $schemaArray = $schema->toArray();
-    $enumValues = $schemaArray['enum'] ?? [];
-
-    $options = [];
-    foreach ($enumValues as $value) {
-        $isSelected = ($value === $selected) ? ' selected' : '';
-        $label = ucfirst(str_replace(['_', '-'], ' ', (string)$value));
-        $options[] = "<option value=\"{$value}\"{$isSelected}>{$label}</option>";
-    }
-
-    return implode("\n", $options);
-}
-
-/**
- * Generate form validation rules for frontend
- */
-function generateValidationRules(string $enumClass): array
-{
-    $schema = Schema::fromEnum($enumClass);
-    $schemaArray = $schema->toArray();
-
-    return [
-        'type' => $schemaArray['type'],
-        'enum' => $schemaArray['enum'],
-        'required' => true,
-        'message' => "Must be one of: " . implode(', ', $schemaArray['enum'])
-    ];
-}
-
-// Usage
-echo "<select name=\"priority\">\n";
-echo generateSelectOptions(Priority::class, 2); // Medium selected
-echo "\n</select>";
-
-$validationRules = generateValidationRules(UserStatus::class);
-// For frontend JavaScript validation
 ```
 
 ## Best Practices
