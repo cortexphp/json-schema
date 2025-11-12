@@ -62,6 +62,8 @@ $ipv6Schema->isValid('2001:db8::1');        // true
 ### Date and Time Formats
 
 ```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
 // Date (YYYY-MM-DD)
 $dateSchema = Schema::string('birth_date')
     ->format(SchemaFormat::Date);
@@ -102,6 +104,10 @@ $uuidSchema->isValid('123e4567-e89b-12d3-a456-426614174000'); // true
 ### Real-World Schema with Multiple Formats
 
 ```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaFormat;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
 $userProfileSchema = Schema::object('user_profile')
     ->properties(
         // Contact information
@@ -171,6 +177,7 @@ $userProfileSchema->isValid($validProfile); // true
 |--------|----------|---------------|---------------|-------------|
 | `Email` | ✅ | ✅ | ✅ | Standard email address |
 | `Uri` | ✅ | ✅ | ✅ | URI reference |
+| `UriReference` | ✅ | ✅ | ✅ | URI reference (relative or absolute) |
 | `Hostname` | ✅ | ✅ | ✅ | Internet hostname |
 | `Ipv4` | ✅ | ✅ | ✅ | IPv4 address |
 | `Ipv6` | ✅ | ✅ | ✅ | IPv6 address |
@@ -180,11 +187,11 @@ $userProfileSchema->isValid($validProfile); // true
 | `JsonPointer` | ✅ | ✅ | ✅ | JSON Pointer |
 | `RelativeJsonPointer` | ✅ | ✅ | ✅ | Relative JSON Pointer |
 | `UriTemplate` | ✅ | ✅ | ✅ | URI Template |
+| `Regex` | ✅ | ✅ | ✅ | Regular expression pattern |
 | **Draft 2019-09+** |
 | `Duration` | ❌ | ✅ | ✅ | ISO 8601 duration |
 | `Uuid` | ❌ | ✅ | ✅ | UUID string |
 | `IdnEmail` | ❌ | ✅ | ✅ | Internationalized email |
-| `IdnHostname` | ❌ | ✅ | ✅ | Internationalized hostname |
 | `Iri` | ❌ | ✅ | ✅ | Internationalized URI |
 | `IriReference` | ❌ | ✅ | ✅ | IRI reference |
 

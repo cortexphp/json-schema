@@ -280,6 +280,10 @@ $complexSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
 ## Real-World Example: API Response Schema
 
 ```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
 $apiResponseSchema = Schema::object('api_response', SchemaVersion::Draft_2019_09)
     ->properties(
         Schema::boolean('success')->required(),

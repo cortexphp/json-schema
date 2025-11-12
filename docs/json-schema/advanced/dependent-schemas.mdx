@@ -17,6 +17,7 @@ Define validation that depends on the presence of a property:
 ```php
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
+use Cortex\JsonSchema\Enums\SchemaFormat;
 
 $paymentSchema = Schema::object('payment', SchemaVersion::Draft_2019_09)
     ->properties(
@@ -416,6 +417,8 @@ $apiEndpointSchema->isValid([
 ## Validation Examples
 
 ```php
+use Cortex\JsonSchema\Exceptions\SchemaException;
+
 // Test the payment schema from earlier
 $paymentData = [
     'amount' => '50.00',
