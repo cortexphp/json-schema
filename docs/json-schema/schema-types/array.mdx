@@ -60,7 +60,7 @@ $usersSchema->isValid([
 <Accordion title="View JSON Schema Output">
 ```json
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "array",
     "title": "users",
     "items": {
@@ -142,21 +142,23 @@ $uniqueUsersSchema->isValid([
 
 ## Tuple Validation
 
-Validate arrays with specific items at specific positions:
+Validate arrays with specific items at specific positions using `prefixItems()` (Draft 2020-12+):
 
 ```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
 // Coordinate pair [latitude, longitude]
-$coordinateSchema = Schema::array('coordinates')
-    ->items(
+$coordinateSchema = Schema::array('coordinates', SchemaVersion::Draft_2020_12)
+    ->prefixItems([
         Schema::number()
-            ->minimum(-180)
-            ->maximum(180)
+            ->minimum(-90)
+            ->maximum(90)
             ->description('latitude'),
         Schema::number()
             ->minimum(-180)
             ->maximum(180)
             ->description('longitude')
-    )
+    ])
     ->minItems(2)
     ->maxItems(2)
     ->description('Geographic coordinates [lat, lng]');
@@ -166,18 +168,94 @@ $coordinateSchema->isValid([51.5074]);          // false (missing longitude)
 $coordinateSchema->isValid([51.5074, -0.1278, 100]); // false (too many items)
 
 // Mixed type tuple
-$recordSchema = Schema::array('record')
-    ->items(
+$recordSchema = Schema::array('record', SchemaVersion::Draft_2020_12)
+    ->prefixItems([
         Schema::string()->description('name'),
         Schema::integer()->minimum(0)->description('age'),
         Schema::boolean()->description('active')
-    )
+    ])
     ->minItems(3)
     ->maxItems(3);
 
 $recordSchema->isValid(['John Doe', 30, true]); // true
 $recordSchema->isValid(['John Doe', 30]);       // false (missing boolean)
 ```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "array",
+    "title": "coordinates",
+    "prefixItems": [
+        {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "description": "latitude"
+        },
+        {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "description": "longitude"
+        }
+    ],
+    "minItems": 2,
+    "maxItems": 2,
+    "description": "Geographic coordinates [lat, lng]"
+}
+```
+</Accordion>
+
+### Tuple with Additional Items
+
+You can combine `prefixItems()` with `items()` to validate a fixed prefix followed by additional items:
+
+```php
+// First two items are fixed, additional items follow a pattern
+$flexibleTupleSchema = Schema::array('flexible_tuple', SchemaVersion::Draft_2020_12)
+    ->prefixItems([
+        Schema::string()->description('name'),
+        Schema::integer()->description('age')
+    ])
+    ->items(Schema::string())  // All additional items must be strings
+    ->description('Name and age, followed by optional string tags');
+
+$flexibleTupleSchema->isValid(['John', 30]);                    // true
+$flexibleTupleSchema->isValid(['John', 30, 'developer', 'php']); // true
+$flexibleTupleSchema->isValid(['John', 30, 123]);               // false (additional item not string)
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "array",
+    "title": "flexible_tuple",
+    "prefixItems": [
+        {
+            "type": "string",
+            "description": "name"
+        },
+        {
+            "type": "integer",
+            "description": "age"
+        }
+    ],
+    "items": {
+        "type": "string"
+    },
+    "description": "Name and age, followed by optional string tags"
+}
+```
+</Accordion>
+
+### When to Use prefixItems vs items
+
+- **Use `items()`** when all array items should follow the same schema (homogeneous arrays)
+- **Use `prefixItems()`** when you need positional validation (tuples) or when the first N items have specific schemas
+- **Combine both** when you need a fixed prefix followed by additional items with a different schema
 
 ## Contains Validation
 
@@ -337,22 +415,69 @@ $taggedArraySchema = Schema::array('tagged_items')
 
 Advanced array features available in newer JSON Schema versions:
 
+### Unevaluated Items (Draft 2019-09+)
+
+Control validation of items that weren't explicitly evaluated:
+
 ```php
-// Unevaluated items (Draft 2019-09+)
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+// Strict array - no unevaluated items allowed
 $strictArraySchema = Schema::array('strict', SchemaVersion::Draft_2019_09)
     ->items(Schema::string())
     ->unevaluatedItems(false)  // No additional items beyond schema
     ->description('Strict array validation');
 
-// Prefix items (Draft 2020-12+)
+// Unevaluated items must match a schema
+$controlledArraySchema = Schema::array('controlled', SchemaVersion::Draft_2019_09)
+    ->items(Schema::string())
+    ->unevaluatedItems(Schema::number())  // Unevaluated items must be numbers
+    ->description('Strings with numeric unevaluated items');
+```
+
+### Prefix Items (Draft 2020-12+)
+
+Validate arrays with positional schemas for tuple validation:
+
+```php
+// Tuple validation with prefixItems
 $prefixArraySchema = Schema::array('prefixed', SchemaVersion::Draft_2020_12)
     ->prefixItems([
-        Schema::string(),   // First item must be string
-        Schema::integer(),  // Second item must be integer
+        Schema::string()->description('First item: name'),
+        Schema::integer()->description('Second item: count'),
     ])
-    ->items(Schema::boolean())  // Additional items must be boolean
+    ->items(Schema::boolean())  // Additional items after prefix must be boolean
     ->description('Array with typed prefix and additional items');
+
+// Valid examples
+$prefixArraySchema->isValid(['John', 42]);                    // true
+$prefixArraySchema->isValid(['John', 42, true, false]);       // true
+$prefixArraySchema->isValid(['John', 42, 'extra']);          // false (additional item not boolean)
 ```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "array",
+    "title": "prefixed",
+    "prefixItems": [
+        {
+            "type": "string",
+            "description": "First item: name"
+        },
+        {
+            "type": "integer",
+            "description": "Second item: count"
+        }
+    ],
+    "items": {
+        "type": "boolean"
+    },
+    "description": "Array with typed prefix and additional items"
+}
+```
+</Accordion>
 
 ## Validation Examples
 
