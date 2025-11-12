@@ -1,0 +1,298 @@
+---
+title: MCP Server
+description: 'Add the CortexPHP MCP server to your AI assistant'
+icon: 'server'
+---
+
+## What is MCP?
+
+The Model Context Protocol (MCP) is a protocol that enables AI assistants to connect to external data sources and tools. The CortexPHP MCP server provides access to CortexPHP documentation and knowledge base, allowing AI assistants to answer questions about CortexPHP packages and provide code examples.
+
+## Adding the MCP Server
+
+Choose your AI assistant below for specific setup instructions:
+
+<Tabs>
+<Tab title="Cursor">
+  <Steps>
+  <Step title="Open MCP Configuration">
+    Locate your Cursor MCP configuration file:
+
+    - **macOS/Linux**: `~/.cursor/mcp.json`
+    - **Windows**: `%USERPROFILE%\.cursor\mcp.json`
+
+    You can also access it through Cursor settings:
+    1. Open Cursor Settings (⌘+, on macOS or Ctrl+, on Windows)
+    2. Search for "MCP"
+    3. Click "Edit in mcp.json"
+  </Step>
+
+  <Step title="Add CortexPHP Server">
+    Add the CortexPHP MCP server to your configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "cortexphp": {
+          "url": "https://docs.cortexphp.com/mcp"
+        }
+      }
+    }
+    ```
+
+    <Warning>
+    If you already have other MCP servers configured, add the `cortexphp` entry to your existing `mcpServers` object without removing other servers.
+    </Warning>
+  </Step>
+
+  <Step title="Reload Cursor">
+    Reload Cursor to activate the MCP server:
+    - Press **⌘+Shift+P** (macOS) or **Ctrl+Shift+P** (Windows/Linux)
+    - Type "Reload Window" and press Enter
+
+    Or simply restart Cursor.
+  </Step>
+  </Steps>
+</Tab>
+
+<Tab title="Claude Desktop">
+  <Steps>
+  <Step title="Locate Configuration File">
+    Find your Claude Desktop configuration file:
+
+    - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+    - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+    - **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+    <Info>
+    On macOS, the Library folder is hidden by default. Press **⌘+Shift+G** in Finder and paste the path to navigate there.
+    </Info>
+  </Step>
+
+  <Step title="Edit Configuration">
+    Open the configuration file in a text editor and add the CortexPHP MCP server:
+
+    ```json
+    {
+      "mcpServers": {
+        "cortexphp": {
+          "url": "https://docs.cortexphp.com/mcp"
+        }
+      }
+    }
+    ```
+
+    <Warning>
+    Preserve any existing MCP servers in your configuration. Only add the new `cortexphp` entry.
+    </Warning>
+  </Step>
+
+  <Step title="Restart Claude Desktop">
+    Quit Claude Desktop completely and reopen it to load the new MCP server configuration.
+
+    <Check>
+    You can now ask Claude about CortexPHP packages and get answers from the documentation.
+    </Check>
+  </Step>
+  </Steps>
+</Tab>
+
+<Tab title="Cline (VS Code)">
+  <Steps>
+  <Step title="Open MCP Settings">
+    In VS Code with the Cline extension:
+
+    1. Open the Cline extension panel
+    2. Click the settings icon (⚙️)
+    3. Navigate to the "MCP Servers" section
+  </Step>
+
+  <Step title="Add Server Configuration">
+    Add the CortexPHP MCP server configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "cortexphp": {
+          "url": "https://docs.cortexphp.com/mcp"
+        }
+      }
+    }
+    ```
+
+    Or use the Cline UI to add a new MCP server with:
+    - **Name**: `cortexphp`
+    - **URL**: `https://docs.cortexphp.com/mcp`
+  </Step>
+
+  <Step title="Reload Extension">
+    Reload the Cline extension or restart VS Code to activate the MCP server.
+
+    <Check>
+    The CortexPHP documentation is now accessible through Cline.
+    </Check>
+  </Step>
+  </Steps>
+</Tab>
+
+<Tab title="Other MCP Clients">
+  <Steps>
+  <Step title="Find Configuration Location">
+    Most MCP-compatible clients store configuration in a JSON file. Check your client's documentation for the configuration file location.
+
+    Common patterns:
+    - `~/.config/[app-name]/mcp.json`
+    - `~/Library/Application Support/[app-name]/mcp.json`
+    - `%APPDATA%\[app-name]\mcp.json`
+  </Step>
+
+  <Step title="Add Server Entry">
+    Add the CortexPHP MCP server to your client's configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "cortexphp": {
+          "url": "https://docs.cortexphp.com/mcp"
+        }
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Restart Client">
+    Restart your MCP client application to load the new server configuration.
+  </Step>
+  </Steps>
+</Tab>
+</Tabs>
+
+## Using the MCP Server
+
+Once configured, you can ask your AI assistant questions about CortexPHP packages, and it will automatically search the CortexPHP documentation and knowledge base to provide accurate answers with code examples.
+
+### Example Queries
+
+- "How do I create a JSON Schema for user validation?"
+- "Show me examples of conditional validation in CortexPHP"
+- "What are the available schema types?"
+- "How do I generate schemas from PHP classes?"
+
+<Tip>
+The MCP server provides access to comprehensive documentation, code examples, and API references for all CortexPHP packages, making it easier to get help and find the right solutions.
+</Tip>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Server Not Connecting">
+  If the MCP server isn't connecting:
+
+  1. **Verify the URL** is correct: `https://docs.cortexphp.com/mcp`
+  2. **Check your internet connection** - MCP servers require network access
+  3. **Restart your AI assistant** completely (not just reload)
+  4. **Check MCP support** - Ensure your AI assistant version supports MCP
+  5. **Review logs**:
+     - **Cursor**: Check Developer Tools (Help → Toggle Developer Tools)
+     - **Claude Desktop**: Check application logs in the config directory
+     - **VS Code/Cline**: Check Output panel (View → Output → Cline)
+</Accordion>
+
+<Accordion title="Configuration File Not Found">
+  If you can't find the configuration file:
+
+  **Cursor**:
+  - Create `~/.cursor/mcp.json` manually if it doesn't exist
+  - Ensure the `.cursor` directory exists in your home folder
+
+  **Claude Desktop**:
+  - On macOS: Press **⌘+Shift+G** in Finder and go to `~/Library/Application Support/Claude/`
+  - On Windows: Press **Win+R** and type `%APPDATA%\Claude`
+  - Create the file if it doesn't exist with an empty JSON object: `{}`
+
+  **Cline**:
+  - The extension should create the configuration automatically
+  - Try reinstalling the Cline extension if settings aren't appearing
+</Accordion>
+
+<Accordion title="JSON Syntax Errors">
+  If you encounter JSON syntax errors:
+
+  - **Use a JSON validator** - Copy your config to [jsonlint.com](https://jsonlint.com)
+  - **Check for trailing commas** - JSON doesn't allow commas after the last item
+  - **Verify quotes** - Use double quotes (`"`) not single quotes (`'`)
+  - **Match brackets** - Every `{` needs a `}`, every `[` needs a `]`
+
+  Example of correct syntax:
+  ```json
+  {
+    "mcpServers": {
+      "cortexphp": {
+        "url": "https://docs.cortexphp.com/mcp"
+      }
+    }
+  }
+  ```
+</Accordion>
+
+<Accordion title="Changes Not Taking Effect">
+  If you've added the configuration but it's not working:
+
+  **Cursor**:
+  1. Save the `mcp.json` file
+  2. Press **⌘+Shift+P** / **Ctrl+Shift+P**
+  3. Run "Developer: Reload Window"
+  4. If still not working, fully quit and restart Cursor
+
+  **Claude Desktop**:
+  1. Save the configuration file
+  2. Fully quit Claude Desktop (not just close the window)
+  3. Reopen Claude Desktop
+  4. Check if the server appears in the MCP servers list
+
+  **Cline**:
+  1. Save settings
+  2. Reload VS Code window
+  3. Check the Cline output panel for any error messages
+</Accordion>
+
+<Accordion title="Multiple MCP Servers">
+  If you have multiple MCP servers and one isn't working:
+
+  Make sure your JSON structure is correct:
+  ```json
+  {
+    "mcpServers": {
+      "cortexphp": {
+        "url": "https://docs.cortexphp.com/mcp"
+      },
+      "another-server": {
+        "url": "https://example.com/mcp"
+      }
+    }
+  }
+  ```
+
+  Note: Each server is a separate entry within the `mcpServers` object, separated by commas.
+</Accordion>
+</AccordionGroup>
+
+## Additional Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="CortexPHP Documentation"
+    icon="book"
+    href="https://docs.cortexphp.com"
+  >
+    Browse the complete CortexPHP documentation
+  </Card>
+  <Card
+    title="MCP Protocol"
+    icon="link"
+    href="https://modelcontextprotocol.io"
+  >
+    Learn more about the Model Context Protocol
+  </Card>
+</CardGroup>
+

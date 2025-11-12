@@ -23,7 +23,8 @@
                             "json-schema/introduction",
                             "json-schema/installation",
                             "json-schema/quickstart",
-                            "json-schema/versions"
+                            "json-schema/versions",
+                            "json-schema/mcp-server"
                         ]
                     },
                     {
