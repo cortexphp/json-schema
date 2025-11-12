@@ -381,6 +381,7 @@ it('can create a schema from a class with inheritance', function (): void {
     class CompleteUserInheritanceTest extends BaseEntityInheritanceTest
     {
         public string $name;
+
         public string $email;
     }
 
@@ -418,6 +419,7 @@ it('can create a schema from a class with traits', function (): void {
         use TimestampableTraitTest;
 
         public string $name;
+
         public string $email;
     }
 
@@ -441,6 +443,7 @@ it('can create a schema from a class with inheritance and traits', function (): 
     abstract class BaseEntityCombinedTest
     {
         public string $id;
+
         public int $created_at;
     }
 
@@ -460,6 +463,7 @@ it('can create a schema from a class with inheritance and traits', function (): 
         use TimestampableCombinedTest;
 
         public string $name;
+
         public string $email;
     }
 

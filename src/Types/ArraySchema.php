@@ -134,7 +134,10 @@ final class ArraySchema extends AbstractSchema
 
         if ($this->prefixItems !== []) {
             $schema['prefixItems'] = array_map(
-                static fn(JsonSchema $item): array => $item->toArray(includeSchemaRef: false, includeTitle: false),
+                static fn(JsonSchema $jsonSchema): array => $jsonSchema->toArray(
+                    includeSchemaRef: false,
+                    includeTitle: false,
+                ),
                 $this->prefixItems,
             );
         }
