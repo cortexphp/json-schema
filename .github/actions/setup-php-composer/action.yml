@@ -14,6 +14,10 @@ inputs:
     description: 'Composer stability preference (prefer-stable, prefer-lowest)'
     required: false
     default: 'prefer-stable'
+  extensions:
+    description: 'PHP extensions to install'
+    required: false
+    default: 'dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo'
 
 runs:
   using: 'composite'
@@ -23,6 +27,7 @@ runs:
       with:
         php-version: ${{ inputs.php-version }}
         coverage: ${{ inputs.coverage }}
+        extensions: ${{ inputs.extensions }}
 
     - name: Get Composer Cache Directory
       id: composer-cache
