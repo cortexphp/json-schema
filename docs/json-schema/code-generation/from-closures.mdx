@@ -319,7 +319,7 @@ $modernApiClosure = function (
 // Generate with Draft 2019-09 for deprecated support
 $modernSchema = Schema::fromClosure(
     $modernApiClosure,
-    version: SchemaVersion::Draft_2019_09
+    schemaVersion: SchemaVersion::Draft_2019_09
 );
 
 // Apply validation rules programmatically after generation
