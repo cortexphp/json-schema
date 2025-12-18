@@ -7,7 +7,7 @@ updates:
     labels:
       - "dependencies"
       - "composer"
-    versioning-strategy: "widen"
+    versioning-strategy: "increase-if-necessary"
     open-pull-requests-limit: 5
 
   - package-ecosystem: "github-actions"
