@@ -45,4 +45,37 @@ class SchemaException extends Exception
 
         return $errors;
     }
+
+    /**
+     * Get the first property path that failed validation.
+     * Returns the property path without the leading slash (e.g., 'email' instead of '/email').
+     */
+    public function getProperty(): ?string
+    {
+        $errors = $this->getErrors();
+
+        if (empty($errors)) {
+            return null;
+        }
+
+        $firstPath = array_key_first($errors);
+
+        // Remove leading slash for cleaner output
+        return ltrim((string) $firstPath, '/');
+    }
+
+    /**
+     * Get the first property path that failed validation with the leading slash.
+     * Returns the full path as used in the errors array (e.g., '/email').
+     */
+    public function getPropertyPath(): ?string
+    {
+        $errors = $this->getErrors();
+
+        if (empty($errors)) {
+            return null;
+        }
+
+        return (string) array_key_first($errors);
+    }
 }

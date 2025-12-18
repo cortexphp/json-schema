@@ -25,8 +25,10 @@ try {
 } catch (SchemaException $e) {
     echo "Error: " . $e->getMessage();           // User-friendly message
     echo "Code: " . $e->getCode();               // Error code
-    echo "Property: " . $e->getProperty();       // Failed property (if available)
-    echo "Value: " . $e->getFailedValue();       // Value that failed (if available)
+    
+    // Get detailed error information
+    $errors = $e->getErrors();
+    print_r($errors);  // Array with paths as keys and messages as values
 }
 ```
 
@@ -75,7 +77,13 @@ foreach ($testCases as $index => $testData) {
     } catch (SchemaException $e) {
         echo "Test case {$index}: {$e->getMessage()}\n";
         echo "  Error code: {$e->getCode()}\n";
-        echo "  Failed property: " . ($e->getProperty() ?? 'unknown') . "\n\n";
+        
+        // Get detailed errors with property paths
+        $errors = $e->getErrors();
+        foreach ($errors as $path => $message) {
+            echo "  Failed property: {$path} - {$message}\n";
+        }
+        echo "\n";
     }
 }
 ```
@@ -141,8 +149,12 @@ $requiredSchema = Schema::object('user')
 try {
     $requiredSchema->validate(['name' => 'John']);  // Missing email
 } catch (SchemaException $e) {
-    echo $e->getMessage(); // "Property 'email' is required"
-    echo $e->getProperty(); // "email"
+    echo $e->getMessage(); // Error message
+    
+    // Get detailed errors
+    $errors = $e->getErrors();
+    // Errors array contains property paths as keys
+    print_r($errors);
 }
 ```
 
@@ -190,10 +202,14 @@ class UserFriendlyErrorHandler
 
     public function getFieldSpecificMessage(SchemaException $e): string
     {
-        $property = $e->getProperty();
+        $errors = $e->getErrors();
         $friendlyMessage = $this->getFriendlyMessage($e);
-
-        if ($property) {
+        
+        // Get the first error property path
+        if (!empty($errors)) {
+            $firstPath = array_key_first($errors);
+            // Remove leading slash and convert to readable format
+            $property = ltrim($firstPath, '/');
             $fieldName = ucfirst(str_replace('_', ' ', $property));
             return "{$fieldName}: {$friendlyMessage}";
         }
@@ -261,7 +277,6 @@ class ValidatorWithResults
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
                 'field' => $e->getProperty(),
-                'value' => $e->getFailedValue()
             ];
         }
 
@@ -320,7 +335,6 @@ class NestedErrorHandler
             $errors[] = [
                 'path' => $fieldPath,
                 'message' => $e->getMessage(),
-                'value' => $e->getFailedValue()
             ];
         }
 
@@ -427,11 +441,14 @@ Provide helpful suggestions for common validation errors:
 ```php
 class ErrorRecoveryHelper
 {
-    public function suggestCorrections(SchemaException $e): array
+    /**
+     * Suggest corrections based on validation errors.
+     * Note: Pass the original value if you need value-specific suggestions.
+     */
+    public function suggestCorrections(SchemaException $e, mixed $value = null): array
     {
         $suggestions = [];
         $message = $e->getMessage();
-        $value = $e->getFailedValue();
 
         // Email format suggestions
         if (strpos($message, 'email') !== false && is_string($value)) {
@@ -480,14 +497,13 @@ class ErrorRecoveryHelper
         return $suggestions;
     }
 
-    public function getDetailedError(SchemaException $e): array
+    public function getDetailedError(SchemaException $e, mixed $value = null): array
     {
         return [
             'message' => $e->getMessage(),
             'code' => $e->getCode(),
             'field' => $e->getProperty(),
-            'value' => $e->getFailedValue(),
-            'suggestions' => $this->suggestCorrections($e)
+            'suggestions' => $this->suggestCorrections($e, $value)
         ];
     }
 }
