@@ -49,6 +49,8 @@ class SchemaException extends Exception
     /**
      * Get the first property path that failed validation.
      * Returns the property path without the leading slash (e.g., 'email' instead of '/email').
+     * 
+     * @return string|null The property path or null if no errors
      */
     public function getProperty(): ?string
     {
@@ -67,6 +69,8 @@ class SchemaException extends Exception
     /**
      * Get the first property path that failed validation with the leading slash.
      * Returns the full path as used in the errors array (e.g., '/email').
+     * 
+     * @return string|null The full property path or null if no errors
      */
     public function getPropertyPath(): ?string
     {
