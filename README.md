@@ -24,9 +24,9 @@ This package supports multiple JSON Schema specification versions with automatic
 
 ### Supported Versions
 
-- **Draft-07** (2018) - Default version for maximum compatibility
+- **Draft 2020-12** - (Default) Latest version with `prefixItems`, dynamic references, and format vocabularies
 - **Draft 2019-09** - Adds advanced features like `$defs`, `unevaluatedProperties`, `deprecated`
-- **Draft 2020-12** - Latest version with `prefixItems`, dynamic references, and format vocabularies
+- **Draft-07** (2018) - Legacy version for maximum compatibility
 
 ## Requirements
 
