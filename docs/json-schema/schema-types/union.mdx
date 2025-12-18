@@ -246,9 +246,9 @@ $dbFieldSchema = Schema::union([
 
 $recordSchema = Schema::object('database_record')
     ->properties(
-        Schema::integer('id')->required(),
-        Schema::additionalProperties($dbFieldSchema)
+        Schema::integer('id')->required()
     )
+    ->additionalProperties($dbFieldSchema)
     ->description('Flexible database record with typed fields');
 ```
 
