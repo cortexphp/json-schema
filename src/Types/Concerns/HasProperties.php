@@ -254,7 +254,7 @@ trait HasProperties
     public function requireAll(): static
     {
         foreach ($this->properties as $property) {
-            $property->required();
+            $this->requiredProperties[] = $property->getTitle();
         }
 
         return $this;
