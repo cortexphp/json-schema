@@ -19,6 +19,11 @@ interface JsonSchema
     public function getTitle(): ?string;
 
     /**
+     * Determine if the schema has a title
+     */
+    public function hasTitle(): bool;
+
+    /**
      * Set the description
      */
     public function description(string $description): static;

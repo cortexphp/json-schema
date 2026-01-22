@@ -28,6 +28,14 @@ trait HasTitle
     }
 
     /**
+     * Determine if the schema has a title
+     */
+    public function hasTitle(): bool
+    {
+        return $this->title !== null;
+    }
+
+    /**
      * Add title to schema array
      *
      * @param array<string, mixed> $schema
