@@ -249,6 +249,18 @@ trait HasProperties
     }
 
     /**
+     * Convenience method to mark all properties as required.
+     */
+    public function requireAll(): static
+    {
+        foreach ($this->properties as $property) {
+            $property->required();
+        }
+
+        return $this;
+    }
+
+    /**
      * Add properties to schema array
      *
      * @param array<string, mixed> $schema

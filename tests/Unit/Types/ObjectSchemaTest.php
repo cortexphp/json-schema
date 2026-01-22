@@ -547,3 +547,44 @@ it('correctly identifies when schema has required properties with hasRequiredPro
         ->and($objectWithoutRequired->hasRequiredProperties())->toBeFalse()
         ->and($emptyObject->hasRequiredProperties())->toBeFalse();
 });
+
+it('can mark all properties as required with requireAll method', function (): void {
+    $objectSchema = Schema::object('user')
+        ->properties(
+            Schema::string('name'),
+            Schema::integer('age'),
+            Schema::string('email'),
+        )
+        ->requireAll();
+
+    $schemaArray = $objectSchema->toArray();
+
+    expect($schemaArray)->toHaveKey('required', ['name', 'age', 'email'])
+        ->and($objectSchema->getRequiredProperties())->toHaveCount(3)
+        ->and($objectSchema->getRequiredProperties())->toContain('name')
+        ->and($objectSchema->getRequiredProperties())->toContain('age')
+        ->and($objectSchema->getRequiredProperties())->toContain('email');
+
+    // Validation test - all properties are now required
+    expect(fn() => $objectSchema->validate([
+        'name' => 'John Doe',
+        'age' => 30,
+    ]))->toThrow(
+        SchemaException::class,
+        'The required properties (email) are missing',
+    );
+
+    expect(fn() => $objectSchema->validate([
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+    ]))->toThrow(
+        SchemaException::class,
+        'The required properties (age) are missing',
+    );
+
+    expect(fn() => $objectSchema->validate([
+        'name' => 'John Doe',
+        'age' => 30,
+        'email' => 'john@example.com',
+    ]))->not->toThrow(SchemaException::class);
+});
