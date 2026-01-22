@@ -73,8 +73,8 @@
         ]
     },
     "logo": {
-        "light": "/logo/light.svg",
-        "dark": "/logo/dark.svg"
+        "light": "/assets/logo-light.svg",
+        "dark": "/assets/logo-dark.svg"
     },
     "navbar": {
         "primary": {
