@@ -295,7 +295,7 @@ try {
 ## Number vs Integer
 
 <Info>
-Numbers can be integers or floating-point values. If you specifically need integer validation, use [Integer Schema](/schema-types/integer) instead.
+Numbers can be integers or floating-point values. If you specifically need integer validation, use [Integer Schema](/json-schema/schema-types/integer) instead.
 </Info>
 
 ```php
@@ -326,24 +326,5 @@ $integerSchema->isValid(42.5);  // false (not whole number)
   </Card>
   <Card title="Configuration Values" icon="sliders">
     Validate numeric configuration parameters with appropriate ranges and precision.
-  </Card>
-</CardGroup>
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card
-    title="Integer Schema"
-    icon="hashtag"
-    href="/schema-types/integer"
-  >
-    Learn about integer-specific validation and constraints
-  </Card>
-  <Card
-    title="Array Schema"
-    icon="list"
-    href="/schema-types/array"
-  >
-    Validate arrays of numbers and other complex data structures
   </Card>
 </CardGroup>
