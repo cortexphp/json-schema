@@ -172,9 +172,9 @@ Use `toArray()` when you need to programmatically work with the schema structure
   $usernameSchema->isValid('john-doe');    // false (contains hyphen)
   ```
 
-  <Check>
+  <Tip>
   String schemas support patterns, length constraints, and format validation.
-  </Check>
+  </Tip>
 </Tab>
 
 <Tab title="Array Validation">
@@ -193,9 +193,9 @@ Use `toArray()` when you need to programmatically work with the schema structure
   $tagsSchema->isValid([]);                        // false (too few items)
   ```
 
-  <Check>
+  <Tip>
   Array schemas can validate item types, count limits, and uniqueness.
-  </Check>
+  </Tip>
 </Tab>
 
 <Tab title="Nested Objects">
@@ -215,9 +215,9 @@ Use `toArray()` when you need to programmatically work with the schema structure
       );
   ```
 
-  <Check>
+  <Tip>
   Object schemas support unlimited nesting and property requirements.
-  </Check>
+  </Tip>
 </Tab>
 </Tabs>
 
@@ -227,7 +227,7 @@ You can also use schema classes directly instead of the factory:
 
 <CodeGroup>
 
-```php Factory Method (Recommended)
+```php Factory Method
 use Cortex\JsonSchema\Schema;
 
 $schema = Schema::string('name')

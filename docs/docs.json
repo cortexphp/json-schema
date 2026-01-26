@@ -59,13 +59,6 @@
                             "json-schema/code-generation/from-enums",
                             "json-schema/code-generation/from-json"
                         ]
-                    },
-                    {
-                        "group": "Validation",
-                        "pages": [
-                            "json-schema/validation/data-validation",
-                            "json-schema/validation/version-features"
-                        ]
                     }
                 ]
             }
