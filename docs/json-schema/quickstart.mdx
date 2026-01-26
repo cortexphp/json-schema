@@ -288,6 +288,7 @@ Schema::setDefaultVersion(SchemaVersion::Draft_07); // For maximum compatibility
   <Info>
   When `type` is "business", the `company_name` field becomes required. Personal accounts don't need a company name.
   </Info>
+  <a href="/json-schema/advanced/conditional-validation">Learn more about conditional validation</a>
 </Accordion>
 
 <Accordion title="Union Types - Multiple allowed types">
@@ -329,40 +330,3 @@ Schema::setDefaultVersion(SchemaVersion::Draft_07); // For maximum compatibility
   </Warning>
 </Accordion>
 </AccordionGroup>
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card
-    title="Schema Types"
-    icon="shapes"
-    href="/schema-types/string"
-  >
-    Learn about all available schema types and their validation options
-  </Card>
-  <Card
-    title="Advanced Features"
-    icon="star"
-    href="/advanced/conditional-validation"
-  >
-    Explore conditional validation, definitions, and complex patterns
-  </Card>
-  <Card
-    title="Code Generation"
-    icon="code"
-    href="/code-generation/from-classes"
-  >
-    Generate schemas automatically from PHP classes and functions
-  </Card>
-  <Card
-    title="Validation Guide"
-    icon="check-circle"
-    href="/validation/data-validation"
-  >
-    Master data validation and error handling techniques
-  </Card>
-</CardGroup>
-
-<Tip>
-The Schema class provides the most convenient way to create schemas. All examples in this documentation use the factory methods unless otherwise specified.
-</Tip>
