@@ -64,7 +64,6 @@
                         "group": "Validation",
                         "pages": [
                             "json-schema/validation/data-validation",
-                            "json-schema/validation/error-handling",
                             "json-schema/validation/version-features"
                         ]
                     }
