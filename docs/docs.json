@@ -1,20 +1,20 @@
 {
     "$schema": "https://mintlify.com/docs.json",
-    "theme": "aspen",
+    "theme": "palm",
     "name": "CortexPHP",
     "colors": {
         "primary": "#1C85FE",
         "light": "#1C85FE",
         "dark": "#1C85FE"
     },
-    "favicon": "/favicon.svg",
+    "favicon": "/assets/favicon.svg",
     "icons": {
         "library": "lucide"
     },
     "navigation": {
-        "dropdowns": [
+        "products": [
             {
-                "dropdown": "JSON Schema",
+                "product": "JSON Schema",
                 "icon": "braces",
                 "groups": [
                     {
@@ -68,18 +68,13 @@
         "light": "/assets/logo-light.svg",
         "dark": "/assets/logo-dark.svg"
     },
-    "navbar": {
-        "primary": {
-            "type": "github",
-            "href": "https://github.com/cortexphp/json-schema"
-        }
-    },
     "contextual": {
         "options": ["copy", "view", "chatgpt", "claude"]
     },
     "footer": {
         "socials": {
-            "github": "https://github.com/cortexphp"
+            "github": "https://github.com/cortexphp",
+            "x": "https://twitter.com/cortexphp"
         }
     }
 }
