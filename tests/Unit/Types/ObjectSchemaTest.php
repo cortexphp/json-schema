@@ -113,7 +113,7 @@ it('can get the underlying errors', function (): void {
     }
 })->throws(SchemaException::class);
 
-it('can set set the property title separately from the property key', function (): void {
+it('can set the property title separately from the property key', function (): void {
     $objectSchema = Schema::object()
         ->properties(
             Schema::string('foo')->title('Foo'),
