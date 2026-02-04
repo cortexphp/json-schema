@@ -55,7 +55,7 @@ trait HasProperties
     public function properties(JsonSchema ...$properties): static
     {
         foreach ($properties as $property) {
-            $title = $property->getTitle();
+            $title = $this->resolvePropertyTitle($property);
 
             if ($title === null) {
                 throw new SchemaException('Property must have a title');
@@ -254,7 +254,7 @@ trait HasProperties
     public function requireAll(): static
     {
         foreach ($this->properties as $property) {
-            $title = $property->getTitle();
+            $title = $this->resolvePropertyTitle($property);
 
             if ($title !== null) {
                 $this->requiredProperties[] = $title;
@@ -277,7 +277,15 @@ trait HasProperties
             $schema['properties'] = [];
 
             foreach ($this->properties as $name => $prop) {
-                $schema['properties'][$name] = $prop->toArray(includeSchemaRef: false, includeTitle: false);
+                $propertySchema = $prop->toArray(includeSchemaRef: false, includeTitle: true);
+
+                // If the property schema has a title and it matches the name,
+                // then we don't need to include it in the schema
+                if (array_key_exists('title', $propertySchema) && $propertySchema['title'] === $name) {
+                    unset($propertySchema['title']);
+                }
+
+                $schema['properties'][$name] = $propertySchema;
             }
         }
 
@@ -329,6 +337,14 @@ trait HasProperties
         }
 
         return $schema;
+    }
+
+    /**
+     * Resolve the property title from a schema instance.
+     */
+    protected function resolvePropertyTitle(JsonSchema $jsonSchema): ?string
+    {
+        return $jsonSchema->getInitialTitle() ?? $jsonSchema->getTitle();
     }
 
     /**

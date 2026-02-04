@@ -70,4 +70,4 @@ jobs:
             ecs-cache-
 
       - name: Run format checks
-        run: composer format --no-progress-bar
+        run: composer format:check --no-progress-bar

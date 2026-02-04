@@ -19,6 +19,7 @@ use Cortex\JsonSchema\Types\Concerns\HasValidation;
 use Cortex\JsonSchema\Types\Concerns\HasDefinitions;
 use Cortex\JsonSchema\Types\Concerns\HasDescription;
 use Cortex\JsonSchema\Types\Concerns\HasConditionals;
+use Cortex\JsonSchema\Types\Concerns\HasInitialTitle;
 use Cortex\JsonSchema\Types\Concerns\ValidatesVersionFeatures;
 
 abstract class AbstractSchema implements JsonSchema
@@ -33,8 +34,9 @@ abstract class AbstractSchema implements JsonSchema
     use HasReadWrite;
     use HasValidation;
     use HasDescription;
-    use HasConditionals;
     use HasDefinitions;
+    use HasConditionals;
+    use HasInitialTitle;
     use ValidatesVersionFeatures;
 
     protected SchemaVersion $schemaVersion = SchemaVersion::Draft_2020_12;
@@ -47,6 +49,7 @@ abstract class AbstractSchema implements JsonSchema
         ?string $title = null,
         ?SchemaVersion $schemaVersion = null,
     ) {
+        $this->initialTitle = $title;
         $this->title = $title;
         $this->schemaVersion = $schemaVersion ?? SchemaVersion::default();
     }

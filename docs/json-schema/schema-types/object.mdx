@@ -103,6 +103,29 @@ $productSchema = Schema::object('product')
 ```
 </Accordion>
 
+## Property Titles
+
+Property names are defined by the schema constructor argument, while `title()` is metadata and only included when it differs from the property name:
+
+```php
+$schema = Schema::object()
+    ->properties(
+        Schema::string('email')->title('Email Address')
+    );
+```
+
+```json
+{
+    "type": "object",
+    "properties": {
+        "email": {
+            "type": "string",
+            "title": "Email Address"
+        }
+    }
+}
+```
+
 ## Required Properties
 
 Specify which properties are mandatory:

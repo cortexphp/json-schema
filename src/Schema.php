@@ -174,7 +174,7 @@ class Schema
             // @phpstan-ignore argument.type
             is_array($value) || (is_string($value) && json_validate($value)) => self::fromJson($value, $schemaVersion),
             default => throw new SchemaException(
-                'Unsupported value type. Only closures, enums, and classes are supported.',
+                'Unsupported value type. Only closures, enums, arrays and classes are supported.',
             ),
         };
     }
