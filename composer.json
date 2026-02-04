@@ -44,12 +44,18 @@
     "scripts": {
         "test": "pest",
         "ecs": "ecs check --fix",
+        "ecs:check": "ecs check",
         "rector": "rector process",
+        "rector:check": "rector process --dry-run",
         "stan": "phpstan analyse",
         "type-coverage": "pest --type-coverage --min=100",
         "format": [
             "@rector",
             "@ecs"
+        ],
+        "format:check": [
+            "@rector:check",
+            "@ecs:check"
         ],
         "check": [
             "@format",
