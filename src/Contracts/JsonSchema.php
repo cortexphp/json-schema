@@ -98,4 +98,9 @@ interface JsonSchema
      * Get the JSON Schema version for this schema.
      */
     public function getVersion(): SchemaVersion;
+
+    /**
+     * Get the initial title.
+     */
+    public function getInitialTitle(): ?string;
 }

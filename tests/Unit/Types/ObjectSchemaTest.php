@@ -113,6 +113,21 @@ it('can get the underlying errors', function (): void {
     }
 })->throws(SchemaException::class);
 
+it('can set set the property title separately from the property key', function (): void {
+    $objectSchema = Schema::object()
+        ->properties(
+            Schema::string('foo')->title('Foo'),
+            Schema::string('bar'),
+        );
+
+    $schemaArray = $objectSchema->toArray();
+
+    expect($schemaArray)->toHaveKey('properties.foo.type', 'string');
+    expect($schemaArray)->toHaveKey('properties.foo.title', 'Foo');
+    expect($schemaArray)->toHaveKey('properties.bar.type', 'string');
+    expect($schemaArray['properties']['bar'])->not->toHaveKey('title');
+});
+
 it('can create an object schema with additional properties control', function (): void {
     $objectSchema = Schema::object('config')
         ->description('Configuration object')
