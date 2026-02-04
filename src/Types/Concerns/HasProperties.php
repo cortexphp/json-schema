@@ -342,9 +342,9 @@ trait HasProperties
     /**
      * Resolve the property title from a schema instance.
      */
-    protected function resolvePropertyTitle(JsonSchema $property): ?string
+    protected function resolvePropertyTitle(JsonSchema $jsonSchema): ?string
     {
-        return $property->getInitialTitle() ?? $property->getTitle();
+        return $jsonSchema->getInitialTitle() ?? $jsonSchema->getTitle();
     }
 
     /**
