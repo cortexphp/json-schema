@@ -8,8 +8,8 @@ use ReflectionClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\StringSchema;
-use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Enums\SchemaFeature;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 covers(StringSchema::class);
@@ -285,9 +285,9 @@ it('detects content features correctly', function (): void {
         ->contentSchema(Schema::object());
 
     $reflection = new ReflectionClass($stringSchema);
-    $contentFeaturesMethod = $reflection->getMethod('getContentFeatures');
+    $reflectionMethod = $reflection->getMethod('getContentFeatures');
 
-    $contentFeatures = $contentFeaturesMethod->invoke($stringSchema);
+    $contentFeatures = $reflectionMethod->invoke($stringSchema);
 
     expect($contentFeatures)->toContain(SchemaFeature::ContentEncoding);
     expect($contentFeatures)->toContain(SchemaFeature::ContentMediaType);
