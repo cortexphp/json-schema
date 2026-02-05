@@ -23,6 +23,7 @@ trait HasValidation
     {
         $validator = new Validator();
         $validator->parser()->setOption('defaultDraft', '2020-12');
+        $validator->parser()->setOption('decodeContent', true);
 
         try {
             $result = $validator->validate(

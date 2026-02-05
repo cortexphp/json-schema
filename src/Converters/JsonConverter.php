@@ -18,6 +18,7 @@ use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Contracts\JsonSchema;
+use Cortex\JsonSchema\Types\AbstractSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 class JsonConverter implements Converter
@@ -150,6 +151,16 @@ class JsonConverter implements Converter
     }
 
     /**
+     * Apply shared fields to the schema.
+     */
+    private function applyId(AbstractSchema $schema): void
+    {
+        if (($id = $this->getString('$id')) !== null) {
+            $schema->id($id);
+        }
+    }
+
+    /**
      * Detect schema version from $schema URI.
      */
     private function detectSchemaVersion(string $schemaUri): SchemaVersion
@@ -166,6 +177,7 @@ class JsonConverter implements Converter
     private function createStringSchema(?string $title): StringSchema
     {
         $stringSchema = new StringSchema($title, $this->schemaVersion);
+        $this->applyId($stringSchema);
 
         if (($minLength = $this->getInt('minLength')) !== null) {
             $stringSchema->minLength($minLength);
@@ -177,6 +189,23 @@ class JsonConverter implements Converter
 
         if (($pattern = $this->getString('pattern')) !== null) {
             $stringSchema->pattern($pattern);
+        }
+
+        if (($contentEncoding = $this->getString('contentEncoding')) !== null) {
+            $stringSchema->contentEncoding($contentEncoding);
+        }
+
+        if (($contentMediaType = $this->getString('contentMediaType')) !== null) {
+            $stringSchema->contentMediaType($contentMediaType);
+        }
+
+        $contentSchema = $this->getValue('contentSchema');
+
+        if (is_array($contentSchema)) {
+            $converter = new self($contentSchema, $this->schemaVersion);
+            $stringSchema->contentSchema($converter->convert());
+        } elseif (is_bool($contentSchema)) {
+            $stringSchema->contentSchema($contentSchema);
         }
 
         if (($format = $this->getString('format')) !== null) {
@@ -218,6 +247,7 @@ class JsonConverter implements Converter
     private function createNumberSchema(?string $title): NumberSchema
     {
         $numberSchema = new NumberSchema($title, $this->schemaVersion);
+        $this->applyId($numberSchema);
 
         if (($minimum = $this->getFloat('minimum')) !== null) {
             $numberSchema->minimum($minimum);
@@ -262,6 +292,7 @@ class JsonConverter implements Converter
     private function createIntegerSchema(?string $title): IntegerSchema
     {
         $integerSchema = new IntegerSchema($title, $this->schemaVersion);
+        $this->applyId($integerSchema);
 
         if (($minimum = $this->getInt('minimum')) !== null) {
             $integerSchema->minimum($minimum);
@@ -306,6 +337,7 @@ class JsonConverter implements Converter
     private function createBooleanSchema(?string $title): BooleanSchema
     {
         $booleanSchema = new BooleanSchema($title, $this->schemaVersion);
+        $this->applyId($booleanSchema);
 
         if (($const = $this->getConstValue('const')) !== null) {
             $booleanSchema->const($const);
@@ -329,6 +361,7 @@ class JsonConverter implements Converter
     private function createArraySchema(?string $title): ArraySchema
     {
         $arraySchema = new ArraySchema($title, $this->schemaVersion);
+        $this->applyId($arraySchema);
 
         if (($items = $this->getArray('items')) !== null) {
             $converter = new self($items, $this->schemaVersion);
@@ -372,6 +405,7 @@ class JsonConverter implements Converter
     private function createObjectSchema(?string $title): ObjectSchema
     {
         $objectSchema = new ObjectSchema($title, $this->schemaVersion);
+        $this->applyId($objectSchema);
         $required = $this->getArray('required') ?? [];
 
         if (($properties = $this->getArray('properties')) !== null) {
@@ -434,6 +468,7 @@ class JsonConverter implements Converter
     private function createNullSchema(?string $title): NullSchema
     {
         $nullSchema = new NullSchema($title, $this->schemaVersion);
+        $this->applyId($nullSchema);
 
         if (($description = $this->getString('description')) !== null) {
             $nullSchema->description($description);
@@ -460,6 +495,8 @@ class JsonConverter implements Converter
             // If no type is specified, treat as mixed
             $schema = new UnionSchema(SchemaType::cases(), $title, $this->schemaVersion);
         }
+
+        $this->applyId($schema);
 
         if (($enum = $this->getArray('enum')) !== null && $enum !== []) {
             /** @var non-empty-array<bool|float|int|string|null> $enum */

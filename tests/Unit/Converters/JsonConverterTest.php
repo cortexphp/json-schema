@@ -350,3 +350,30 @@ it('can handle string with enum and const', function (): void {
         'default' => 'red',
     ]);
 });
+
+it('can handle string content annotations', function (): void {
+    $json = [
+        'type' => 'string',
+        'contentEncoding' => 'base64',
+        'contentMediaType' => 'application/json',
+        'contentSchema' => [
+            'type' => 'object',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                ],
+            ],
+        ],
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2019_09);
+    $jsonSchema = $converter->convert();
+
+    expect($jsonSchema)->toBeInstanceOf(StringSchema::class);
+
+    $output = $jsonSchema->toArray();
+    expect($output['contentEncoding'])->toBe('base64');
+    expect($output['contentMediaType'])->toBe('application/json');
+    expect($output['contentSchema']['type'])->toBe('object');
+    expect($output['contentSchema']['properties']['name']['type'])->toBe('string');
+});

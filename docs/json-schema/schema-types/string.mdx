@@ -147,6 +147,55 @@ $timeSchema = Schema::string('appointment_time')
 Formats marked with † require JSON Schema Draft-07 or later. Formats marked with * require Draft 2019-09 or later.
 </Note>
 
+## Content Annotations
+
+Describe encoded content carried by a string using `contentEncoding` and `contentMediaType`, and (optionally) validate the decoded content with `contentSchema`:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+use Cortex\JsonSchema\Enums\SchemaFormat;
+
+$payloadSchema = Schema::string('payload', SchemaVersion::Draft_2019_09)
+    ->contentEncoding('base64')
+    ->contentMediaType('application/json')
+    ->contentSchema(
+        Schema::object()
+            ->properties(
+                Schema::string('event_id')->required(),
+                Schema::string('type')->required(),
+                Schema::string('created_at')->format(SchemaFormat::DateTime)->required(),
+                Schema::object('data')
+                    ->properties(
+                        Schema::string('user_id')->required(),
+                        Schema::string('email')->format(SchemaFormat::Email),
+                    )
+                    ->required(),
+            ),
+    );
+```
+
+<Note>
+`contentSchema` requires JSON Schema Draft 2019-09 or later. `contentEncoding` and `contentMediaType` are available in all supported versions.
+</Note>
+
+Validation examples:
+
+```php
+$payloadSchema->isValid(base64_encode(
+    json_encode([
+        'event_id' => 'evt_123',
+        'type' => 'user.created',
+        'created_at' => '2024-03-14T12:00:00Z',
+        'data' => [
+            'user_id' => 'usr_1',
+            'email' => 'ada@example.com',
+        ],
+    ], JSON_THROW_ON_ERROR),
+)); // true (base64 encoded string value and matches the content schema)
+
+$payloadSchema->isValid(123); // false (not a string)
+```
+
 ## Enumeration Values
 
 Restrict strings to a specific set of allowed values:
@@ -195,6 +244,10 @@ $passwordSchema = Schema::string('password')
     ->minLength(8)
     ->pattern('(?=.*[a-z])(?=.*[A-Z])(?=.*\d)');
 ```
+
+<Note>
+Read-only and write-only annotations require JSON Schema Draft-07 or later.
+</Note>
 
 ## Complex Example
 

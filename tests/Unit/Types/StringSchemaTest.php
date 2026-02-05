@@ -228,3 +228,50 @@ it('can create a string schema with examples', function (): void {
 
     expect($stringSchema->toArray())->toHaveKey('examples', ['foo', 'bar']);
 });
+
+it('can create a string schema with content annotations', function (): void {
+    $stringSchema = Schema::string('payload', SchemaVersion::Draft_2019_09)
+        ->contentEncoding('base64')
+        ->contentMediaType('application/json')
+        ->contentSchema(
+            Schema::object()
+                ->properties(
+                    Schema::string('name')->required(),
+                ),
+        );
+
+    $schemaArray = $stringSchema->toArray();
+
+    expect($schemaArray)->toHaveKey('contentEncoding', 'base64');
+    expect($schemaArray)->toHaveKey('contentMediaType', 'application/json');
+    expect($schemaArray)->toHaveKey('contentSchema.type', 'object');
+    expect($schemaArray)->toHaveKey('contentSchema.properties.name.type', 'string');
+
+    // Valid base64 encoded string that matches the content schema
+    expect(fn() => $stringSchema->validate(base64_encode('{"name":"Ada"}')))
+        ->not->toThrow(SchemaException::class);
+
+    // Invalid base64 encoded string
+    expect(fn() => $stringSchema->validate('not-a-base64-encoded-string'))
+        ->toThrow(SchemaException::class, "The value must be encoded as 'base64'");
+
+    // Does not match the content schema
+    expect(fn() => $stringSchema->validate(base64_encode('{"foo":"bar"}')))
+        ->toThrow(SchemaException::class, 'The JSON content must match schema');
+});
+
+it('can create a string schema with boolean contentSchema', function (): void {
+    $stringSchema = Schema::string('payload', SchemaVersion::Draft_2019_09)
+        ->contentSchema(false);
+
+    expect($stringSchema->toArray())->toHaveKey('contentSchema', false);
+});
+
+it('validates contentSchema feature support', function (): void {
+    $stringSchema = Schema::string('payload', SchemaVersion::Draft_07);
+
+    expect(fn(): StringSchema => $stringSchema->contentSchema(Schema::object()))->toThrow(
+        SchemaException::class,
+        'Feature "Schema for decoded content" is not supported in Draft 7. Minimum version required: Draft 2019-09.',
+    );
+});
