@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
+use ReflectionClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 covers(StringSchema::class);
@@ -274,4 +276,28 @@ it('validates contentSchema feature support', function (): void {
         SchemaException::class,
         'Feature "Schema for decoded content" is not supported in Draft 7. Minimum version required: Draft 2019-09.',
     );
+});
+
+it('detects content features correctly', function (): void {
+    $stringSchema = Schema::string('payload', SchemaVersion::Draft_2019_09);
+    $stringSchema->contentEncoding('base64')
+        ->contentMediaType('application/json')
+        ->contentSchema(Schema::object());
+
+    $reflection = new ReflectionClass($stringSchema);
+    $contentFeaturesMethod = $reflection->getMethod('getContentFeatures');
+
+    $contentFeatures = $contentFeaturesMethod->invoke($stringSchema);
+
+    expect($contentFeatures)->toContain(SchemaFeature::ContentEncoding);
+    expect($contentFeatures)->toContain(SchemaFeature::ContentMediaType);
+    expect($contentFeatures)->toContain(SchemaFeature::ContentSchema);
+
+    // Test that features are included in overall feature detection
+    $getUsedMethod = $reflection->getMethod('getUsedFeatures');
+
+    $allFeatures = $getUsedMethod->invoke($stringSchema);
+    expect($allFeatures)->toContain(SchemaFeature::ContentEncoding);
+    expect($allFeatures)->toContain(SchemaFeature::ContentMediaType);
+    expect($allFeatures)->toContain(SchemaFeature::ContentSchema);
 });

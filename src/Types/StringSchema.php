@@ -201,6 +201,14 @@ final class StringSchema extends AbstractSchema
     {
         $features = [];
 
+        if ($this->contentEncoding !== null) {
+            $features[] = SchemaFeature::ContentEncoding;
+        }
+
+        if ($this->contentMediaType !== null) {
+            $features[] = SchemaFeature::ContentMediaType;
+        }
+
         if ($this->contentSchema !== null) {
             $features[] = SchemaFeature::ContentSchema;
         }
