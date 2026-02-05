@@ -9,13 +9,15 @@ namespace Cortex\JsonSchema\Enums;
  */
 enum SchemaFeature: string
 {
+    // Draft 06 features
+    case ContentMediaType = 'contentMediaType';
+    case ContentEncoding = 'contentEncoding';
+
     // Draft 07 features
     case If = 'if';
     case Then = 'then';
     case Else = 'else';
     case IfThenElse = 'if-then-else';
-    case ContentMediaType = 'contentMediaType';
-    case ContentEncoding = 'contentEncoding';
     case WriteOnly = 'writeOnly';
     case ReadOnly = 'readOnly';
     case Comment = '$comment';
@@ -67,13 +69,15 @@ enum SchemaFeature: string
     public function getMinimumVersion(): SchemaVersion
     {
         return match ($this) {
+            // Draft 06 features
+            self::ContentMediaType,
+            self::ContentEncoding => SchemaVersion::Draft_06,
+
             // Draft 07 features
             self::If,
             self::Then,
             self::Else,
             self::IfThenElse,
-            self::ContentMediaType,
-            self::ContentEncoding,
             self::WriteOnly,
             self::ReadOnly,
             self::Comment,

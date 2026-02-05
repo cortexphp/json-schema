@@ -48,10 +48,16 @@ it('has correct schema version feature support', function (): void {
     expect($draft201909->supports(SchemaFeature::IfThenElse))->toBeTrue();
     expect($draft202012->supports(SchemaFeature::IfThenElse))->toBeTrue();
 
-    expect($draft06->supports(SchemaFeature::ContentMediaType))->toBeFalse();
+    // Draft 06 features
+    expect($draft06->supports(SchemaFeature::ContentMediaType))->toBeTrue();
     expect($draft07->supports(SchemaFeature::ContentMediaType))->toBeTrue();
     expect($draft201909->supports(SchemaFeature::ContentMediaType))->toBeTrue();
     expect($draft202012->supports(SchemaFeature::ContentMediaType))->toBeTrue();
+
+    expect($draft06->supports(SchemaFeature::ContentEncoding))->toBeTrue();
+    expect($draft07->supports(SchemaFeature::ContentEncoding))->toBeTrue();
+    expect($draft201909->supports(SchemaFeature::ContentEncoding))->toBeTrue();
+    expect($draft202012->supports(SchemaFeature::ContentEncoding))->toBeTrue();
 
     expect($draft06->supports(SchemaFeature::Comment))->toBeFalse();
     expect($draft07->supports(SchemaFeature::Comment))->toBeTrue();
