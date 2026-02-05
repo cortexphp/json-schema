@@ -129,21 +129,21 @@ $timeSchema = Schema::string('appointment_time')
 | `Hostname` | Internet hostname | `example.com` |
 | `Ipv4` | IPv4 address | `192.168.1.1` |
 | `Ipv6` | IPv6 address | `2001:db8::1` |
-| `Date` | Full date (RFC 3339) | `2023-12-25` |
-| `Time` | Time (RFC 3339) | `14:30:00` |
+| `Date`† | Full date (RFC 3339) | `2023-12-25` |
+| `Time`† | Time (RFC 3339) | `14:30:00` |
 | `DateTime` | Date-time (RFC 3339) | `2023-12-25T14:30:00Z` |
 | `Duration` | Duration (ISO 8601)* | `P1Y2M3DT4H5M6S` |
 | `Uuid` | UUID string* | `123e4567-e89b-12d3-a456-426614174000` |
 | `JsonPointer` | JSON Pointer | `/users/123/name` |
-| `RelativeJsonPointer` | Relative JSON Pointer | `1/name` |
+| `RelativeJsonPointer`† | Relative JSON Pointer | `1/name` |
 | `UriTemplate` | URI Template | `/users/{id}` |
-| `IdnEmail` | Internationalized email | `用户@example.com` |
-| `IdnHostname` | Internationalized hostname | `例え.テスト` |
-| `Iri` | Internationalized URI | `https://例え.テスト` |
-| `IriReference` | IRI reference | `//例え.テスト/path` |
+| `IdnEmail`† | Internationalized email | `用户@example.com` |
+| `IdnHostname`† | Internationalized hostname | `例え.テスト` |
+| `Iri`† | Internationalized URI | `https://例え.テスト` |
+| `IriReference`† | IRI reference | `//例え.テスト/path` |
 
 <Note>
-Formats marked with * require JSON Schema Draft 2019-09 or later.
+Formats marked with † require JSON Schema Draft-07 or later. Formats marked with * require Draft 2019-09 or later.
 </Note>
 
 ## Enumeration Values

@@ -155,6 +155,7 @@ class JsonConverter implements Converter
     private function detectSchemaVersion(string $schemaUri): SchemaVersion
     {
         return match (true) {
+            str_contains($schemaUri, 'draft-06') => SchemaVersion::Draft_06,
             str_contains($schemaUri, 'draft-07') => SchemaVersion::Draft_07,
             str_contains($schemaUri, 'draft/2019-09') => SchemaVersion::Draft_2019_09,
             str_contains($schemaUri, 'draft/2020-12') => SchemaVersion::Draft_2020_12,

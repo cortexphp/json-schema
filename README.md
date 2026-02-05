@@ -9,7 +9,7 @@
 ## Features
 
 - 🏗️ **Fluent Builder API** - Build JSON Schemas using an intuitive fluent interface
-- 📝 **Multi-Version Support** - Support for JSON Schema Draft-07, Draft 2019-09, and Draft 2020-12
+- 📝 **Multi-Version Support** - Support for JSON Schema Draft-06, Draft-07, Draft 2019-09, and Draft 2020-12
 - ✅ **Validation** - Validate data against schemas with detailed error messages
 - 🤝 **Conditional Schemas** - Support for if/then/else, allOf, anyOf, and not conditions
 - 🔄 **Reflection** - Generate schemas from PHP Classes, Enums and Closures
@@ -24,7 +24,8 @@ This package supports multiple JSON Schema specification versions with automatic
 
 - **Draft 2020-12** - (Default) Latest version with `prefixItems`, dynamic references, and format vocabularies
 - **Draft 2019-09** - Adds advanced features like `$defs`, `unevaluatedProperties`, `deprecated`
-- **Draft-07** (2018) - Legacy version for maximum compatibility
+- **Draft-07** (2018) - Legacy version with broad tool compatibility
+- **Draft-06** (2017) - Legacy version for maximum compatibility with older tooling
 
 ## Requirements
 

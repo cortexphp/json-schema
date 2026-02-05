@@ -11,13 +11,18 @@ use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 it('validates conditional features against schema version', function (): void {
-    // Draft 07 supports if-then-else (this should work)
-    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
+    // Draft 06 does not support if-then-else
+    $draft06Schema = Schema::string('test', SchemaVersion::Draft_06);
     $conditionSchema = Schema::string('condition');
+
+    expect(fn(): StringSchema => $draft06Schema->if($conditionSchema))->toThrow(SchemaException::class);
+
+    // Draft 07+ supports if-then-else (this should work)
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
 
     expect(fn(): StringSchema => $stringSchema->if($conditionSchema))->not->toThrow(SchemaException::class);
 
-    // All versions support if-then-else, so this should work for all versions
+    // Draft 07+ should work
     $draft201909Schema = Schema::string('test', SchemaVersion::Draft_2019_09);
     $draft202012Schema = Schema::string('test', SchemaVersion::Draft_2020_12);
 
@@ -27,6 +32,15 @@ it('validates conditional features against schema version', function (): void {
 
 it('outputs version-appropriate definition keywords', function (): void {
     $stringSchema = Schema::string('definition');
+
+    // Draft 06 should use 'definitions'
+    $draft06Schema = Schema::object('test', SchemaVersion::Draft_06);
+    $draft06Schema->addDefinition('myDef', $stringSchema);
+
+    $draft06Array = $draft06Schema->toArray();
+
+    expect($draft06Array)->toHaveKey('definitions');
+    expect($draft06Array)->not->toHaveKey('$defs');
 
     // Draft 07 should use 'definitions'
     $objectSchema = Schema::object('test', SchemaVersion::Draft_07);
@@ -91,14 +105,21 @@ it('provides helpful error messages for unsupported features', function (): void
 });
 
 it('correctly identifies version-appropriate keywords', function (): void {
+    $draft06Schema = Schema::string('test', SchemaVersion::Draft_06);
     $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
     $draft201909Schema = Schema::string('test', SchemaVersion::Draft_2019_09);
+
+    $reflection06 = new ReflectionClass($draft06Schema);
+    $reflectionMethod06 = $reflection06->getMethod('getVersionAppropriateKeyword');
 
     $reflection07 = new ReflectionClass($stringSchema);
     $reflectionMethod = $reflection07->getMethod('getVersionAppropriateKeyword');
 
     $reflection201909 = new ReflectionClass($draft201909Schema);
     $method201909 = $reflection201909->getMethod('getVersionAppropriateKeyword');
+
+    // Draft 06 should use 'definitions'
+    expect($reflectionMethod06->invoke($draft06Schema, '$defs', 'definitions'))->toBe('definitions');
 
     // Draft 07 should use 'definitions'
     expect($reflectionMethod->invoke($stringSchema, '$defs', 'definitions'))->toBe('definitions');
@@ -183,6 +204,51 @@ it('validates deprecated feature against schema version', function (): void {
     expect(fn(): StringSchema => $draft202012Schema->deprecated())->not->toThrow(SchemaException::class);
 });
 
+it('validates comment feature against schema version', function (): void {
+    // Draft 06 should reject $comment
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_06);
+
+    expect(fn(): StringSchema => $stringSchema->comment('Not allowed'))->toThrow(
+        SchemaException::class,
+        'Feature "Schema annotation comment" is not supported in Draft 6. Minimum version required: Draft 7.',
+    );
+
+    // Draft 07+ should accept $comment
+    $draft07Schema = Schema::string('test', SchemaVersion::Draft_07);
+    $draft201909Schema = Schema::string('test', SchemaVersion::Draft_2019_09);
+    $draft202012Schema = Schema::string('test', SchemaVersion::Draft_2020_12);
+
+    expect(fn(): StringSchema => $draft07Schema->comment('Allowed'))->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft201909Schema->comment('Allowed'))->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft202012Schema->comment('Allowed'))->not->toThrow(SchemaException::class);
+});
+
+it('validates read/write features against schema version', function (): void {
+    // Draft 06 should reject readOnly/writeOnly
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_06);
+
+    expect(fn(): StringSchema => $stringSchema->readOnly())->toThrow(
+        SchemaException::class,
+        'Feature "Read-only property annotation" is not supported in Draft 6. Minimum version required: Draft 7.',
+    );
+    expect(fn(): StringSchema => $stringSchema->writeOnly())->toThrow(
+        SchemaException::class,
+        'Feature "Write-only property annotation" is not supported in Draft 6. Minimum version required: Draft 7.',
+    );
+
+    // Draft 07+ should accept readOnly/writeOnly
+    $draft07Schema = Schema::string('test', SchemaVersion::Draft_07);
+    $draft201909Schema = Schema::string('test', SchemaVersion::Draft_2019_09);
+    $draft202012Schema = Schema::string('test', SchemaVersion::Draft_2020_12);
+
+    expect(fn(): StringSchema => $draft07Schema->readOnly())->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft07Schema->writeOnly())->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft201909Schema->readOnly())->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft201909Schema->writeOnly())->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft202012Schema->readOnly())->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft202012Schema->writeOnly())->not->toThrow(SchemaException::class);
+});
+
 it('validates array contains count features against schema version', function (): void {
     // Draft 07 should reject minContains/maxContains
     $arraySchema = Schema::array('test', SchemaVersion::Draft_07);
@@ -210,7 +276,7 @@ it('detects metadata and read/write features correctly', function (): void {
     $stringSchema = Schema::string('test', SchemaVersion::Draft_2019_09);
 
     // Add metadata features
-    $stringSchema->deprecated()->readOnly();
+    $stringSchema->deprecated()->comment('Deprecated field')->readOnly();
 
     $reflection = new ReflectionClass($stringSchema);
     $reflectionMethod = $reflection->getMethod('getMetadataFeatures');
@@ -221,6 +287,7 @@ it('detects metadata and read/write features correctly', function (): void {
     $readWriteFeatures = $getReadWriteMethod->invoke($stringSchema);
 
     expect($metadataFeatures)->toContain(SchemaFeature::Deprecated);
+    expect($metadataFeatures)->toContain(SchemaFeature::Comment);
     expect($readWriteFeatures)->toContain(SchemaFeature::ReadOnly);
 
     // Test that features are included in overall feature detection
@@ -228,6 +295,7 @@ it('detects metadata and read/write features correctly', function (): void {
 
     $allFeatures = $getUsedMethod->invoke($stringSchema);
     expect($allFeatures)->toContain(SchemaFeature::Deprecated);
+    expect($allFeatures)->toContain(SchemaFeature::Comment);
     expect($allFeatures)->toContain(SchemaFeature::ReadOnly);
 });
 
@@ -252,6 +320,26 @@ it('detects array contains count features correctly', function (): void {
 });
 
 it('validates format features against schema version', function (): void {
+    // Draft 06 should reject formats introduced in Draft 07
+    $draft06Schema = Schema::string('test', SchemaVersion::Draft_06);
+
+    expect(fn(): StringSchema => $draft06Schema->format(SchemaFormat::Date))->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft06Schema->format(SchemaFormat::Time))->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft06Schema->format(SchemaFormat::Regex))->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft06Schema->format(SchemaFormat::RelativeJsonPointer))->toThrow(
+        SchemaException::class,
+    );
+    expect(fn(): StringSchema => $draft06Schema->format(SchemaFormat::IdnEmail))->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft06Schema->format(SchemaFormat::IdnHostname))->toThrow(
+        SchemaException::class,
+    );
+    expect(fn(): StringSchema => $draft06Schema->format(SchemaFormat::Iri))->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft06Schema->format(SchemaFormat::IriReference))->toThrow(SchemaException::class);
+
+    // Draft 06 should accept formats available in Draft 06
+    expect(fn(): StringSchema => $draft06Schema->format(SchemaFormat::Email))->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft06Schema->format(SchemaFormat::DateTime))->not->toThrow(SchemaException::class);
+
     // Draft 07 should reject duration and uuid formats
     $stringSchema = Schema::string('test', SchemaVersion::Draft_07);
 
