@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Cortex\JsonSchema\Tests\Unit;
+namespace Cortex\JsonSchema\Tests\Unit\Support;
 
 use ReflectionClass;
 use Cortex\JsonSchema\Support\NodeData;

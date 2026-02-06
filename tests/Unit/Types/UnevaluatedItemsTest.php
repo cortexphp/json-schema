@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+namespace Cortex\JsonSchema\Tests\Unit\Types;
+
+use ReflectionClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Enums\SchemaVersion;

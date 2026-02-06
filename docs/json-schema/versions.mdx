@@ -9,8 +9,11 @@ icon: 'history'
 This package supports multiple JSON Schema specification versions with automatic feature validation to ensure compatibility.
 
 <CardGroup cols={1}>
+  <Card title="Draft-06 (2017)" icon="shield-check">
+    Legacy version for maximum compatibility with older tools. Includes core validation features and basic constraints.
+  </Card>
   <Card title="Draft-07 (2018)" icon="shield-check">
-    Legacy version for maximum compatibility across tools and libraries. Includes core validation features and basic conditionals.
+    Legacy version with broad compatibility across tools and libraries. Includes core validation features and conditionals.
   </Card>
   <Card title="Draft 2019-09" icon="star">
     Adds advanced features like `$defs`, `unevaluatedProperties`, `deprecated`, and enhanced array validation.
@@ -96,28 +99,28 @@ $arraySchema = Schema::array('items', SchemaVersion::Draft_07)
 
 ## Feature Support Matrix
 
-| Feature | Draft-07 | Draft 2019-09 | Draft 2020-12 | Description |
-|---------|----------|---------------|---------------|-------------|
+| Feature | Draft-06 | Draft-07 | Draft 2019-09 | Draft 2020-12 | Description |
+|---------|----------|----------|---------------|---------------|-------------|
 | **Core Validation** |
-| `minLength`, `maxLength`, `pattern` | ✅ | ✅ | ✅ | Basic string validation |
-| `minimum`, `maximum`, `multipleOf` | ✅ | ✅ | ✅ | Numeric constraints |
-| `minItems`, `maxItems`, `uniqueItems` | ✅ | ✅ | ✅ | Array validation |
-| `properties`, `required`, `additionalProperties` | ✅ | ✅ | ✅ | Object validation |
+| `minLength`, `maxLength`, `pattern` | ✅ | ✅ | ✅ | ✅ | Basic string validation |
+| `minimum`, `maximum`, `multipleOf` | ✅ | ✅ | ✅ | ✅ | Numeric constraints |
+| `minItems`, `maxItems`, `uniqueItems` | ✅ | ✅ | ✅ | ✅ | Array validation |
+| `properties`, `required`, `additionalProperties` | ✅ | ✅ | ✅ | ✅ | Object validation |
 | **Conditionals** |
-| `if`/`then`/`else` | ✅ | ✅ | ✅ | Conditional schemas |
-| `allOf`, `anyOf`, `oneOf`, `not` | ✅ | ✅ | ✅ | Logical combinations |
+| `if`/`then`/`else` | ❌ | ✅ | ✅ | ✅ | Conditional schemas |
+| `allOf`, `anyOf`, `oneOf`, `not` | ✅ | ✅ | ✅ | ✅ | Logical combinations |
 | **Advanced Features** |
-| `deprecated` | ❌ | ✅ | ✅ | Property deprecation |
-| `$defs` (replaces `definitions`) | ❌ | ✅ | ✅ | Schema definitions |
-| `minContains`, `maxContains` | ❌ | ✅ | ✅ | Array contains validation |
-| `unevaluatedProperties`, `unevaluatedItems` | ❌ | ✅ | ✅ | Strict validation |
-| `dependentSchemas` | ❌ | ✅ | ✅ | Property dependencies |
+| `deprecated` | ❌ | ❌ | ✅ | ✅ | Property deprecation |
+| `$defs` (replaces `definitions`) | ❌ | ❌ | ✅ | ✅ | Schema definitions |
+| `minContains`, `maxContains` | ❌ | ❌ | ✅ | ✅ | Array contains validation |
+| `unevaluatedProperties`, `unevaluatedItems` | ❌ | ❌ | ✅ | ✅ | Strict validation |
+| `dependentSchemas` | ❌ | ❌ | ✅ | ✅ | Property dependencies |
 | **Draft 2020-12 Only** |
-| `prefixItems` | ❌ | ❌ | ✅ | Tuple validation |
-| Dynamic references (`$dynamicRef`) | ❌ | ❌ | ✅ | Dynamic schema refs |
+| `prefixItems` | ❌ | ❌ | ❌ | ✅ | Tuple validation |
+| Dynamic references (`$dynamicRef`) | ❌ | ❌ | ❌ | ✅ | Dynamic schema refs |
 | **Formats** |
-| `email`, `uri`, `date-time` | ✅ | ✅ | ✅ | Basic formats |
-| `duration`, `uuid` | ❌ | ✅ | ✅ | Extended formats |
+| `email`, `uri`, `date-time` | ✅ | ✅ | ✅ | ✅ | Basic formats |
+| `duration`, `uuid` | ❌ | ❌ | ✅ | ✅ | Extended formats |
 
 ## Version-Appropriate Output
 
@@ -181,5 +184,5 @@ echo $feature->getMinimumVersion()->name; // "Draft201909"
 ```
 
 <Tip>
-The package defaults to Draft 2020-12 for the latest features. Use Draft-07 for maximum compatibility with older tools if needed.
+The package defaults to Draft 2020-12 for the latest features. Use Draft-06 for maximum compatibility with older tools if needed.
 </Tip>

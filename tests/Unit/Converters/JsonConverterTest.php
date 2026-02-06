@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace Cortex\JsonSchema\Tests\Unit\Converters;
+
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\NullSchema;
 use Cortex\JsonSchema\Types\ArraySchema;
@@ -233,6 +235,20 @@ it('detects schema version from $schema property', function (): void {
     expect($jsonSchema->toArray()['deprecated'])->toBe(true);
 });
 
+it('detects draft-06 schema version from $schema property', function (): void {
+    $json = [
+        '$schema' => 'http://json-schema.org/draft-06/schema#',
+        'type' => 'string',
+    ];
+
+    // Even though we pass Draft_07, it should detect Draft_06 from the $schema
+    $converter = new JsonConverter($json, SchemaVersion::Draft_07);
+    $jsonSchema = $converter->convert();
+
+    expect($jsonSchema)->toBeInstanceOf(StringSchema::class);
+    expect($jsonSchema->getVersion())->toBe(SchemaVersion::Draft_06);
+});
+
 it('can handle nested schemas', function (): void {
     $json = [
         'type' => 'object',
@@ -335,4 +351,31 @@ it('can handle string with enum and const', function (): void {
         'const' => 'red',
         'default' => 'red',
     ]);
+});
+
+it('can handle string content annotations', function (): void {
+    $json = [
+        'type' => 'string',
+        'contentEncoding' => 'base64',
+        'contentMediaType' => 'application/json',
+        'contentSchema' => [
+            'type' => 'object',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                ],
+            ],
+        ],
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2019_09);
+    $jsonSchema = $converter->convert();
+
+    expect($jsonSchema)->toBeInstanceOf(StringSchema::class);
+
+    $output = $jsonSchema->toArray();
+    expect($output['contentEncoding'])->toBe('base64');
+    expect($output['contentMediaType'])->toBe('application/json');
+    expect($output['contentSchema']['type'])->toBe('object');
+    expect($output['contentSchema']['properties']['name']['type'])->toBe('string');
 });

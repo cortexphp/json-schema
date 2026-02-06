@@ -9,7 +9,7 @@ namespace Cortex\JsonSchema\Enums;
  */
 enum SchemaFeature: string
 {
-    // Draft 07 features (available in all supported versions)
+    // Draft 07 features
     case If = 'if';
     case Then = 'then';
     case Else = 'else';
@@ -18,6 +18,15 @@ enum SchemaFeature: string
     case ContentEncoding = 'contentEncoding';
     case WriteOnly = 'writeOnly';
     case ReadOnly = 'readOnly';
+    case Comment = '$comment';
+    case FormatDate = 'format-date';
+    case FormatTime = 'format-time';
+    case FormatRegex = 'format-regex';
+    case FormatRelativeJsonPointer = 'format-relative-json-pointer';
+    case FormatIdnEmail = 'format-idn-email';
+    case FormatIdnHostname = 'format-idn-hostname';
+    case FormatIri = 'format-iri';
+    case FormatIriReference = 'format-iri-reference';
 
     // Draft 2019-09 new features
     case Anchor = '$anchor';
@@ -66,7 +75,16 @@ enum SchemaFeature: string
             self::ContentMediaType,
             self::ContentEncoding,
             self::WriteOnly,
-            self::ReadOnly => SchemaVersion::Draft_07,
+            self::ReadOnly,
+            self::Comment,
+            self::FormatDate,
+            self::FormatTime,
+            self::FormatRegex,
+            self::FormatRelativeJsonPointer,
+            self::FormatIdnEmail,
+            self::FormatIdnHostname,
+            self::FormatIri,
+            self::FormatIriReference => SchemaVersion::Draft_07,
 
             // Draft 2019-09 features
             self::Anchor,
@@ -135,6 +153,15 @@ enum SchemaFeature: string
             self::ContentEncoding => 'Content encoding annotation',
             self::WriteOnly => 'Write-only property annotation',
             self::ReadOnly => 'Read-only property annotation',
+            self::Comment => 'Schema annotation comment',
+            self::FormatDate => 'RFC 3339 full-date format validation',
+            self::FormatTime => 'RFC 3339 time format validation',
+            self::FormatRegex => 'Regular expression format validation',
+            self::FormatRelativeJsonPointer => 'Relative JSON Pointer format validation',
+            self::FormatIdnEmail => 'Internationalized email format validation',
+            self::FormatIdnHostname => 'Internationalized hostname format validation',
+            self::FormatIri => 'Internationalized URI format validation',
+            self::FormatIriReference => 'Internationalized URI reference format validation',
 
             self::Anchor => 'Plain name anchors for schema identification',
             self::Defs => 'Schema definitions (renamed from definitions)',

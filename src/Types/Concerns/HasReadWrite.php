@@ -18,6 +18,10 @@ trait HasReadWrite
      */
     public function readOnly(bool $readOnly = true): static
     {
+        if ($readOnly) {
+            $this->validateFeatureSupport(SchemaFeature::ReadOnly);
+        }
+
         $this->readOnly = $readOnly;
 
         return $this;
@@ -28,6 +32,10 @@ trait HasReadWrite
      */
     public function writeOnly(bool $writeOnly = true): static
     {
+        if ($writeOnly) {
+            $this->validateFeatureSupport(SchemaFeature::WriteOnly);
+        }
+
         $this->writeOnly = $writeOnly;
 
         return $this;

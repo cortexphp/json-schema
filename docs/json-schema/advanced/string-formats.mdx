@@ -173,27 +173,28 @@ $userProfileSchema->isValid($validProfile); // true
 
 ## Format Support by Version
 
-| Format | Draft-07 | Draft 2019-09 | Draft 2020-12 | Description |
-|--------|----------|---------------|---------------|-------------|
-| `Email` | ✅ | ✅ | ✅ | Standard email address |
-| `Uri` | ✅ | ✅ | ✅ | URI reference |
-| `UriReference` | ✅ | ✅ | ✅ | URI reference (relative or absolute) |
-| `Hostname` | ✅ | ✅ | ✅ | Internet hostname |
-| `Ipv4` | ✅ | ✅ | ✅ | IPv4 address |
-| `Ipv6` | ✅ | ✅ | ✅ | IPv6 address |
-| `Date` | ✅ | ✅ | ✅ | Full date |
-| `Time` | ✅ | ✅ | ✅ | Time |
-| `DateTime` | ✅ | ✅ | ✅ | Date and time |
-| `JsonPointer` | ✅ | ✅ | ✅ | JSON Pointer |
-| `RelativeJsonPointer` | ✅ | ✅ | ✅ | Relative JSON Pointer |
-| `UriTemplate` | ✅ | ✅ | ✅ | URI Template |
-| `Regex` | ✅ | ✅ | ✅ | Regular expression pattern |
+| Format | Draft-06 | Draft-07 | Draft 2019-09 | Draft 2020-12 | Description |
+|--------|----------|----------|---------------|---------------|-------------|
+| `Email` | ✅ | ✅ | ✅ | ✅ | Standard email address |
+| `Uri` | ✅ | ✅ | ✅ | ✅ | URI reference |
+| `UriReference` | ✅ | ✅ | ✅ | ✅ | URI reference (relative or absolute) |
+| `Hostname` | ✅ | ✅ | ✅ | ✅ | Internet hostname |
+| `Ipv4` | ✅ | ✅ | ✅ | ✅ | IPv4 address |
+| `Ipv6` | ✅ | ✅ | ✅ | ✅ | IPv6 address |
+| `Date` | ❌ | ✅ | ✅ | ✅ | Full date |
+| `Time` | ❌ | ✅ | ✅ | ✅ | Time |
+| `DateTime` | ✅ | ✅ | ✅ | ✅ | Date and time |
+| `JsonPointer` | ✅ | ✅ | ✅ | ✅ | JSON Pointer |
+| `RelativeJsonPointer` | ❌ | ✅ | ✅ | ✅ | Relative JSON Pointer |
+| `UriTemplate` | ✅ | ✅ | ✅ | ✅ | URI Template |
+| `Regex` | ❌ | ✅ | ✅ | ✅ | Regular expression pattern |
+| `IdnEmail` | ❌ | ✅ | ✅ | ✅ | Internationalized email |
+| `IdnHostname` | ❌ | ✅ | ✅ | ✅ | Internationalized hostname |
+| `Iri` | ❌ | ✅ | ✅ | ✅ | Internationalized URI |
+| `IriReference` | ❌ | ✅ | ✅ | ✅ | IRI reference |
 | **Draft 2019-09+** |
-| `Duration` | ❌ | ✅ | ✅ | ISO 8601 duration |
-| `Uuid` | ❌ | ✅ | ✅ | UUID string |
-| `IdnEmail` | ❌ | ✅ | ✅ | Internationalized email |
-| `Iri` | ❌ | ✅ | ✅ | Internationalized URI |
-| `IriReference` | ❌ | ✅ | ✅ | IRI reference |
+| `Duration` | ❌ | ❌ | ✅ | ✅ | ISO 8601 duration |
+| `Uuid` | ❌ | ❌ | ✅ | ✅ | UUID string |
 
 ## Common Use Cases
 

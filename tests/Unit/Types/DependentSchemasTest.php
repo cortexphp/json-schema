@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+namespace Cortex\JsonSchema\Tests\Unit\Types;
+
+use ReflectionClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\ObjectSchema;

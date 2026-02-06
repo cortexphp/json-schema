@@ -7,6 +7,7 @@ namespace Cortex\JsonSchema\Types;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Contracts\JsonSchema;
+use Cortex\JsonSchema\Types\Concerns\HasId;
 use Cortex\JsonSchema\Types\Concerns\HasRef;
 use Cortex\JsonSchema\Types\Concerns\HasEnum;
 use Cortex\JsonSchema\Types\Concerns\HasConst;
@@ -25,6 +26,7 @@ use Cortex\JsonSchema\Types\Concerns\ValidatesVersionFeatures;
 abstract class AbstractSchema implements JsonSchema
 {
     use HasRef;
+    use HasId;
     use HasEnum;
     use HasConst;
     use HasTitle;
@@ -113,6 +115,7 @@ abstract class AbstractSchema implements JsonSchema
             $schema['$schema'] = $this->schemaVersion->value;
         }
 
+        $schema = $this->addIdToSchema($schema);
         $schema = $this->addTitleToSchema($schema, $includeTitle);
         $schema = $this->addFormatToSchema($schema);
         $schema = $this->addDescriptionToSchema($schema);
