@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace Cortex\JsonSchema\Tests\Unit\Converters;
+
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\NullSchema;
 use Cortex\JsonSchema\Types\ArraySchema;

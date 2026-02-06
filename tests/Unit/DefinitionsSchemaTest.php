@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Cortex\JsonSchema\Tests\Unit\Targets;
+namespace Cortex\JsonSchema\Tests\Unit;
 
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
