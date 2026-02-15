@@ -21,8 +21,7 @@ trait HasValidation
      */
     public function validate(mixed $value): void
     {
-        $validator = new Validator();
-        $validator->parser()->setOption('defaultDraft', '2020-12');
+        $validator = $this->makeValidator();
 
         try {
             $result = $validator->validate(
@@ -52,5 +51,19 @@ trait HasValidation
         } catch (SchemaException) {
             return false;
         }
+    }
+
+    /**
+     * Create a configured validator instance.
+     */
+    private function makeValidator(): Validator
+    {
+        $validator = new Validator();
+        $parser = $validator->parser();
+
+        $parser->setOption('defaultDraft', '2020-12');
+        $parser->setOption('decodeContent', true);
+
+        return $validator;
     }
 }

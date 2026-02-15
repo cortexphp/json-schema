@@ -52,6 +52,7 @@ trait HasMetadata
      */
     public function comment(string $comment): static
     {
+        $this->validateFeatureSupport(SchemaFeature::Comment);
         $this->comment = $comment;
 
         return $this;
@@ -108,6 +109,10 @@ trait HasMetadata
 
         if ($this->deprecated) {
             $features[] = SchemaFeature::Deprecated;
+        }
+
+        if ($this->comment !== null) {
+            $features[] = SchemaFeature::Comment;
         }
 
         return $features;

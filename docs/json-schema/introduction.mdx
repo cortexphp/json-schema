@@ -23,7 +23,7 @@ icon: 'book-open'
     href="/json-schema/versions"
     icon="layers"
   >
-    Support for JSON Schema Draft-07, Draft 2019-09, and Draft 2020-12 with automatic feature validation.
+    Support for JSON Schema Draft-06, Draft-07, Draft 2019-09, and Draft 2020-12 with automatic feature validation.
   </Card>
   <Card
     title="Data Validation"
@@ -157,17 +157,17 @@ The package automatically validates feature compatibility with your chosen JSON 
 </Warning>
 
 <Tip>
-The package defaults to Draft 2020-12 for the latest features. Use Draft-07 for maximum compatibility with older tools, or Draft 2019-09 for a balance of features and compatibility.
+The package defaults to Draft 2020-12 for the latest features. Use Draft-06 for maximum compatibility with older tools, or Draft 2019-09 for a balance of features and compatibility.
 </Tip>
 
-| Feature | Draft-07 | Draft 2019-09 | Draft 2020-12 |
-|---------|----------|---------------|---------------|
-| Basic validation | ✅ | ✅ | ✅ |
-| Conditionals | ✅ | ✅ | ✅ |
-| Basic formats | ✅ | ✅ | ✅ |
-| `deprecated` | ❌ | ✅ | ✅ |
-| `$defs` | ❌ | ✅ | ✅ |
-| `minContains`/`maxContains` | ❌ | ✅ | ✅ |
-| `unevaluatedProperties` | ❌ | ✅ | ✅ |
-| `dependentSchemas` | ❌ | ✅ | ✅ |
-| `prefixItems` | ❌ | ❌ | ✅ |
+| Feature | Draft-06 | Draft-07 | Draft 2019-09 | Draft 2020-12 |
+|---------|----------|----------|---------------|---------------|
+| Basic validation | ✅ | ✅ | ✅ | ✅ |
+| Conditionals | ❌ | ✅ | ✅ | ✅ |
+| Basic formats | ✅ | ✅ | ✅ | ✅ |
+| `deprecated` | ❌ | ❌ | ✅ | ✅ |
+| `$defs` | ❌ | ❌ | ✅ | ✅ |
+| `minContains`/`maxContains` | ❌ | ❌ | ✅ | ✅ |
+| `unevaluatedProperties` | ❌ | ❌ | ✅ | ✅ |
+| `dependentSchemas` | ❌ | ❌ | ✅ | ✅ |
+| `prefixItems` | ❌ | ❌ | ❌ | ✅ |

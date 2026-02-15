@@ -6,7 +6,9 @@ namespace Cortex\JsonSchema\Types;
 
 use Override;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
+use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 final class StringSchema extends AbstractSchema
@@ -16,6 +18,12 @@ final class StringSchema extends AbstractSchema
     protected ?int $maxLength = null;
 
     protected ?string $pattern = null;
+
+    protected ?string $contentEncoding = null;
+
+    protected ?string $contentMediaType = null;
+
+    protected JsonSchema|bool|null $contentSchema = null;
 
     public function __construct(?string $title = null, ?SchemaVersion $schemaVersion = null)
     {
@@ -67,6 +75,39 @@ final class StringSchema extends AbstractSchema
     }
 
     /**
+     * Set the content encoding.
+     */
+    public function contentEncoding(string $contentEncoding): static
+    {
+        $this->validateFeatureSupport(SchemaFeature::ContentEncoding);
+        $this->contentEncoding = $contentEncoding;
+
+        return $this;
+    }
+
+    /**
+     * Set the content media type.
+     */
+    public function contentMediaType(string $contentMediaType): static
+    {
+        $this->validateFeatureSupport(SchemaFeature::ContentMediaType);
+        $this->contentMediaType = $contentMediaType;
+
+        return $this;
+    }
+
+    /**
+     * Set the content schema.
+     */
+    public function contentSchema(JsonSchema|bool $contentSchema): static
+    {
+        $this->validateFeatureSupport(SchemaFeature::ContentSchema);
+        $this->contentSchema = $contentSchema;
+
+        return $this;
+    }
+
+    /**
      * Convert to array.
      *
      * @return array<string, mixed>
@@ -76,7 +117,31 @@ final class StringSchema extends AbstractSchema
     {
         $schema = parent::toArray($includeSchemaRef, $includeTitle);
 
-        return $this->addLengthToSchema($schema);
+        $schema = $this->addLengthToSchema($schema);
+
+        return $this->addContentToSchema($schema);
+    }
+
+    /**
+     * Get features used by this schema from all traits.
+     *
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
+     */
+    #[Override]
+    protected function getUsedFeatures(): array
+    {
+        $features = [
+            ...parent::getUsedFeatures(),
+            ...$this->getContentFeatures(),
+        ];
+
+        $uniqueFeatures = [];
+
+        foreach ($features as $feature) {
+            $uniqueFeatures[$feature->value] = $feature;
+        }
+
+        return array_values($uniqueFeatures);
     }
 
     /**
@@ -101,5 +166,55 @@ final class StringSchema extends AbstractSchema
         }
 
         return $schema;
+    }
+
+    /**
+     * Add content keywords to schema array.
+     *
+     * @param array<string, mixed> $schema
+     *
+     * @return array<string, mixed>
+     */
+    protected function addContentToSchema(array $schema): array
+    {
+        if ($this->contentEncoding !== null) {
+            $schema['contentEncoding'] = $this->contentEncoding;
+        }
+
+        if ($this->contentMediaType !== null) {
+            $schema['contentMediaType'] = $this->contentMediaType;
+        }
+
+        if ($this->contentSchema !== null) {
+            $schema['contentSchema'] = $this->contentSchema instanceof JsonSchema
+                ? $this->contentSchema->toArray(includeSchemaRef: false, includeTitle: false)
+                : $this->contentSchema;
+        }
+
+        return $schema;
+    }
+
+    /**
+     * Get content features used by this schema.
+     *
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
+     */
+    protected function getContentFeatures(): array
+    {
+        $features = [];
+
+        if ($this->contentEncoding !== null) {
+            $features[] = SchemaFeature::ContentEncoding;
+        }
+
+        if ($this->contentMediaType !== null) {
+            $features[] = SchemaFeature::ContentMediaType;
+        }
+
+        if ($this->contentSchema !== null) {
+            $features[] = SchemaFeature::ContentSchema;
+        }
+
+        return $features;
     }
 }

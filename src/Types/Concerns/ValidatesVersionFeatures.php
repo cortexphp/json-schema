@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Types\Concerns;
 
 use Cortex\JsonSchema\Enums\SchemaFeature;
-use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 /** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
@@ -60,7 +59,7 @@ trait ValidatesVersionFeatures
     {
         // For features that were renamed, use the appropriate keyword for the version
         return match ($modernKeyword) {
-            '$defs' => $this->getVersion() === SchemaVersion::Draft_07 ? 'definitions' : '$defs',
+            '$defs' => $this->isFeatureSupported(SchemaFeature::Defs) ? '$defs' : 'definitions',
             default => $modernKeyword,
         };
     }

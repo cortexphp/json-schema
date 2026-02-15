@@ -18,6 +18,7 @@ enum SchemaFormat: string
     case UriTemplate = 'uri-template';
     case Uuid = 'uuid';
     case Hostname = 'hostname';
+    case IdnHostname = 'idn-hostname';
     case Ipv4 = 'ipv4';
     case Ipv6 = 'ipv6';
     case Iri = 'iri';

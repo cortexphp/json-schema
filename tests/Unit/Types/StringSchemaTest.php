@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
+use ReflectionClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\StringSchema;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -227,4 +229,75 @@ it('can create a string schema with examples', function (): void {
     $stringSchema = Schema::string('foo')->examples(['foo', 'bar']);
 
     expect($stringSchema->toArray())->toHaveKey('examples', ['foo', 'bar']);
+});
+
+it('can create a string schema with content annotations', function (): void {
+    $stringSchema = Schema::string('payload', SchemaVersion::Draft_2019_09)
+        ->contentEncoding('base64')
+        ->contentMediaType('application/json')
+        ->contentSchema(
+            Schema::object()
+                ->properties(
+                    Schema::string('name')->required(),
+                ),
+        );
+
+    $schemaArray = $stringSchema->toArray();
+
+    expect($schemaArray)->toHaveKey('contentEncoding', 'base64');
+    expect($schemaArray)->toHaveKey('contentMediaType', 'application/json');
+    expect($schemaArray)->toHaveKey('contentSchema.type', 'object');
+    expect($schemaArray)->toHaveKey('contentSchema.properties.name.type', 'string');
+
+    // Valid base64 encoded string that matches the content schema
+    expect(fn() => $stringSchema->validate(base64_encode('{"name":"Ada"}')))
+        ->not->toThrow(SchemaException::class);
+
+    // Invalid base64 encoded string
+    expect(fn() => $stringSchema->validate('not-a-base64-encoded-string'))
+        ->toThrow(SchemaException::class, "The value must be encoded as 'base64'");
+
+    // Does not match the content schema
+    expect(fn() => $stringSchema->validate(base64_encode('{"foo":"bar"}')))
+        ->toThrow(SchemaException::class, 'The JSON content must match schema');
+});
+
+it('can create a string schema with boolean contentSchema', function (): void {
+    $stringSchema = Schema::string('payload', SchemaVersion::Draft_2019_09)
+        ->contentSchema(false);
+
+    expect($stringSchema->toArray())->toHaveKey('contentSchema', false);
+});
+
+it('validates contentSchema feature support', function (): void {
+    $stringSchema = Schema::string('payload', SchemaVersion::Draft_07);
+
+    expect(fn(): StringSchema => $stringSchema->contentSchema(Schema::object()))->toThrow(
+        SchemaException::class,
+        'Feature "Schema for decoded content" is not supported in Draft 7. Minimum version required: Draft 2019-09.',
+    );
+});
+
+it('detects content features correctly', function (): void {
+    $stringSchema = Schema::string('payload', SchemaVersion::Draft_2019_09);
+    $stringSchema->contentEncoding('base64')
+        ->contentMediaType('application/json')
+        ->contentSchema(Schema::object());
+
+    $reflection = new ReflectionClass($stringSchema);
+    $reflectionMethod = $reflection->getMethod('getContentFeatures');
+
+    $contentFeatures = $reflectionMethod->invoke($stringSchema);
+
+    expect($contentFeatures)->toContain(SchemaFeature::ContentEncoding);
+    expect($contentFeatures)->toContain(SchemaFeature::ContentMediaType);
+    expect($contentFeatures)->toContain(SchemaFeature::ContentSchema);
+
+    // Test that features are included in overall feature detection
+    $getUsedMethod = $reflection->getMethod('getUsedFeatures');
+
+    $allFeatures = $getUsedMethod->invoke($stringSchema);
+    expect($allFeatures)->toContain(SchemaFeature::ContentEncoding);
+    expect($allFeatures)->toContain(SchemaFeature::ContentMediaType);
+    expect($allFeatures)->toContain(SchemaFeature::ContentSchema);
 });

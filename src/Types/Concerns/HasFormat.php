@@ -53,6 +53,14 @@ trait HasFormat
         $feature = match ($schemaFormat) {
             SchemaFormat::Duration => SchemaFeature::FormatDuration,
             SchemaFormat::Uuid => SchemaFeature::FormatUuid,
+            SchemaFormat::Date => SchemaFeature::FormatDate,
+            SchemaFormat::Time => SchemaFeature::FormatTime,
+            SchemaFormat::Regex => SchemaFeature::FormatRegex,
+            SchemaFormat::RelativeJsonPointer => SchemaFeature::FormatRelativeJsonPointer,
+            SchemaFormat::IdnEmail => SchemaFeature::FormatIdnEmail,
+            SchemaFormat::IdnHostname => SchemaFeature::FormatIdnHostname,
+            SchemaFormat::Iri => SchemaFeature::FormatIri,
+            SchemaFormat::IriReference => SchemaFeature::FormatIriReference,
             // All other formats are available in all supported versions
             default => null,
         };
@@ -76,6 +84,30 @@ trait HasFormat
         $features = [];
 
         switch ($this->format) {
+            case SchemaFormat::Date:
+                $features[] = SchemaFeature::FormatDate;
+                break;
+            case SchemaFormat::Time:
+                $features[] = SchemaFeature::FormatTime;
+                break;
+            case SchemaFormat::Regex:
+                $features[] = SchemaFeature::FormatRegex;
+                break;
+            case SchemaFormat::RelativeJsonPointer:
+                $features[] = SchemaFeature::FormatRelativeJsonPointer;
+                break;
+            case SchemaFormat::IdnEmail:
+                $features[] = SchemaFeature::FormatIdnEmail;
+                break;
+            case SchemaFormat::IdnHostname:
+                $features[] = SchemaFeature::FormatIdnHostname;
+                break;
+            case SchemaFormat::Iri:
+                $features[] = SchemaFeature::FormatIri;
+                break;
+            case SchemaFormat::IriReference:
+                $features[] = SchemaFeature::FormatIriReference;
+                break;
             case SchemaFormat::Duration:
                 $features[] = SchemaFeature::FormatDuration;
                 break;
