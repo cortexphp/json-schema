@@ -9,6 +9,8 @@ on:
 jobs:
   notify-docs-repo:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: peter-evans/repository-dispatch@v3
         with:
