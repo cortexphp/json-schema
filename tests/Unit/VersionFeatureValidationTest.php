@@ -411,6 +411,32 @@ it('detects format features correctly', function (): void {
     expect($emailFormatFeatures)->toBeEmpty();
 });
 
+it('validates content encoding and media type features against schema version', function (): void {
+    // Draft 06 should reject contentEncoding/contentMediaType
+    $stringSchema = Schema::string('test', SchemaVersion::Draft_06);
+
+    expect(fn(): StringSchema => $stringSchema->contentEncoding('base64'))->toThrow(
+        SchemaException::class,
+        'Feature "Content encoding annotation" is not supported in Draft 6. Minimum version required: Draft 7.',
+    );
+    expect(fn(): StringSchema => $stringSchema->contentMediaType('application/json'))->toThrow(
+        SchemaException::class,
+        'Feature "Content media type annotation" is not supported in Draft 6. Minimum version required: Draft 7.',
+    );
+
+    // Draft 07+ should accept contentEncoding/contentMediaType
+    $draft07Schema = Schema::string('test', SchemaVersion::Draft_07);
+    $draft201909Schema = Schema::string('test', SchemaVersion::Draft_2019_09);
+    $draft202012Schema = Schema::string('test', SchemaVersion::Draft_2020_12);
+
+    expect(fn(): StringSchema => $draft07Schema->contentEncoding('base64'))->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft07Schema->contentMediaType('application/json'))->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft201909Schema->contentEncoding('base64'))->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft201909Schema->contentMediaType('application/json'))->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft202012Schema->contentEncoding('base64'))->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft202012Schema->contentMediaType('application/json'))->not->toThrow(SchemaException::class);
+});
+
 it('allows string formats for custom validation', function (): void {
     // String formats should not trigger validation (for custom formats)
     $stringSchema = Schema::string('test', SchemaVersion::Draft_07);

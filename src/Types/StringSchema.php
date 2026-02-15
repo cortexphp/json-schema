@@ -79,6 +79,7 @@ final class StringSchema extends AbstractSchema
      */
     public function contentEncoding(string $contentEncoding): static
     {
+        $this->validateFeatureSupport(SchemaFeature::ContentEncoding);
         $this->contentEncoding = $contentEncoding;
 
         return $this;
@@ -89,6 +90,7 @@ final class StringSchema extends AbstractSchema
      */
     public function contentMediaType(string $contentMediaType): static
     {
+        $this->validateFeatureSupport(SchemaFeature::ContentMediaType);
         $this->contentMediaType = $contentMediaType;
 
         return $this;
