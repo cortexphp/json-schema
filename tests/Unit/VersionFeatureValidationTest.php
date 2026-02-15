@@ -430,11 +430,17 @@ it('validates content encoding and media type features against schema version', 
     $draft202012Schema = Schema::string('test', SchemaVersion::Draft_2020_12);
 
     expect(fn(): StringSchema => $draft07Schema->contentEncoding('base64'))->not->toThrow(SchemaException::class);
-    expect(fn(): StringSchema => $draft07Schema->contentMediaType('application/json'))->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft07Schema->contentMediaType('application/json'))->not->toThrow(
+        SchemaException::class,
+    );
     expect(fn(): StringSchema => $draft201909Schema->contentEncoding('base64'))->not->toThrow(SchemaException::class);
-    expect(fn(): StringSchema => $draft201909Schema->contentMediaType('application/json'))->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft201909Schema->contentMediaType('application/json'))->not->toThrow(
+        SchemaException::class,
+    );
     expect(fn(): StringSchema => $draft202012Schema->contentEncoding('base64'))->not->toThrow(SchemaException::class);
-    expect(fn(): StringSchema => $draft202012Schema->contentMediaType('application/json'))->not->toThrow(SchemaException::class);
+    expect(fn(): StringSchema => $draft202012Schema->contentMediaType('application/json'))->not->toThrow(
+        SchemaException::class,
+    );
 });
 
 it('allows string formats for custom validation', function (): void {
