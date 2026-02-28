@@ -41,7 +41,7 @@ class JsonConverter implements Converter
                 /** @var array<int|string, mixed>|string $decoded */
                 $decoded = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
             } catch (JsonException $e) {
-                throw new SchemaException('Invalid JSON Schema', previous: $e);
+                throw new SchemaException('Invalid JSON Schema', $e->getCode(), previous: $e);
             }
 
             if (! is_array($decoded)) {
