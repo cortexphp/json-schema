@@ -110,68 +110,9 @@ $responseDataSchema = Schema::union([
     ->description('API response data in various formats');
 ```
 
-## Typeless Schemas
-
-Sometimes you need a schema document that has **no** `type` keyword at all — for example a composition-only schema (just `allOf`/`anyOf`/`oneOf`) or a definition-only document (just `$defs`). Use `Schema::typeless()` to build one:
-
-```php
-use Cortex\JsonSchema\Schema;
-
-// Composition-only schema with no "type" keyword
-$schema = Schema::typeless('shape')
-    ->oneOf(
-        Schema::object()->properties(
-            Schema::string('kind')->const('circle'),
-            Schema::number('radius')->required()
-        ),
-        Schema::object()->properties(
-            Schema::string('kind')->const('square'),
-            Schema::number('size')->required()
-        )
-    );
-```
-
-<Accordion title="View JSON Schema Output">
-```json
-{
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "title": "shape",
-    "oneOf": [
-        {
-            "type": "object",
-            "properties": {
-                "kind": { "const": "circle" },
-                "radius": { "type": "number" }
-            },
-            "required": ["radius"]
-        },
-        {
-            "type": "object",
-            "properties": {
-                "kind": { "const": "square" },
-                "size": { "type": "number" }
-            },
-            "required": ["size"]
-        }
-    ]
-}
-```
-</Accordion>
-
-This is also useful for definition-only documents:
-
-```php
-$definitions = Schema::typeless()
-    ->addDefinition('address', Schema::object()->properties(
-        Schema::string('street')->required(),
-        Schema::string('city')->required()
-    ));
-// Output contains "$defs" but no "type"
-```
-
-<Tip>
-`Schema::typeless()` returns a `TypelessSchema` — a dedicated schema type with no `type` keyword, designed for composition-only and definition-only documents. Importing a typeless JSON Schema via [`Schema::fromJson()` / `Schema::fromArray()`](/json-schema/code-generation/from-json) also produces a `TypelessSchema` automatically.
-</Tip>
+<Note>
+Need a schema with no `type` keyword? See [Typeless Schema](/json-schema/schema-types/typeless) for composition-only and definition-only documents.
+</Note>
 
 ## Union with Specific Schemas
 

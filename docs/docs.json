@@ -46,6 +46,7 @@
                             "json-schema/schema-types/integer",
                             "json-schema/schema-types/boolean",
                             "json-schema/schema-types/union",
+                            "json-schema/schema-types/typeless",
                             "json-schema/schema-types/null"
                         ]
                     },

@@ -1,0 +1,137 @@
+---
+title: Typeless Schema
+description: 'Composition-only and definition-only schemas without a type keyword'
+icon: 'circle-off'
+---
+
+Typeless schemas represent JSON Schema documents that intentionally omit the `type` keyword. They are used for composition-only schemas (`allOf`/`anyOf`/`oneOf`/`not`), definition-only documents (`$defs`), or any schema where structural keywords carry the full meaning without declaring a value type.
+
+Use `Schema::typeless()` to build one — it returns a dedicated `TypelessSchema` instance.
+
+## Composition-Only Schemas
+
+When validation is expressed entirely through composition keywords, no top-level `type` is needed:
+
+```php
+use Cortex\JsonSchema\Schema;
+
+$schema = Schema::typeless('shape')
+    ->oneOf(
+        Schema::object()->properties(
+            Schema::string('kind')->const('circle'),
+            Schema::number('radius')->required()
+        ),
+        Schema::object()->properties(
+            Schema::string('kind')->const('square'),
+            Schema::number('size')->required()
+        )
+    );
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "shape",
+    "oneOf": [
+        {
+            "type": "object",
+            "properties": {
+                "kind": { "const": "circle" },
+                "radius": { "type": "number" }
+            },
+            "required": ["radius"]
+        },
+        {
+            "type": "object",
+            "properties": {
+                "kind": { "const": "square" },
+                "size": { "type": "number" }
+            },
+            "required": ["size"]
+        }
+    ]
+}
+```
+</Accordion>
+
+## Definition-Only Documents
+
+Typeless schemas are also the right choice for documents that only declare reusable definitions:
+
+```php
+$definitions = Schema::typeless()
+    ->addDefinition('address', Schema::object()->properties(
+        Schema::string('street')->required(),
+        Schema::string('city')->required()
+    ));
+// Output contains "$defs" but no "type"
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$defs": {
+        "address": {
+            "type": "object",
+            "properties": {
+                "street": { "type": "string" },
+                "city": { "type": "string" }
+            },
+            "required": ["street", "city"]
+        }
+    }
+}
+```
+</Accordion>
+
+## Typeless vs Union
+
+<Note>
+A typeless schema is **not** the same as a union. A [Union Schema](/json-schema/schema-types/union) explicitly declares which value types are accepted (e.g. `["string", "integer"]`). A typeless schema has no `type` keyword at all — it constrains data through composition, references, or structural keywords instead.
+</Note>
+
+| | Typeless Schema | Union Schema |
+|---|---|---|
+| `type` keyword | Omitted | Present (single or array) |
+| Use case | Composition, `$defs`, `$ref` | Multi-type value acceptance |
+| Factory | `Schema::typeless()` | `Schema::union([...])` |
+
+## Importing Typeless Schemas
+
+When importing existing JSON Schema documents, schemas without a `type` keyword that carry structural keywords (`$ref`, `$defs`, `allOf`, `properties`, `required`, etc.) are converted to a `TypelessSchema` automatically — the converter does not expand them into a union of all types.
+
+```php
+$schema = Schema::fromArray([
+    '$defs' => [
+        'product' => [
+            'type' => 'object',
+            'properties' => [
+                'name' => ['type' => 'string'],
+            ],
+        ],
+    ],
+]);
+
+$schema->toArray(); // No "type" key is emitted
+```
+
+See [From JSON Schema](/json-schema/code-generation/from-json) for full import coverage.
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Schema Libraries" icon="library">
+    Documents that only define reusable `$defs` for other schemas to reference.
+  </Card>
+  <Card title="Polymorphic Validation" icon="shapes">
+    Composition-only schemas using `oneOf`/`anyOf` to discriminate between shapes without a top-level type.
+  </Card>
+  <Card title="Reference Roots" icon="asterisk">
+    Root schemas that are purely a `$ref` pointer to another definition.
+  </Card>
+  <Card title="Conditional Documents" icon="git-branch">
+    Schemas where `if`/`then`/`else` or `allOf` carry the full validation logic.
+  </Card>
+</CardGroup>
