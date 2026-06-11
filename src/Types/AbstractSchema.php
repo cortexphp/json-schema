@@ -89,14 +89,6 @@ abstract class AbstractSchema implements JsonSchema
     }
 
     /**
-     * Determine if the type keyword should be omitted.
-     */
-    public function shouldOmitType(): bool
-    {
-        return $this->omitType;
-    }
-
-    /**
      * Add null type to schema.
      */
     public function nullable(): static

@@ -24,7 +24,7 @@ final class SchemaRoundTrip
     public static function assertSourceSubset(array $source, array $output, string $path = 'root'): void
     {
         foreach ($source as $key => $value) {
-            if (in_array($key, self::IGNORED_KEYS, true)) {
+            if (in_array($key, self::IGNORED_KEYS, strict: true)) {
                 continue;
             }
 
@@ -39,8 +39,8 @@ final class SchemaRoundTrip
             $outputValue = $output[$key];
 
             if (is_array($value) && is_array($outputValue)) {
-                if (self::isList($value)) {
-                    if (! self::isList($outputValue)) {
+                if (array_is_list($value)) {
+                    if (! array_is_list($outputValue)) {
                         throw new ExpectationFailedException(
                             sprintf('Expected list at path [%s], got associative array.', $currentPath),
                         );
@@ -87,15 +87,7 @@ final class SchemaRoundTrip
                 continue;
             }
 
-            if ($value !== $outputValue) {
-                if (is_int($value) && is_float($outputValue) && $value === (int) $outputValue) {
-                    continue;
-                }
-
-                if (is_float($value) && is_int($outputValue) && $value === (float) $outputValue) {
-                    continue;
-                }
-
+            if ($value !== $outputValue && ! self::areNumericEqual($value, $outputValue)) {
                 throw new ExpectationFailedException(
                     sprintf(
                         'Expected value %s at path [%s], got %s.',
@@ -109,14 +101,11 @@ final class SchemaRoundTrip
     }
 
     /**
-     * @param array<int|string, mixed> $array
+     * Check whether two values are numerically equal across int/float boundaries.
      */
-    private static function isList(array $array): bool
+    private static function areNumericEqual(mixed $a, mixed $b): bool
     {
-        if ($array === []) {
-            return true;
-        }
-
-        return array_keys($array) === range(0, count($array) - 1);
+        return (is_int($a) && is_float($b) && $a === (int) $b)
+            || (is_float($a) && is_int($b) && $a === (float) $b);
     }
 }

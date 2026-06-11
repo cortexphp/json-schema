@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Types\Concerns;
 
-use Cortex\JsonSchema\Exceptions\SchemaException;
-
 /**
  * @mixin \Cortex\JsonSchema\Contracts\JsonSchema
  */
@@ -26,23 +24,9 @@ trait HasEnum
         $unique = [];
 
         foreach ($values as $value) {
-            $alreadyExists = false;
-
-            foreach ($unique as $existing) {
-                if ($existing === $value) {
-                    $alreadyExists = true;
-
-                    break;
-                }
-            }
-
-            if (! $alreadyExists) {
+            if (! in_array($value, $unique, strict: true)) {
                 $unique[] = $value;
             }
-        }
-
-        if ($unique === []) {
-            throw new SchemaException('Enum must contain at least one value');
         }
 
         /** @var non-empty-array<int|string|bool|float|array|null> $unique */
