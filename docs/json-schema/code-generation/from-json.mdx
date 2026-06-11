@@ -259,7 +259,7 @@ Version-specific keywords are imported using the detected (or supplied) `SchemaV
 
 ### Typeless Schemas
 
-Schemas without a `type` keyword that carry structural keywords (such as `$ref`, `$defs`, `allOf`, `properties`, or `required`) are imported as typeless schemas — the converter does **not** expand them into a union of all types. This keeps composition-only and definition-only documents intact:
+Schemas without a `type` keyword that carry structural keywords (such as `$ref`, `$defs`, `allOf`, `properties`, or `required`) are imported as a `TypelessSchema` — the converter does **not** expand them into a union of all types. This keeps composition-only and definition-only documents intact:
 
 ```php
 // A definition-only document with no top-level "type"

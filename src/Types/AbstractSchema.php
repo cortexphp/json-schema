@@ -45,13 +45,11 @@ abstract class AbstractSchema implements JsonSchema
 
     protected SchemaVersion $schemaVersion = SchemaVersion::Draft_2020_12;
 
-    protected bool $omitType = false;
-
     /**
-     * @param \Cortex\JsonSchema\Enums\SchemaType|array<array-key, \Cortex\JsonSchema\Enums\SchemaType> $type
+     * @param \Cortex\JsonSchema\Enums\SchemaType|array<array-key, \Cortex\JsonSchema\Enums\SchemaType>|null $type
      */
     public function __construct(
-        protected SchemaType|array $type,
+        protected SchemaType|array|null $type,
         ?string $title = null,
         ?SchemaVersion $schemaVersion = null,
     ) {
@@ -79,21 +77,11 @@ abstract class AbstractSchema implements JsonSchema
     }
 
     /**
-     * Omit the type keyword when converting to array.
-     */
-    public function omitType(bool $omit = true): static
-    {
-        $this->omitType = $omit;
-
-        return $this;
-    }
-
-    /**
      * Add null type to schema.
      */
     public function nullable(): static
     {
-        if ($this->isNullable()) {
+        if ($this->type === null || $this->isNullable()) {
             return $this;
         }
 
@@ -121,7 +109,7 @@ abstract class AbstractSchema implements JsonSchema
 
         $schema = [];
 
-        if (! $this->omitType) {
+        if ($this->type !== null) {
             $schema['type'] = is_array($this->type)
                 ? array_map(static fn(SchemaType $schemaType) => $schemaType->value, $this->type)
                 : $this->type->value;

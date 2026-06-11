@@ -170,7 +170,7 @@ $definitions = Schema::typeless()
 ```
 
 <Tip>
-`Schema::typeless()` is a thin wrapper around `UnionSchema::typeless()`, which is in turn built on top of the `omitType()` method available on any schema (it tells the schema to drop the `type` keyword when converting to an array). Importing a typeless JSON Schema via [`Schema::fromJson()` / `Schema::fromArray()`](/json-schema/code-generation/from-json) produces the same result automatically.
+`Schema::typeless()` returns a `TypelessSchema` — a dedicated schema type with no `type` keyword, designed for composition-only and definition-only documents. Importing a typeless JSON Schema via [`Schema::fromJson()` / `Schema::fromArray()`](/json-schema/code-generation/from-json) also produces a `TypelessSchema` automatically.
 </Tip>
 
 ## Union with Specific Schemas

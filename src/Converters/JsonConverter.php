@@ -19,6 +19,7 @@ use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Types\AbstractSchema;
+use Cortex\JsonSchema\Types\TypelessSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 class JsonConverter implements Converter
@@ -354,7 +355,7 @@ class JsonConverter implements Converter
     /**
      * Apply object-specific keywords.
      */
-    private function applyObjectKeywords(ObjectSchema|UnionSchema $objectSchema): void
+    private function applyObjectKeywords(ObjectSchema|UnionSchema|TypelessSchema $objectSchema): void
     {
         $required = $this->getArray('required') ?? [];
 
@@ -555,7 +556,7 @@ class JsonConverter implements Converter
             return;
         }
 
-        if (! $schema instanceof NumberSchema && ! $schema instanceof UnionSchema) {
+        if (! $schema instanceof NumberSchema && ! $schema instanceof UnionSchema && ! $schema instanceof TypelessSchema) {
             return;
         }
 
@@ -625,18 +626,18 @@ class JsonConverter implements Converter
         ));
     }
 
-    private function createTypelessSchema(?string $title): UnionSchema
+    private function createTypelessSchema(?string $title): TypelessSchema
     {
-        $unionSchema = UnionSchema::typeless($title, $this->schemaVersion);
-        $this->applyCommonKeywords($unionSchema);
+        $typelessSchema = new TypelessSchema($title, $this->schemaVersion);
+        $this->applyCommonKeywords($typelessSchema);
 
         $objectKeywords = array_flip(['properties', 'patternProperties', 'required']);
 
         if (array_intersect_key($this->data, $objectKeywords) !== []) {
-            $this->applyObjectKeywords($unionSchema);
+            $this->applyObjectKeywords($typelessSchema);
         }
 
-        return $unionSchema;
+        return $typelessSchema;
     }
 
     private function createStringSchema(?string $title): StringSchema

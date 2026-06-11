@@ -15,6 +15,7 @@ use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Contracts\JsonSchema;
+use Cortex\JsonSchema\Types\TypelessSchema;
 use Cortex\JsonSchema\Converters\JsonConverter;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -630,7 +631,7 @@ it('can handle typeless structured schemas', function (): void {
     $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
     $jsonSchema = $converter->convert();
 
-    expect($jsonSchema)->toBeInstanceOf(UnionSchema::class);
+    expect($jsonSchema)->toBeInstanceOf(TypelessSchema::class);
 
     $output = $jsonSchema->toArray(includeSchemaRef: false);
     expect($output)->not->toHaveKey('type');

@@ -93,41 +93,6 @@ it('can create a union schema with metadata', function (): void {
     expect($schemaArray)->toHaveKey('readOnly', true);
 });
 
-it('can create a typeless schema via the Schema facade', function (): void {
-    $unionSchema = Schema::typeless('shape')
-        ->oneOf(
-            Schema::object()->properties(
-                Schema::string('kind')->const('circle'),
-                Schema::number('radius')->required(),
-            ),
-            Schema::object()->properties(
-                Schema::string('kind')->const('square'),
-                Schema::number('size')->required(),
-            ),
-        );
-
-    expect($unionSchema)->toBeInstanceOf(UnionSchema::class);
-
-    $schemaArray = $unionSchema->toArray();
-
-    expect($schemaArray)->not->toHaveKey('type');
-    expect($schemaArray)->toHaveKey('title', 'shape');
-    expect($schemaArray['oneOf'])->toHaveCount(2);
-});
-
-it('can create a typeless definition-only schema', function (): void {
-    $unionSchema = UnionSchema::typeless()
-        ->addDefinition('address', Schema::object()->properties(
-            Schema::string('street')->required(),
-            Schema::string('city')->required(),
-        ));
-
-    $schemaArray = $unionSchema->toArray();
-
-    expect($schemaArray)->not->toHaveKey('type');
-    expect($schemaArray['$defs']['address']['type'])->toBe('object');
-});
-
 it('throws exception when creating union schema with no types', function (): void {
     expect(fn(): UnionSchema => Schema::union([], 'empty'))->toThrow(
         SchemaException::class,

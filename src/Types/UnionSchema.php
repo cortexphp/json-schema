@@ -58,15 +58,4 @@ final class UnionSchema extends AbstractSchema
 
         return $this->addPropertiesToSchema($schema);
     }
-
-    /**
-     * Create a typeless schema for composition-only or definition-only documents.
-     */
-    public static function typeless(?string $title = null, ?SchemaVersion $schemaVersion = null): self
-    {
-        $schema = new self([SchemaType::String], $title, $schemaVersion);
-        $schema->omitType();
-
-        return $schema;
-    }
 }

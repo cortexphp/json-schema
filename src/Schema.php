@@ -17,6 +17,7 @@ use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Contracts\JsonSchema;
+use Cortex\JsonSchema\Types\TypelessSchema;
 use Cortex\JsonSchema\Converters\EnumConverter;
 use Cortex\JsonSchema\Converters\JsonConverter;
 use Cortex\JsonSchema\Converters\ClassConverter;
@@ -102,9 +103,9 @@ class Schema
     /**
      * Create a typeless schema for composition-only or definition-only documents.
      */
-    public static function typeless(?string $title = null, ?SchemaVersion $schemaVersion = null): UnionSchema
+    public static function typeless(?string $title = null, ?SchemaVersion $schemaVersion = null): TypelessSchema
     {
-        return UnionSchema::typeless($title, $schemaVersion ?? self::getDefaultVersion());
+        return new TypelessSchema($title, $schemaVersion ?? self::getDefaultVersion());
     }
 
     /**
