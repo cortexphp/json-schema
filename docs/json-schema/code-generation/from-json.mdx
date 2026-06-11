@@ -52,7 +52,7 @@ $schema->isValid($userData); // true
 
 ## Import from Array
 
-Import a schema from a PHP array representation:
+Import a schema from a PHP array representation using `Schema::fromArray()`:
 
 ```php
 $schemaArray = [
@@ -93,8 +93,12 @@ $schemaArray = [
 ];
 
 // Import from array
-$productSchema = Schema::fromJson($schemaArray);
+$productSchema = Schema::fromArray($schemaArray);
 ```
+
+<Note>
+`Schema::fromArray()` is a convenience wrapper around `Schema::fromJson()` for when you already have a decoded array. Both accept an optional `SchemaVersion` as the second argument; `Schema::fromJson()` additionally accepts a raw JSON string.
+</Note>
 
 <Accordion title="Imported Schema Usage">
 ```php
@@ -236,6 +240,44 @@ $singleUserResponse = [
 
 $apiSchema->isValid($singleUserResponse); // true
 ```
+
+## Supported Keywords
+
+The converter performs a full round-trip of the JSON Schema vocabulary, so importing and then re-exporting a schema preserves its keywords. Every schema type receives coverage for the following:
+
+- **Metadata** - `title`, `description`, `$comment`, `examples`, `default`, `deprecated`, `readOnly`, `writeOnly`
+- **Validation** - `enum`, `const` (including boolean and array/object values), `format`
+- **Composition** - `allOf`, `anyOf`, `oneOf`, `not`
+- **Conditionals** - `if` / `then` / `else`
+- **References & identity** - `$ref`, `$anchor`, `$defs`, and draft-07 `definitions`
+- **Object keywords** - `properties`, `required`, `additionalProperties`, `patternProperties`, `propertyNames`, `minProperties`, `maxProperties`, `unevaluatedProperties`, `dependentSchemas`, `dependentRequired`
+- **Array keywords** - `items`, `prefixItems`, draft-07 tuple-style `items` arrays, `additionalItems`, `unevaluatedItems`, `contains`, `minContains`, `maxContains`, `minItems`, `maxItems`, `uniqueItems`
+
+<Tip>
+Version-specific keywords are imported using the detected (or supplied) `SchemaVersion`. For example, `unevaluatedProperties`, `dependentSchemas`, `dependentRequired`, and `$anchor` require Draft 2019-09+, while `prefixItems` requires Draft 2020-12.
+</Tip>
+
+### Typeless Schemas
+
+Schemas without a `type` keyword that carry structural keywords (such as `$ref`, `$defs`, `allOf`, `properties`, or `required`) are imported as typeless schemas — the converter does **not** expand them into a union of all types. This keeps composition-only and definition-only documents intact:
+
+```php
+// A definition-only document with no top-level "type"
+$schema = Schema::fromArray([
+    '$defs' => [
+        'product' => [
+            'type' => 'object',
+            'properties' => [
+                'name' => ['type' => 'string'],
+            ],
+        ],
+    ],
+]);
+
+$schema->toArray(); // No "type" key is emitted
+```
+
+See [Union Schema](/json-schema/schema-types/union) for building typeless schemas with the fluent builder via `Schema::typeless()`.
 
 ## Common Use Cases
 

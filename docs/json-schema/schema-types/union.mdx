@@ -110,6 +110,69 @@ $responseDataSchema = Schema::union([
     ->description('API response data in various formats');
 ```
 
+## Typeless Schemas
+
+Sometimes you need a schema document that has **no** `type` keyword at all — for example a composition-only schema (just `allOf`/`anyOf`/`oneOf`) or a definition-only document (just `$defs`). Use `Schema::typeless()` to build one:
+
+```php
+use Cortex\JsonSchema\Schema;
+
+// Composition-only schema with no "type" keyword
+$schema = Schema::typeless('shape')
+    ->oneOf(
+        Schema::object()->properties(
+            Schema::string('kind')->const('circle'),
+            Schema::number('radius')->required()
+        ),
+        Schema::object()->properties(
+            Schema::string('kind')->const('square'),
+            Schema::number('size')->required()
+        )
+    );
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "shape",
+    "oneOf": [
+        {
+            "type": "object",
+            "properties": {
+                "kind": { "const": "circle" },
+                "radius": { "type": "number" }
+            },
+            "required": ["radius"]
+        },
+        {
+            "type": "object",
+            "properties": {
+                "kind": { "const": "square" },
+                "size": { "type": "number" }
+            },
+            "required": ["size"]
+        }
+    ]
+}
+```
+</Accordion>
+
+This is also useful for definition-only documents:
+
+```php
+$definitions = Schema::typeless()
+    ->addDefinition('address', Schema::object()->properties(
+        Schema::string('street')->required(),
+        Schema::string('city')->required()
+    ));
+// Output contains "$defs" but no "type"
+```
+
+<Tip>
+`Schema::typeless()` is a thin wrapper around `UnionSchema::typeless()`, which is in turn built on top of the `omitType()` method available on any schema (it tells the schema to drop the `type` keyword when converting to an array). Importing a typeless JSON Schema via [`Schema::fromJson()` / `Schema::fromArray()`](/json-schema/code-generation/from-json) produces the same result automatically.
+</Tip>
+
 ## Union with Specific Schemas
 
 Use `oneOf` to define specific schemas for each type:

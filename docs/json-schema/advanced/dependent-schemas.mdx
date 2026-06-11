@@ -314,6 +314,78 @@ $profileSchema = Schema::object('profile', SchemaVersion::Draft_2019_09)
     ]);
 ```
 
+## Dependent Required Properties
+
+When you only need to require *other* properties based on the presence of a property — without applying a full sub-schema — use `dependentRequired()`. It maps directly to the `dependentRequired` keyword (Draft 2019-09+), which was split out from the legacy `dependencies` keyword.
+
+```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+$paymentSchema = Schema::object('payment', SchemaVersion::Draft_2019_09)
+    ->properties(
+        Schema::string('amount')->required(),
+        Schema::string('credit_card'),
+        Schema::string('billing_address'),
+        Schema::string('cvv')
+    )
+    // When 'credit_card' is present, 'billing_address' and 'cvv' become required
+    ->dependentRequired([
+        'credit_card' => ['billing_address', 'cvv'],
+    ]);
+
+// Valid - no credit card, so no extra requirements
+$paymentSchema->isValid([
+    'amount' => '100.00'
+]); // true
+
+// Valid - credit card with its required companions
+$paymentSchema->isValid([
+    'amount' => '100.00',
+    'credit_card' => '4111111111111111',
+    'billing_address' => '123 Main St',
+    'cvv' => '123'
+]); // true
+
+// Invalid - credit card present but missing dependent fields
+$paymentSchema->isValid([
+    'amount' => '100.00',
+    'credit_card' => '4111111111111111'
+]); // false (billing_address and cvv are required)
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "type": "object",
+    "title": "payment",
+    "properties": {
+        "amount": {
+            "type": "string"
+        },
+        "credit_card": {
+            "type": "string"
+        },
+        "billing_address": {
+            "type": "string"
+        },
+        "cvv": {
+            "type": "string"
+        }
+    },
+    "required": ["amount"],
+    "dependentRequired": {
+        "credit_card": ["billing_address", "cvv"]
+    }
+}
+```
+</Accordion>
+
+<Tip>
+Reach for `dependentRequired()` when the dependency is purely about *requiring other properties*. Use `dependentSchema()` / `dependentSchemas()` when you need richer conditional validation (types, patterns, `if`/`then`/`else`, etc.).
+</Tip>
+
 ## API Configuration Example
 
 Real-world example for API endpoint configuration:

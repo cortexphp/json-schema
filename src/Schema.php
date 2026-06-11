@@ -100,6 +100,14 @@ class Schema
     }
 
     /**
+     * Create a typeless schema for composition-only or definition-only documents.
+     */
+    public static function typeless(?string $title = null, ?SchemaVersion $schemaVersion = null): UnionSchema
+    {
+        return UnionSchema::typeless($title, $schemaVersion ?? self::getDefaultVersion());
+    }
+
+    /**
      * Create a schema from a given closure.
      */
     public static function fromClosure(
