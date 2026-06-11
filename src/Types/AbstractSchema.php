@@ -12,6 +12,7 @@ use Cortex\JsonSchema\Types\Concerns\HasRef;
 use Cortex\JsonSchema\Types\Concerns\HasEnum;
 use Cortex\JsonSchema\Types\Concerns\HasConst;
 use Cortex\JsonSchema\Types\Concerns\HasTitle;
+use Cortex\JsonSchema\Types\Concerns\HasAnchor;
 use Cortex\JsonSchema\Types\Concerns\HasFormat;
 use Cortex\JsonSchema\Types\Concerns\HasMetadata;
 use Cortex\JsonSchema\Types\Concerns\HasRequired;
@@ -26,6 +27,7 @@ use Cortex\JsonSchema\Types\Concerns\ValidatesVersionFeatures;
 abstract class AbstractSchema implements JsonSchema
 {
     use HasRef;
+    use HasAnchor;
     use HasId;
     use HasEnum;
     use HasConst;
@@ -42,6 +44,8 @@ abstract class AbstractSchema implements JsonSchema
     use ValidatesVersionFeatures;
 
     protected SchemaVersion $schemaVersion = SchemaVersion::Draft_2020_12;
+
+    protected bool $omitType = false;
 
     /**
      * @param \Cortex\JsonSchema\Enums\SchemaType|array<array-key, \Cortex\JsonSchema\Enums\SchemaType> $type
@@ -75,6 +79,24 @@ abstract class AbstractSchema implements JsonSchema
     }
 
     /**
+     * Omit the type keyword when converting to array.
+     */
+    public function omitType(bool $omit = true): static
+    {
+        $this->omitType = $omit;
+
+        return $this;
+    }
+
+    /**
+     * Determine if the type keyword should be omitted.
+     */
+    public function shouldOmitType(): bool
+    {
+        return $this->omitType;
+    }
+
+    /**
      * Add null type to schema.
      */
     public function nullable(): static
@@ -105,17 +127,20 @@ abstract class AbstractSchema implements JsonSchema
         // Validate that all features used by this schema are supported by the version
         $this->validateAllUsedFeatures();
 
-        $schema = [
-            'type' => is_array($this->type)
+        $schema = [];
+
+        if (! $this->omitType) {
+            $schema['type'] = is_array($this->type)
                 ? array_map(static fn(SchemaType $schemaType) => $schemaType->value, $this->type)
-                : $this->type->value,
-        ];
+                : $this->type->value;
+        }
 
         if ($includeSchemaRef) {
             $schema['$schema'] = $this->schemaVersion->value;
         }
 
         $schema = $this->addIdToSchema($schema);
+        $schema = $this->addAnchorToSchema($schema);
         $schema = $this->addTitleToSchema($schema, $includeTitle);
         $schema = $this->addFormatToSchema($schema);
         $schema = $this->addDescriptionToSchema($schema);
@@ -158,6 +183,7 @@ abstract class AbstractSchema implements JsonSchema
             ...$this->getMetadataFeatures(),
             ...$this->getReadWriteFeatures(),
             ...$this->getFormatFeatures(),
+            ...$this->getAnchorFeatures(),
         ];
 
         // Remove duplicates by using feature values as keys

@@ -8,7 +8,9 @@ use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
+/**
+ * @mixin \Cortex\JsonSchema\Contracts\JsonSchema
+ */
 trait HasProperties
 {
     /**
@@ -46,6 +48,11 @@ trait HasProperties
      * @var array<string, \Cortex\JsonSchema\Contracts\JsonSchema>
      */
     protected array $dependentSchemas = [];
+
+    /**
+     * @var array<string, list<string>>
+     */
+    protected array $dependentRequired = [];
 
     /**
      * Set properties.
@@ -128,6 +135,23 @@ trait HasProperties
         foreach ($schemas as $property => $schema) {
             $this->dependentSchema($property, $schema);
         }
+
+        return $this;
+    }
+
+    /**
+     * Set dependent required property names.
+     * This feature is only available in Draft 2019-09 and later.
+     *
+     * @param array<string, list<string>> $dependencies
+     *
+     * @throws \Cortex\JsonSchema\Exceptions\SchemaException
+     */
+    public function dependentRequired(array $dependencies): static
+    {
+        $this->validateFeatureSupport(SchemaFeature::DependentRequired);
+
+        $this->dependentRequired = $dependencies;
 
         return $this;
     }
@@ -336,6 +360,10 @@ trait HasProperties
             }
         }
 
+        if ($this->dependentRequired !== []) {
+            $schema['dependentRequired'] = $this->dependentRequired;
+        }
+
         return $schema;
     }
 
@@ -373,5 +401,19 @@ trait HasProperties
         }
 
         return [SchemaFeature::DependentSchemas];
+    }
+
+    /**
+     * Get dependent required features used by this schema.
+     *
+     * @return array<\Cortex\JsonSchema\Enums\SchemaFeature>
+     */
+    protected function getDependentRequiredFeatures(): array
+    {
+        if ($this->dependentRequired === []) {
+            return [];
+        }
+
+        return [SchemaFeature::DependentRequired];
     }
 }

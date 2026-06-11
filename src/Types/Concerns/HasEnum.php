@@ -4,22 +4,49 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Types\Concerns;
 
-/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
+use Cortex\JsonSchema\Exceptions\SchemaException;
+
+/**
+ * @mixin \Cortex\JsonSchema\Contracts\JsonSchema
+ */
 trait HasEnum
 {
     /**
-     * @var non-empty-array<int|string|bool|float|null>|null
+     * @var non-empty-array<int|string|bool|float|array|null>|null
      */
     protected ?array $enum = null;
 
     /**
      * Set the allowed enum values.
      *
-     * @param non-empty-array<int|string|bool|float|null> $values
+     * @param non-empty-array<int|string|bool|float|array|null> $values
      */
     public function enum(array $values): static
     {
-        $this->enum = array_values(array_unique($values, SORT_REGULAR));
+        $unique = [];
+
+        foreach ($values as $value) {
+            $alreadyExists = false;
+
+            foreach ($unique as $existing) {
+                if ($existing === $value) {
+                    $alreadyExists = true;
+
+                    break;
+                }
+            }
+
+            if (! $alreadyExists) {
+                $unique[] = $value;
+            }
+        }
+
+        if ($unique === []) {
+            throw new SchemaException('Enum must contain at least one value');
+        }
+
+        /** @var non-empty-array<int|string|bool|float|array|null> $unique */
+        $this->enum = $unique;
 
         return $this;
     }

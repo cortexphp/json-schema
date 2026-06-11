@@ -136,7 +136,9 @@ it('can create a schema from a class', function (): void {
 });
 
 it('can create a schema from an enum', function (): void {
-    /** This is a custom enum for testing */
+    /**
+     * This is a custom enum for testing
+     */
     enum UserRole: string
     {
         case Admin = 'admin';

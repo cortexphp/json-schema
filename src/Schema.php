@@ -188,4 +188,14 @@ class Schema
     {
         return (new JsonConverter($json, $schemaVersion ?? self::getDefaultVersion()))->convert();
     }
+
+    /**
+     * Create a schema from a given array.
+     *
+     * @param array<string, mixed> $array
+     */
+    public static function fromArray(array $array, ?SchemaVersion $schemaVersion = null): JsonSchema
+    {
+        return self::fromJson($array, $schemaVersion ?? self::getDefaultVersion());
+    }
 }

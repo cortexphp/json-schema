@@ -379,3 +379,296 @@ it('can handle string content annotations', function (): void {
     expect($output['contentSchema']['type'])->toBe('object');
     expect($output['contentSchema']['properties']['name']['type'])->toBe('string');
 });
+
+it('can handle conditional keywords', function (): void {
+    $json = [
+        'type' => 'object',
+        'if' => [
+            'properties' => [
+                'isMember' => [
+                    'const' => true,
+                ],
+            ],
+        ],
+        'then' => [
+            'properties' => [
+                'membershipNumber' => [
+                    'type' => 'string',
+                    'minLength' => 10,
+                ],
+            ],
+        ],
+        'else' => [
+            'properties' => [
+                'membershipNumber' => [
+                    'type' => 'string',
+                    'minLength' => 15,
+                ],
+            ],
+        ],
+        'allOf' => [
+            [
+                'type' => 'object',
+            ],
+        ],
+        'anyOf' => [
+            [
+                'type' => 'object',
+            ],
+        ],
+        'oneOf' => [
+            [
+                'type' => 'object',
+            ],
+        ],
+        'not' => [
+            'type' => 'null',
+        ],
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
+    $jsonSchema = $converter->convert();
+
+    expect($jsonSchema)->toBeInstanceOf(ObjectSchema::class);
+
+    $output = $jsonSchema->toArray(includeSchemaRef: false);
+    expect($output)->toHaveKey('if');
+    expect($output)->toHaveKey('then');
+    expect($output)->toHaveKey('else');
+    expect($output['allOf'])->toHaveCount(1);
+    expect($output['anyOf'])->toHaveCount(1);
+    expect($output['oneOf'])->toHaveCount(1);
+    expect($output['not']['type'])->toBe('null');
+});
+
+it('can handle $ref keyword', function (): void {
+    $json = [
+        'type' => 'object',
+        '$ref' => '#/$defs/user',
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
+    $jsonSchema = $converter->convert();
+
+    expect($jsonSchema->toArray(includeSchemaRef: false)['$ref'])->toBe('#/$defs/user');
+});
+
+it('can handle $defs keyword', function (): void {
+    $json = [
+        'type' => 'object',
+        '$defs' => [
+            'name' => [
+                'type' => 'string',
+            ],
+        ],
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
+    $jsonSchema = $converter->convert();
+
+    $output = $jsonSchema->toArray(includeSchemaRef: false);
+    expect($output['$defs']['name']['type'])->toBe('string');
+});
+
+it('can handle metadata keywords', function (): void {
+    $json = [
+        'type' => 'string',
+        '$comment' => 'Internal note',
+        'examples' => ['example@example.com'],
+        'deprecated' => true,
+        'readOnly' => true,
+        'writeOnly' => true,
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2019_09);
+    $jsonSchema = $converter->convert();
+
+    expect($jsonSchema->toArray(includeSchemaRef: false))->toMatchArray([
+        'type' => 'string',
+        '$comment' => 'Internal note',
+        'examples' => ['example@example.com'],
+        'deprecated' => true,
+        'readOnly' => true,
+        'writeOnly' => true,
+    ]);
+});
+
+it('can handle object pattern and property name keywords', function (): void {
+    $json = [
+        'type' => 'object',
+        'patternProperties' => [
+            '^S_' => [
+                'type' => 'string',
+            ],
+        ],
+        'propertyNames' => [
+            'pattern' => '^[A-Za-z_]*$',
+        ],
+        'minProperties' => 1,
+        'maxProperties' => 5,
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
+    $jsonSchema = $converter->convert();
+
+    $output = $jsonSchema->toArray(includeSchemaRef: false);
+    expect($output['patternProperties']['^S_']['type'])->toBe('string');
+    expect($output['propertyNames']['pattern'])->toBe('^[A-Za-z_]*$');
+    expect($output['minProperties'])->toBe(1);
+    expect($output['maxProperties'])->toBe(5);
+});
+
+it('can handle dependentSchemas and dependentRequired', function (): void {
+    $json = [
+        'type' => 'object',
+        'dependentRequired' => [
+            'foo' => ['bar'],
+        ],
+        'dependentSchemas' => [
+            'foo' => [
+                'required' => ['bar'],
+            ],
+        ],
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
+    $jsonSchema = $converter->convert();
+
+    $output = $jsonSchema->toArray(includeSchemaRef: false);
+    expect($output['dependentRequired'])->toBe([
+        'foo' => ['bar'],
+    ]);
+    expect($output['dependentSchemas']['foo']['required'])->toBe(['bar']);
+});
+
+it('can handle unevaluatedProperties', function (): void {
+    $json = [
+        'type' => 'object',
+        'unevaluatedProperties' => false,
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
+    $jsonSchema = $converter->convert();
+
+    expect($jsonSchema->toArray(includeSchemaRef: false)['unevaluatedProperties'])->toBe(false);
+});
+
+it('can handle prefixItems and unevaluatedItems', function (): void {
+    $json = [
+        'type' => 'array',
+        'prefixItems' => [
+            [
+                'type' => 'string',
+            ],
+            [
+                'type' => 'integer',
+            ],
+        ],
+        'unevaluatedItems' => false,
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
+    $jsonSchema = $converter->convert();
+
+    $output = $jsonSchema->toArray(includeSchemaRef: false);
+    expect($output['prefixItems'])->toHaveCount(2);
+    expect($output['prefixItems'][0]['type'])->toBe('string');
+    expect($output['prefixItems'][1]['type'])->toBe('integer');
+    expect($output['unevaluatedItems'])->toBe(false);
+});
+
+it('can handle tuple items and additionalItems', function (): void {
+    $json = [
+        'type' => 'array',
+        'items' => [
+            [
+                'type' => 'string',
+            ],
+            [
+                'type' => 'integer',
+            ],
+        ],
+        'additionalItems' => false,
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_07);
+    $jsonSchema = $converter->convert();
+
+    $output = $jsonSchema->toArray(includeSchemaRef: false);
+    expect($output['items'])->toHaveCount(2);
+    expect($output['items'][0]['type'])->toBe('string');
+    expect($output['items'][1]['type'])->toBe('integer');
+    expect($output['additionalItems'])->toBe(false);
+});
+
+it('can handle $anchor keyword', function (): void {
+    $json = [
+        'type' => 'object',
+        '$anchor' => 'ProductSchema',
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
+    $jsonSchema = $converter->convert();
+
+    expect($jsonSchema->toArray(includeSchemaRef: false)['$anchor'])->toBe('ProductSchema');
+});
+
+it('can handle typeless structured schemas', function (): void {
+    $json = [
+        '$defs' => [
+            'product' => [
+                'type' => 'object',
+                'properties' => [
+                    'name' => [
+                        'type' => 'string',
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
+    $jsonSchema = $converter->convert();
+
+    expect($jsonSchema)->toBeInstanceOf(UnionSchema::class);
+
+    $output = $jsonSchema->toArray(includeSchemaRef: false);
+    expect($output)->not->toHaveKey('type');
+    expect($output['$defs']['product']['type'])->toBe('object');
+});
+
+it('can handle boolean const values', function (): void {
+    $json = [
+        'type' => 'boolean',
+        'const' => false,
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
+    $jsonSchema = $converter->convert();
+
+    expect($jsonSchema->toArray(includeSchemaRef: false)['const'])->toBeFalse();
+});
+
+it('can handle number schema metadata and constraints', function (): void {
+    $json = [
+        'type' => 'number',
+        'minimum' => 0,
+        'exclusiveMaximum' => 100,
+        'enum' => [1.5, 2.5],
+        'default' => 1.5,
+        'description' => 'A number',
+    ];
+
+    $converter = new JsonConverter($json, SchemaVersion::Draft_2020_12);
+    $jsonSchema = $converter->convert();
+
+    expect($jsonSchema)->toBeInstanceOf(NumberSchema::class);
+    expect($jsonSchema->toArray(includeSchemaRef: false))->toMatchArray([
+        'type' => 'number',
+        'minimum' => 0,
+        'exclusiveMaximum' => 100,
+        'enum' => [1.5, 2.5],
+        'default' => 1.5,
+        'description' => 'A number',
+    ]);
+});

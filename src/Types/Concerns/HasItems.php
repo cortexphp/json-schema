@@ -7,7 +7,9 @@ namespace Cortex\JsonSchema\Types\Concerns;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
+/**
+ * @mixin \Cortex\JsonSchema\Contracts\JsonSchema
+ */
 trait HasItems
 {
     protected ?JsonSchema $items = null;
@@ -19,11 +21,40 @@ trait HasItems
     protected bool $uniqueItems = false;
 
     /**
+     * @var array<int, JsonSchema>
+     */
+    protected array $tupleItems = [];
+
+    protected JsonSchema|bool|null $additionalItems = null;
+
+    /**
      * Set the schema for validating array items.
      */
     public function items(JsonSchema $jsonSchema): static
     {
         $this->items = $jsonSchema;
+
+        return $this;
+    }
+
+    /**
+     * Set tuple item schemas for draft-07 style array validation.
+     *
+     * @param array<int, \Cortex\JsonSchema\Contracts\JsonSchema> $schemas
+     */
+    public function tupleItems(array $schemas): static
+    {
+        $this->tupleItems = array_values($schemas);
+
+        return $this;
+    }
+
+    /**
+     * Set whether additional tuple items are allowed and optionally their schema.
+     */
+    public function additionalItems(bool|JsonSchema $allowed): static
+    {
+        $this->additionalItems = $allowed;
 
         return $this;
     }
@@ -83,8 +114,22 @@ trait HasItems
      */
     protected function addItemsToSchema(array $schema): array
     {
-        if ($this->items !== null) {
+        if ($this->tupleItems !== []) {
+            $schema['items'] = array_map(
+                static fn(JsonSchema $jsonSchema): array => $jsonSchema->toArray(
+                    includeSchemaRef: false,
+                    includeTitle: false,
+                ),
+                $this->tupleItems,
+            );
+        } elseif ($this->items !== null) {
             $schema['items'] = $this->items->toArray();
+        }
+
+        if ($this->additionalItems !== null) {
+            $schema['additionalItems'] = $this->additionalItems instanceof JsonSchema
+                ? $this->additionalItems->toArray(includeSchemaRef: false, includeTitle: false)
+                : $this->additionalItems;
         }
 
         if ($this->minItems !== null) {
