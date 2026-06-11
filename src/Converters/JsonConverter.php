@@ -171,8 +171,9 @@ class JsonConverter implements Converter
      */
     private function inferTypeFromKeywords(): ?string
     {
-        $stringKeywords = array_flip([
-            'pattern', 'minLength', 'maxLength', 'format', 'contentEncoding', 'contentMediaType'],
+        $stringKeywords = array_flip(
+            [
+                'pattern', 'minLength', 'maxLength', 'format', 'contentEncoding', 'contentMediaType'],
         );
 
         if (array_intersect_key($this->data, $stringKeywords) !== []) {
@@ -345,6 +346,7 @@ class JsonConverter implements Converter
             if (! is_array($definitionData)) {
                 continue;
             }
+
             $schema->addDefinition($name, (new self($definitionData, $this->schemaVersion))->convert());
         }
     }
@@ -368,6 +370,7 @@ class JsonConverter implements Converter
                 if (! is_array($propertyData)) {
                     continue;
                 }
+
                 $propertySchemas[$name] = (new self($propertyData, $this->schemaVersion))->convert();
 
                 if (in_array($name, $required, true)) {
@@ -396,6 +399,7 @@ class JsonConverter implements Converter
                 if (! is_array($propertyData)) {
                     continue;
                 }
+
                 $objectSchema->patternProperty($pattern, (new self($propertyData, $this->schemaVersion))->convert());
             }
         }
@@ -421,6 +425,7 @@ class JsonConverter implements Converter
                 if (! is_array($dependentData)) {
                     continue;
                 }
+
                 $objectSchema->dependentSchema($property, (new self($dependentData, $this->schemaVersion))->convert());
             }
         }
@@ -437,6 +442,7 @@ class JsonConverter implements Converter
                 if (! is_array($requiredProperties)) {
                     continue;
                 }
+
                 $normalized[$property] = array_values(array_filter($requiredProperties, is_string(...)));
             }
 
