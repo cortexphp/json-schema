@@ -17,6 +17,7 @@ use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\BooleanSchema;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Contracts\JsonSchema;
+use Cortex\JsonSchema\Types\TypelessSchema;
 use Cortex\JsonSchema\Converters\EnumConverter;
 use Cortex\JsonSchema\Converters\JsonConverter;
 use Cortex\JsonSchema\Converters\ClassConverter;
@@ -97,6 +98,14 @@ class Schema
     public static function mixed(?string $title = null, ?SchemaVersion $schemaVersion = null): UnionSchema
     {
         return new UnionSchema(SchemaType::cases(), $title, $schemaVersion ?? self::getDefaultVersion());
+    }
+
+    /**
+     * Create a typeless schema for composition-only or definition-only documents.
+     */
+    public static function typeless(?string $title = null, ?SchemaVersion $schemaVersion = null): TypelessSchema
+    {
+        return new TypelessSchema($title, $schemaVersion ?? self::getDefaultVersion());
     }
 
     /**
@@ -187,5 +196,15 @@ class Schema
     public static function fromJson(string|array $json, ?SchemaVersion $schemaVersion = null): JsonSchema
     {
         return (new JsonConverter($json, $schemaVersion ?? self::getDefaultVersion()))->convert();
+    }
+
+    /**
+     * Create a schema from a given array.
+     *
+     * @param array<string, mixed> $array
+     */
+    public static function fromArray(array $array, ?SchemaVersion $schemaVersion = null): JsonSchema
+    {
+        return self::fromJson($array, $schemaVersion ?? self::getDefaultVersion());
     }
 }

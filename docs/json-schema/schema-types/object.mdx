@@ -503,7 +503,23 @@ $conditionalSchema = Schema::object('payment', SchemaVersion::Draft_2019_09)
                 Schema::string('card_number')->required()
             ))
     );
+
+// Dependent required properties (Draft 2019-09+)
+$cardSchema = Schema::object('payment', SchemaVersion::Draft_2019_09)
+    ->properties(
+        Schema::string('credit_card'),
+        Schema::string('billing_address'),
+        Schema::string('cvv')
+    )
+    // If 'credit_card' is present, these properties become required
+    ->dependentRequired([
+        'credit_card' => ['billing_address', 'cvv'],
+    ]);
 ```
+
+<Note>
+See [Dependent Schemas](/json-schema/advanced/dependent-schemas) for a deeper look at `dependentSchema()`, `dependentSchemas()`, and `dependentRequired()`.
+</Note>
 
 ## Validation Examples
 

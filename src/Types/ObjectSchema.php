@@ -43,6 +43,7 @@ final class ObjectSchema extends AbstractSchema
             ...parent::getUsedFeatures(),
             ...$this->getUnevaluatedPropertiesFeatures(),
             ...$this->getDependentSchemasFeatures(),
+            ...$this->getDependentRequiredFeatures(),
         ];
 
         // Remove duplicates by using feature values as keys

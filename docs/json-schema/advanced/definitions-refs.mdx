@@ -317,6 +317,69 @@ $modernSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
 
 The package automatically uses the correct keyword based on the schema version.
 
+## Plain-Name Anchors (`$anchor`)
+
+Anchors provide a plain-name identifier for a schema that can be targeted by a `$ref` using the `#anchor` fragment syntax, instead of a full JSON Pointer path. Use `anchor()` to set one (Draft 2019-09+):
+
+```php
+use Cortex\JsonSchema\Schema;
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+$userSchema = Schema::object('user', SchemaVersion::Draft_2019_09)
+    ->addDefinition(
+        'address',
+        Schema::object()
+            ->anchor('address') // Plain-name anchor
+            ->properties(
+                Schema::string('street')->required(),
+                Schema::string('city')->required()
+            )
+    )
+    ->properties(
+        Schema::string('name')->required(),
+        // Reference the definition by its anchor instead of a pointer
+        Schema::object('home_address')->ref('#address')
+    );
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "type": "object",
+    "title": "user",
+    "$defs": {
+        "address": {
+            "type": "object",
+            "$anchor": "address",
+            "properties": {
+                "street": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                }
+            },
+            "required": ["street", "city"]
+        }
+    },
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "home_address": {
+            "$ref": "#address"
+        }
+    },
+    "required": ["name"]
+}
+```
+</Accordion>
+
+<Note>
+`$anchor` requires Draft 2019-09 or later. Using `anchor()` on an older schema version throws a `SchemaException`.
+</Note>
+
 ## Complex Real-World Example
 
 Here's a comprehensive e-commerce schema using definitions:

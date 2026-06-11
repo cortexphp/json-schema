@@ -8,7 +8,9 @@ use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
+/**
+ * @mixin \Cortex\JsonSchema\Contracts\JsonSchema
+ */
 trait HasConditionals
 {
     protected ?JsonSchema $if = null;

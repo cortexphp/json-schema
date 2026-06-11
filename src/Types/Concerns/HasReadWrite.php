@@ -6,7 +6,9 @@ namespace Cortex\JsonSchema\Types\Concerns;
 
 use Cortex\JsonSchema\Enums\SchemaFeature;
 
-/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
+/**
+ * @mixin \Cortex\JsonSchema\Contracts\JsonSchema
+ */
 trait HasReadWrite
 {
     protected ?bool $readOnly = null;

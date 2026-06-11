@@ -110,6 +110,10 @@ $responseDataSchema = Schema::union([
     ->description('API response data in various formats');
 ```
 
+<Note>
+Need a schema with no `type` keyword? See [Typeless Schema](/json-schema/schema-types/typeless) for composition-only and definition-only documents.
+</Note>
+
 ## Union with Specific Schemas
 
 Use `oneOf` to define specific schemas for each type:

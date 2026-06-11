@@ -257,6 +257,66 @@ $flexibleTupleSchema->isValid(['John', 30, 123]);               // false (additi
 - **Use `prefixItems()`** when you need positional validation (tuples) or when the first N items have specific schemas
 - **Combine both** when you need a fixed prefix followed by additional items with a different schema
 
+### Legacy Tuples with tupleItems (Draft-07 and earlier)
+
+In Draft-07 and Draft-06, tuple validation is expressed by setting `items` to an *array* of schemas, with `additionalItems` controlling whatever follows the tuple. Use `tupleItems()` and `additionalItems()` for this legacy style:
+
+```php
+use Cortex\JsonSchema\Enums\SchemaVersion;
+
+$coordinateSchema = Schema::array('coordinates', SchemaVersion::Draft_07)
+    ->tupleItems([
+        Schema::number()->description('latitude'),
+        Schema::number()->description('longitude'),
+    ])
+    ->additionalItems(false) // No items beyond the tuple
+    ->description('Geographic coordinates [lat, lng]');
+
+$coordinateSchema->isValid([51.5074, -0.1278]);      // true
+$coordinateSchema->isValid([51.5074, -0.1278, 100]); // false (additional items not allowed)
+```
+
+<Accordion title="View JSON Schema Output">
+```json
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "title": "coordinates",
+    "items": [
+        {
+            "type": "number",
+            "description": "latitude"
+        },
+        {
+            "type": "number",
+            "description": "longitude"
+        }
+    ],
+    "additionalItems": false,
+    "description": "Geographic coordinates [lat, lng]"
+}
+```
+</Accordion>
+
+You can also pass a schema to `additionalItems()` so that any items after the tuple must match it:
+
+```php
+$recordSchema = Schema::array('record', SchemaVersion::Draft_07)
+    ->tupleItems([
+        Schema::string()->description('name'),
+        Schema::integer()->description('age'),
+    ])
+    ->additionalItems(Schema::string()); // Extra items must be strings
+
+$recordSchema->isValid(['John', 30]);                  // true
+$recordSchema->isValid(['John', 30, 'admin', 'staff']); // true
+$recordSchema->isValid(['John', 30, 99]);              // false (extra item not a string)
+```
+
+<Note>
+`tupleItems()` / `additionalItems()` map to the Draft-07 array-form `items` + `additionalItems` keywords. For Draft 2020-12, prefer `prefixItems()` combined with `items()`, which supersede them.
+</Note>
+
 ## Contains Validation
 
 Validate that an array contains specific items:

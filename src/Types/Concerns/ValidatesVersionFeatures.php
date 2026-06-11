@@ -7,7 +7,9 @@ namespace Cortex\JsonSchema\Types\Concerns;
 use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
+/**
+ * @mixin \Cortex\JsonSchema\Contracts\JsonSchema
+ */
 trait ValidatesVersionFeatures
 {
     /**

@@ -6,7 +6,9 @@ namespace Cortex\JsonSchema\Types\Concerns;
 
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
-/** @mixin \Cortex\JsonSchema\Contracts\JsonSchema */
+/**
+ * @mixin \Cortex\JsonSchema\Contracts\JsonSchema
+ */
 trait HasNumericConstraints
 {
     protected ?float $minimum = null;

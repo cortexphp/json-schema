@@ -126,6 +126,7 @@ All schema types support common properties like title, description, examples, de
   - **Boolean Schema** - True/false validation with default values
   - **Null Schema** - Null value validation and nullable type support
   - **Union Schema** - Multi-type schemas with nullable support and discriminated unions
+  - **Typeless Schema** - Composition-only and definition-only documents with no `type` keyword
 
 ## Advanced Features
 
@@ -137,10 +138,11 @@ All schema types support common properties like title, description, examples, de
 - **not** - Schema must not match
 
 ### Modern JSON Schema Features
-- **Definitions & References** - Reusable schema components with `$ref`
-- **Unevaluated Properties** - Advanced property validation (Draft 2019-09+)
-- **Dependent Schemas** - Property-dependent validation rules
+- **Definitions & References** - Reusable schema components with `$ref`, `$defs`, and plain-name `$anchor`
+- **Unevaluated Properties** - Advanced property/item validation (Draft 2019-09+)
+- **Dependent Schemas** - Property-dependent validation rules, including `dependentRequired`
 - **Pattern Properties** - Regex-based property validation
+- **Tuple Validation** - `prefixItems` (Draft 2020-12) and legacy `items`/`additionalItems` tuples (Draft-07)
 - **Contains Validation** - Array item existence validation
 
 ### Code Generation
@@ -170,4 +172,6 @@ The package defaults to Draft 2020-12 for the latest features. Use Draft-06 for 
 | `minContains`/`maxContains` | ❌ | ❌ | ✅ | ✅ |
 | `unevaluatedProperties` | ❌ | ❌ | ✅ | ✅ |
 | `dependentSchemas` | ❌ | ❌ | ✅ | ✅ |
+| `dependentRequired` | ❌ | ❌ | ✅ | ✅ |
+| `$anchor` | ❌ | ❌ | ✅ | ✅ |
 | `prefixItems` | ❌ | ❌ | ❌ | ✅ |
