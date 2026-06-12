@@ -4,7 +4,7 @@ description: 'Generate JSON schemas automatically from PHP class definitions'
 icon: 'code'
 ---
 
-Generate JSON schemas automatically from PHP classes using reflection and docblock analysis. This feature extracts property types, validation rules, and documentation from your existing PHP classes.
+Generate JSON schemas automatically from PHP classes using reflection and docblock analysis. This feature extracts property types, defaults, documentation, and array element types from your existing PHP classes.
 
 ## Basic Class Schema Generation
 
@@ -113,7 +113,7 @@ class Product
     public bool $in_stock = true;
 
     /**
-     * @var array Product tags
+     * @var string[] Product tags
      */
     public array $tags = [];
 }
@@ -155,6 +155,9 @@ $schema = Schema::fromClass(Product::class);
         "tags": {
             "type": "array",
             "description": "Product tags",
+            "items": {
+                "type": "string"
+            },
             "default": []
         }
     },
@@ -188,11 +191,64 @@ class ModernUser
 // Generate with Draft 2019-09 for deprecated support
 $schema = Schema::fromClass(
     ModernUser::class,
-    version: SchemaVersion::Draft_2019_09
+    schemaVersion: SchemaVersion::Draft_2019_09
 );
 
 // The generated schema will include "deprecated": true for old_email
 ```
+
+## Constructor Property Promotion
+
+Promoted constructor properties are supported. Descriptions and array element types are read from the constructor's `@param` tags when the property itself has no docblock:
+
+```php
+/**
+ * User data transfer object
+ *
+ * @param string $name The user's full name
+ * @param int $age The user's age in years
+ */
+class UserDto
+{
+    public function __construct(
+        public string $name,
+        public int $age = 18,
+    ) {}
+}
+
+$schema = Schema::fromClass(UserDto::class);
+// name: required string with @param description
+// age: optional integer with default 18
+```
+
+An explicit `@var` tag on a promoted property takes precedence over the matching `@param` description.
+
+## Array Item Types
+
+When a property is typed as `array`, the converter reads element types from docblock generics and adds an `items` schema. Supported syntax includes:
+
+- `string[]` and `(int|string)[]`
+- `array<string>`, `array<int|string>`, and `array<string, int>` (value type is used for key-value maps)
+- `list<bool>`, `non-empty-array<string>`, and similar list/array generics
+
+```php
+class Article
+{
+    /** @var string[] Article tags */
+    public array $tags;
+
+    /** @var array<int|string> Flexible identifiers */
+    public array $ids;
+}
+
+$schema = Schema::fromClass(Article::class);
+// tags: { "type": "array", "items": { "type": "string" } }
+// ids: { "type": "array", "items": { "type": ["integer", "string"] } }
+```
+
+<Note>
+Array item types are limited to JSON Schema scalar types (`string`, `integer`, `number`, `boolean`, `null`, `object`, `array`) and unions of those scalars. Class names (e.g. `DateTime[]`), `mixed`, and nested generics (e.g. `array<array<int>>`) are skipped silently, leaving a plain `array` without `items`.
+</Note>
 
 ## Complex Property Types
 
@@ -210,7 +266,7 @@ class Order
     public string $id;
 
     /**
-     * @var array List of order items
+     * @var array<string> List of order item SKUs
      */
     public array $items;
 
@@ -225,25 +281,50 @@ class Order
     public ?object $billing_address = null;
 
     /**
-     * @var array Additional notes
+     * @var string[] Additional notes
      */
     public array $notes = [];
 
     /**
-     * @var array Metadata key-value pairs
+     * @var array<string, string> Metadata key-value pairs
      */
     public array $metadata = [];
 }
 
 $schema = Schema::fromClass(Order::class);
-// Custom class types (like Address) are treated as generic 'object' type
-// Generic array syntax (e.g., array<OrderItem>) in docblocks is not parsed
-// Arrays are treated as generic arrays without item type information
+// items, notes, and metadata include string item schemas
+// Custom class types (like Address) require ignoreUnknownTypes or separate schema generation
 ```
 
 <Note>
-Custom class types (non-built-in PHP types) are converted to generic `object` schemas. The converter does not recursively analyze nested classes or parse generic array syntax from docblocks. To create schemas for nested objects, generate them separately and combine them using the fluent API.
+Custom class types (non-built-in PHP types) are not mapped to JSON Schema types by default and will throw an `UnknownTypeException`. Use `ignoreUnknownTypes: true` to skip unmappable properties, or generate nested object schemas separately and combine them using the fluent API.
 </Note>
+
+## Handling Unknown Types
+
+By default, properties typed as custom classes (e.g. `DateTime`, `Address`) cause conversion to fail. Pass `ignoreUnknownTypes: true` to omit those properties from the generated schema:
+
+```php
+class Event
+{
+    public string $title;
+
+    public DateTime $starts_at;
+
+    public ?DateTime $ends_at = null;
+}
+
+// Throws UnknownTypeException for DateTime properties
+$schema = Schema::fromClass(Event::class);
+
+// Skips DateTime properties, includes title only
+$schema = Schema::fromClass(
+    Event::class,
+    ignoreUnknownTypes: true,
+);
+```
+
+This option is also available on `Schema::from()` when passing a class or object instance.
 
 ## Enum Integration
 
@@ -363,8 +444,13 @@ class CompleteUser extends BaseEntity
 }
 
 $schema = Schema::fromClass(CompleteUser::class);
-// Schema will include properties from base class and traits
+// Schema includes properties from the base class and traits
+// Static properties are excluded
 ```
+
+<Note>
+Only **public** properties are included by default. Pass `publicOnly: false` to include protected and private properties. Static properties are always excluded.
+</Note>
 
 ## Validation and Usage
 
@@ -418,13 +504,14 @@ if ($userSchema->isValid($userData)) {
 
 The schema generator automatically extracts the following from your docblocks:
 
-- **Description text** - From the docblock summary and description
-- **Property types** - From `@var` annotations (combined with native PHP types)
-- **Parameter types** - From `@param` annotations
-- **Deprecation status** - Using the `@deprecated` tag
+- **Description text** - From the class docblock summary and `@var` property descriptions
+- **Promoted property descriptions** - From matching constructor `@param` tags when no `@var` is present
+- **Property types** - From native PHP type hints (combined with `@var` where present)
+- **Array item types** - From generic array syntax in `@var` or `@param` tags (scalar element types only)
+- **Deprecation status** - Using the `@deprecated` tag on classes and properties
 
 <Note>
-Validation rules (like minLength, pattern, format) are **not** extracted from docblocks. You need to apply them programmatically using the fluent API after generation, or define them in your actual PHP code using native types and enums.
+Validation rules (like minLength, pattern, format) are **not** extracted from docblocks. Apply them programmatically using the fluent API after generation, or rely on native PHP types and backed enums for type validation.
 </Note>
 
 ## Best Practices
@@ -485,7 +572,7 @@ public string $email;
  */
 public string $username;
 
-// Good: Document complex array types
+// Good: Document array element types with generics
 /**
  * @var array<string> List of user roles
  */
@@ -493,7 +580,7 @@ public array $roles;
 ```
 
 <Note>
-Validation rules like minLength, pattern, format are not extracted from docblocks. Generic array syntax (e.g., `array<string>`, `array<OrderItem>`) in docblocks is not parsed - arrays are treated as generic arrays without item type information. Apply validation rules and array item schemas programmatically using the fluent API after schema generation, or use native PHP types and enums for type validation.
+Validation rules like minLength, pattern, and format are not extracted from docblocks. Array item types are inferred from generic syntax for scalar elements only — nested object or array element types (e.g. `array<OrderItem>`) are not resolved recursively. Apply additional validation programmatically using the fluent API after schema generation.
 </Note>
 
 ## Common Use Cases
