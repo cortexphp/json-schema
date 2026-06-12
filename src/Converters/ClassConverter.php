@@ -10,7 +10,9 @@ use ReflectionClass;
 use ReflectionProperty;
 use ReflectionNamedType;
 use ReflectionParameter;
+use Cortex\JsonSchema\Support\NodeData;
 use Cortex\JsonSchema\Support\DocParser;
+use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
 use Cortex\JsonSchema\Enums\SchemaVersion;
@@ -91,11 +93,11 @@ class ClassConverter implements Converter
     /**
      * Create a schema from a given type.
      *
-     * @param \Cortex\JsonSchema\Support\NodeCollection<array-key, \Cortex\JsonSchema\Support\NodeData>|null $promotedParams
+     * @param \Cortex\JsonSchema\Support\NodeCollection<array-key, \Cortex\JsonSchema\Support\NodeData>|null $nodeCollection
      */
     protected function getSchemaFromReflectionProperty(
         ReflectionProperty $reflectionProperty,
-        ?NodeCollection $promotedParams = null,
+        ?NodeCollection $nodeCollection = null,
     ): JsonSchema {
         $type = $reflectionProperty->getType();
 
@@ -117,12 +119,27 @@ class ClassConverter implements Converter
         $description = $variable?->description;
 
         if ($description === null && $reflectionProperty->isPromoted()) {
-            $description = $promotedParams?->get($reflectionProperty->getName())?->description;
+            $description = $nodeCollection?->get($reflectionProperty->getName())?->description;
         }
 
         // Add the description to the schema if it exists
         if ($description !== null) {
             $jsonSchema->description($description);
+        }
+
+        if ($jsonSchema instanceof ArraySchema) {
+            $itemTypes = $variable instanceof NodeData ? $variable->itemTypes : [];
+
+            if ($itemTypes === [] && $reflectionProperty->isPromoted()) {
+                $promotedNode = $nodeCollection?->get($reflectionProperty->getName());
+                $itemTypes = $promotedNode instanceof NodeData ? $promotedNode->itemTypes : [];
+            }
+
+            $itemsSchema = $this->getItemsSchema($itemTypes);
+
+            if ($itemsSchema instanceof JsonSchema) {
+                $jsonSchema->items($itemsSchema);
+            }
         }
 
         if ($type === null || $type->allowsNull()) {

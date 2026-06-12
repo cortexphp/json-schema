@@ -11,8 +11,10 @@ use PHPStan\PhpDocParser\Parser\TypeParser;
 use PHPStan\PhpDocParser\Parser\PhpDocParser;
 use PHPStan\PhpDocParser\Parser\TokenIterator;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocNode;
+use PHPStan\PhpDocParser\Ast\Type\ArrayTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 use PHPStan\PhpDocParser\Parser\ConstExprParser;
+use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode;
 use PHPStan\PhpDocParser\Ast\Type\NullableTypeNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocChildNode;
@@ -49,6 +51,7 @@ class DocParser
                 name: ltrim($param->parameterName, '$'),
                 description: $param->description === '' ? null : $param->description,
                 types: self::mapValueNodeToTypes($param),
+                itemTypes: self::mapValueNodeToItemTypes($param),
             ),
             array_merge(
                 $this->parse()->getParamTagValues(),
@@ -69,6 +72,7 @@ class DocParser
                 name: ltrim($varTagValueNode->variableName, '$'),
                 description: $varTagValueNode->description === '' ? null : $varTagValueNode->description,
                 types: self::mapValueNodeToTypes($varTagValueNode),
+                itemTypes: self::mapValueNodeToItemTypes($varTagValueNode),
             ),
             $this->parse()->getVarTagValues(),
         );
@@ -107,6 +111,79 @@ class DocParser
                 'null',
             ],
             default => [(string) $param->type],
+        };
+    }
+
+    /**
+     * Map the value node to its array element types.
+     *
+     * @return array<array-key, string>
+     */
+    protected static function mapValueNodeToItemTypes(
+        ParamTagValueNode|TypelessParamTagValueNode|VarTagValueNode $param,
+    ): array {
+        if ($param instanceof TypelessParamTagValueNode) {
+            return [];
+        }
+
+        return self::extractItemTypesFromTypeNode($param->type);
+    }
+
+    /**
+     * Extract array element types from a type node.
+     *
+     * @return array<array-key, string>
+     */
+    protected static function extractItemTypesFromTypeNode(TypeNode $typeNode): array
+    {
+        return match (true) {
+            $typeNode instanceof ArrayTypeNode => self::typeNodeToStrings($typeNode->type),
+            $typeNode instanceof GenericTypeNode => self::extractGenericArrayItemTypes($typeNode),
+            default => [],
+        };
+    }
+
+    /**
+     * Extract element types from generic array/list types.
+     *
+     * @return array<array-key, string>
+     */
+    protected static function extractGenericArrayItemTypes(GenericTypeNode $genericTypeNode): array
+    {
+        $baseName = strtolower($genericTypeNode->type->name);
+
+        if (! in_array($baseName, ['array', 'list', 'iterable', 'non-empty-array', 'non-empty-list'], true)) {
+            return [];
+        }
+
+        if ($genericTypeNode->genericTypes === []) {
+            return [];
+        }
+
+        $valueType = $genericTypeNode->genericTypes[array_key_last($genericTypeNode->genericTypes)];
+
+        return self::typeNodeToStrings($valueType);
+    }
+
+    /**
+     * Resolve a type node to its constituent type strings.
+     *
+     * @return array<array-key, string>
+     */
+    protected static function typeNodeToStrings(TypeNode $typeNode): array
+    {
+        return match (true) {
+            $typeNode instanceof UnionTypeNode => array_merge(
+                ...array_map(
+                    self::typeNodeToStrings(...),
+                    $typeNode->types,
+                ),
+            ),
+            $typeNode instanceof NullableTypeNode => [
+                ...self::typeNodeToStrings($typeNode->type),
+                'null',
+            ],
+            default => [(string) $typeNode],
         };
     }
 

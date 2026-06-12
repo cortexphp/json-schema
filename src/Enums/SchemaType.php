@@ -56,4 +56,21 @@ enum SchemaType: string
             default => throw UnknownTypeException::forType($type),
         };
     }
+
+    /**
+     * Attempt to create a schema type from a given scalar type, returning null for unknown types.
+     */
+    public static function tryFromScalar(string $type): ?self
+    {
+        return match ($type) {
+            'int', 'integer' => self::Integer,
+            'float', 'double' => self::Number,
+            'string' => self::String,
+            'array' => self::Array,
+            'bool', 'boolean', 'true', 'false' => self::Boolean,
+            'object' => self::Object,
+            'null' => self::Null,
+            default => null,
+        };
+    }
 }

@@ -475,3 +475,20 @@ it('can create a schema from a deprecated closure without description', function
         ],
     ]);
 });
+
+it('can create array items schema from @param string[] docblock', function (): void {
+    /**
+     * @param string[] $tags The user's tags
+     */
+    $closure = function (array $tags): void {};
+    $objectSchema = (new ClosureConverter($closure))->convert();
+
+    expect($objectSchema->toArray()['properties']['tags'])->toBe([
+        'type' => 'array',
+        'description' => "The user's tags",
+        'items' => [
+            'type' => 'string',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+        ],
+    ]);
+});

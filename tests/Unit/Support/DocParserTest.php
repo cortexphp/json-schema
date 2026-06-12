@@ -407,6 +407,34 @@ it('can detect multiple deprecated tags', function (): void {
     expect($parser->isDeprecated())->toBeTrue();
 });
 
+it('can parse array item types from docblocks', function (): void {
+    $cases = [
+        'string[]' => ['/** @var string[] $tags */', ['string']],
+        'array<string>' => ['/** @var array<string> $tags */', ['string']],
+        'array<string, int>' => ['/** @var array<string, int> $scores */', ['int']],
+        'list<bool>' => ['/** @var list<bool> $flags */', ['bool']],
+        'array<int|string>' => ['/** @var array<int|string> $values */', ['int', 'string']],
+        '(int|string)[]' => ['/** @var (int|string)[] $values */', ['int', 'string']],
+        'DateTime[]' => ['/** @var DateTime[] $dates */', ['DateTime']],
+        'param string[]' => ['/** @param string[] $tags The tags */', ['string']],
+    ];
+
+    foreach ($cases as $label => [$docblock, $expectedItemTypes]) {
+        $parser = new DocParser($docblock);
+
+        $node = str_contains($docblock, '@param') ? $parser->params()->get('tags') : $parser->variable();
+
+        expect($node?->itemTypes)->toBe($expectedItemTypes, 'Failed for case: ' . $label);
+    }
+});
+
+it('returns empty item types for non-array docblock types', function (): void {
+    $docblock = '/** @var string $name The name */';
+    $parser = new DocParser($docblock);
+
+    expect($parser->variable()?->itemTypes)->toBe([]);
+});
+
 it('handles deprecation with complex docblock', function (): void {
     $docblock = <<<'EOD'
         /**

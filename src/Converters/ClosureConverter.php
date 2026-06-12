@@ -10,7 +10,9 @@ use ReflectionEnum;
 use ReflectionFunction;
 use ReflectionNamedType;
 use ReflectionParameter;
+use Cortex\JsonSchema\Support\NodeData;
 use Cortex\JsonSchema\Support\DocParser;
+use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
 use Cortex\JsonSchema\Enums\SchemaVersion;
@@ -94,6 +96,15 @@ class ClosureConverter implements Converter
         // Add the description to the schema if it exists
         if ($docParam?->description !== null) {
             $jsonSchema->description($docParam->description);
+        }
+
+        if ($jsonSchema instanceof ArraySchema) {
+            $itemTypes = $docParam instanceof NodeData ? $docParam->itemTypes : [];
+            $itemsSchema = $this->getItemsSchema($itemTypes);
+
+            if ($itemsSchema instanceof JsonSchema) {
+                $jsonSchema->items($itemsSchema);
+            }
         }
 
         if ($type === null || $type->allowsNull()) {

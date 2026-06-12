@@ -584,3 +584,88 @@ it('skips unknown property types when ignoreUnknownTypes is enabled', function (
     expect($array['properties'])->toHaveKey('name');
     expect($array['properties'])->not->toHaveKey('createdAt');
 });
+
+it('can create array items schema from @var string[] docblock', function (): void {
+    $objectSchema = (new ClassConverter(new class () {
+        /**
+         * @var string[] The user's tags
+         */
+        public array $tags;
+    }))->convert();
+
+    expect($objectSchema->toArray())->toBe([
+        'type' => 'object',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+        'properties' => [
+            'tags' => [
+                'type' => 'array',
+                'description' => "The user's tags",
+                'items' => [
+                    'type' => 'string',
+                    '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+                ],
+            ],
+        ],
+        'required' => [
+            'tags',
+        ],
+    ]);
+});
+
+it('can create array items schema from promoted @param int[] docblock', function (): void {
+    $class = new class ([]) {
+        /**
+         * @param int[] $ids The user identifiers
+         */
+        public function __construct(
+            public array $ids,
+        ) {}
+    };
+
+    $objectSchema = (new ClassConverter($class))->convert();
+
+    expect($objectSchema->toArray()['properties']['ids'])->toBe([
+        'type' => 'array',
+        'description' => 'The user identifiers',
+        'items' => [
+            'type' => 'integer',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+        ],
+    ]);
+});
+
+it('can create array items schema for nullable array properties', function (): void {
+    $objectSchema = (new ClassConverter(new class () {
+        /**
+         * @var string[] Optional tags
+         */
+        public ?array $tags = null;
+    }))->convert();
+
+    expect($objectSchema->toArray()['properties']['tags'])->toBe([
+        'type' => [
+            'array',
+            'null',
+        ],
+        'description' => 'Optional tags',
+        'default' => null,
+        'items' => [
+            'type' => 'string',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+        ],
+    ]);
+});
+
+it('leaves array properties without items when element type is unmappable', function (): void {
+    $objectSchema = (new ClassConverter(new class () {
+        /**
+         * @var DateTime[] Scheduled dates
+         */
+        public array $dates;
+    }))->convert();
+
+    expect($objectSchema->toArray()['properties']['dates'])->toBe([
+        'type' => 'array',
+        'description' => 'Scheduled dates',
+    ]);
+});
