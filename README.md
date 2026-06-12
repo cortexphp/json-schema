@@ -12,7 +12,7 @@
 - 📝 **Multi-Version Support** - Support for JSON Schema Draft-06, Draft-07, Draft 2019-09, and Draft 2020-12
 - ✅ **Validation** - Validate data against schemas with detailed error messages
 - 🤝 **Conditional Schemas** - Support for if/then/else, allOf, anyOf, and not conditions
-- 🔄 **Reflection** - Generate schemas from PHP Classes, Enums and Closures
+- 🔄 **Reflection** - Generate schemas from PHP classes, enums, and closures — including docblock array generics and constructor property promotion
 - 💪 **Type Safety** - Built with PHP 8.3+ features and strict typing
 - 🔍 **Version-Aware Features** - Automatic validation of version-specific features with helpful error messages
 

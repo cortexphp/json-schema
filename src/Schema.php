@@ -134,11 +134,13 @@ class Schema
         object|string $class,
         bool $publicOnly = true,
         ?SchemaVersion $schemaVersion = null,
+        bool $ignoreUnknownTypes = false,
     ): ObjectSchema {
         $classConverter = new ClassConverter(
             $class,
             $publicOnly,
             $schemaVersion ?? self::getDefaultVersion(),
+            $ignoreUnknownTypes,
         );
 
         return $classConverter->convert();
@@ -179,6 +181,7 @@ class Schema
                 $value,
                 true,
                 $schemaVersion,
+                $ignoreUnknownTypes,
             ),
             // @phpstan-ignore argument.type
             is_array($value) || (is_string($value) && json_validate($value)) => self::fromJson($value, $schemaVersion),

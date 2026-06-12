@@ -68,7 +68,7 @@ Handle optional parameters with default values:
  * @param float $price Product price in USD
  * @param string $description Product description
  * @param bool $active Whether the product is active
- * @param array $tags Product tags
+ * @param string[] $tags Product tags
  */
 $createProductClosure = function (
     string $name,
@@ -111,6 +111,9 @@ $schema = Schema::fromClosure($createProductClosure);
         "tags": {
             "type": "array",
             "description": "Product tags",
+            "items": {
+                "type": "string"
+            },
             "default": []
         }
     },
@@ -183,6 +186,41 @@ The generated schema will include nullable types:
 }
 ```
 </Accordion>
+
+## Array Item Types
+
+When a parameter is typed as `array`, element types from generic docblock syntax are added as an `items` schema:
+
+```php
+/**
+ * Tag a resource with labels
+ *
+ * @param string[] $tags Resource tags
+ * @param array<int|string> $ids Associated identifiers
+ */
+$tagResourceClosure = function (array $tags, array $ids): void {};
+
+$schema = Schema::fromClosure($tagResourceClosure);
+// tags: { "type": "array", "items": { "type": "string" } }
+// ids: { "type": "array", "items": { "type": ["integer", "string"] } }
+```
+
+Supported syntax matches class property docblocks: `T[]`, `array<T>`, `list<T>`, `array<K,V>`, and unions of scalar element types. Class names, `mixed`, and nested generics are skipped silently.
+
+## Handling Unknown Types
+
+Parameters typed as custom classes throw an `UnknownTypeException` by default. Pass `ignoreUnknownTypes: true` to skip unmappable parameters:
+
+```php
+/**
+ * @param string $title Event title
+ * @param DateTime $starts_at Start time
+ */
+$createEvent = function (string $title, DateTime $starts_at): void {};
+
+$schema = Schema::fromClosure($createEvent, ignoreUnknownTypes: true);
+// Only includes title
+```
 
 ## Advanced Parameter Documentation
 
@@ -261,7 +299,7 @@ Real-world example for API endpoint validation:
  * @param ?string $email Email filter
  * @param ?int $age_min Minimum age filter
  * @param ?int $age_max Maximum age filter
- * @param array $roles Role filter
+ * @param array<string> $roles Role filter
  * @param int $page Page number for pagination
  * @param int $per_page Items per page
  * @param string $sort_by Sort field
@@ -319,7 +357,7 @@ $modernApiClosure = function (
 // Generate with Draft 2019-09 for deprecated support
 $modernSchema = Schema::fromClosure(
     $modernApiClosure,
-    version: SchemaVersion::Draft_2019_09
+    schemaVersion: SchemaVersion::Draft_2019_09
 );
 
 // Apply validation rules programmatically after generation
@@ -429,7 +467,7 @@ function processData($name, $age, $tags, $date) {}
 ```
 
 <Note>
-Validation rules like format, minLength, pattern are not extracted from docblocks. Generic array syntax (e.g., `array<string>`, `array<OrderItem>`) in docblocks is not parsed - arrays are treated as generic arrays without item type information. Only parameter types and descriptions are extracted. Apply validation rules and array item schemas programmatically using the fluent API after schema generation.
+Validation rules like format, minLength, and pattern are not extracted from docblocks. Array item types are inferred from generic syntax for scalar elements only. Apply additional validation programmatically using the fluent API after schema generation.
 </Note>
 
 ### 4. Design Functions for Schema Generation
@@ -451,7 +489,7 @@ function handleUserStuff($data, $action, $options = []) {}
 | `int` | `integer` | Integer numbers |
 | `float` | `number` | Floating-point numbers |
 | `bool` | `boolean` | Boolean true/false |
-| `array` | `array` | Generic arrays |
+| `array` | `array` | Generic arrays; `items` added when docblock specifies element types |
 | `?string` | `["string", "null"]` | Nullable string |
 | `mixed` | No type constraint | Accepts any type |
 | `object` | `object` | Generic object |

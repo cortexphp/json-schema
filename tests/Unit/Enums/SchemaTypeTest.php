@@ -31,6 +31,26 @@ it('throws exception for unknown scalar type', function (): void {
         ->toThrow(UnknownTypeException::class, 'Unknown type: unknown');
 });
 
+it('can resolve scalar types with tryFromScalar', function (string $input, SchemaType $schemaType): void {
+    expect(SchemaType::tryFromScalar($input))->toBe($schemaType);
+})->with([
+    'int' => ['int', SchemaType::Integer],
+    'integer' => ['integer', SchemaType::Integer],
+    'float' => ['float', SchemaType::Number],
+    'double' => ['double', SchemaType::Number],
+    'string' => ['string', SchemaType::String],
+    'bool' => ['bool', SchemaType::Boolean],
+    'boolean' => ['boolean', SchemaType::Boolean],
+    'true' => ['true', SchemaType::Boolean],
+    'false' => ['false', SchemaType::Boolean],
+    'null' => ['null', SchemaType::Null],
+]);
+
+it('returns null from tryFromScalar for unknown types', function (): void {
+    expect(SchemaType::tryFromScalar('DateTime'))->toBeNull();
+    expect(SchemaType::tryFromScalar('mixed'))->toBeNull();
+});
+
 it('can create schema instance', function (SchemaType $schemaType, string $expectedClass): void {
     expect($schemaType->instance())->toBeInstanceOf($expectedClass);
 })->with([

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Converters;
 
+use DateTime;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Converters\ClassConverter;
+use Cortex\JsonSchema\Exceptions\UnknownTypeException;
 
 covers(ClassConverter::class);
 
@@ -116,11 +118,11 @@ it('can create a schema from a class with constructor property promotion', funct
             ],
             'age' => [
                 'type' => 'integer',
+                'default' => 20,
             ],
         ],
         'required' => [
             'name',
-            'age',
         ],
     ]);
 });
@@ -478,4 +480,192 @@ it('can create a schema from a class with inheritance and traits', function (): 
     expect($array['properties'])->toHaveKey('deleted_at');
     expect($array['properties'])->toHaveKey('name');
     expect($array['properties'])->toHaveKey('email');
+});
+
+it('ignores static properties', function (): void {
+    $objectSchema = (new ClassConverter(new class () {
+        public string $name = 'John';
+
+        public static string $table = 'users';
+
+        public static int $count = 0;
+    }))->convert();
+
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+
+    $array = $objectSchema->toArray();
+
+    expect($array['properties'])->toHaveKey('name');
+    expect($array['properties'])->not->toHaveKey('table');
+    expect($array['properties'])->not->toHaveKey('count');
+});
+
+it('uses constructor @param tags to describe promoted properties', function (): void {
+    /**
+     * A user data transfer object
+     */
+    $class = new class ('John Doe') {
+        /**
+         * @param string $name The name of the user
+         * @param int $age The age of the user in years
+         */
+        public function __construct(
+            public string $name,
+            public int $age = 20,
+        ) {}
+    };
+
+    $objectSchema = (new ClassConverter($class))->convert();
+
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+    expect($objectSchema->toArray())->toBe([
+        'type' => 'object',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+        'description' => 'A user data transfer object',
+        'properties' => [
+            'name' => [
+                'type' => 'string',
+                'description' => 'The name of the user',
+            ],
+            'age' => [
+                'type' => 'integer',
+                'description' => 'The age of the user in years',
+                'default' => 20,
+            ],
+        ],
+        'required' => [
+            'name',
+        ],
+    ]);
+});
+
+it('prefers a property @var description over the constructor @param description', function (): void {
+    $class = new class ('John Doe') {
+        /**
+         * @param string $name This should be ignored in favour of the @var tag
+         */
+        public function __construct(
+            /**
+             * @var string The canonical name description
+             */
+            public string $name,
+        ) {}
+    };
+
+    $objectSchema = (new ClassConverter($class))->convert();
+
+    $array = $objectSchema->toArray();
+
+    expect($array['properties']['name']['description'])->toBe('The canonical name description');
+});
+
+it('throws for unknown property types by default', function (): void {
+    $class = new class () {
+        public DateTime $createdAt;
+    };
+
+    expect(fn(): ObjectSchema => (new ClassConverter($class))->convert())
+        ->toThrow(UnknownTypeException::class);
+});
+
+it('skips unknown property types when ignoreUnknownTypes is enabled', function (): void {
+    $class = new class () {
+        public string $name;
+
+        public DateTime $createdAt;
+    };
+
+    $objectSchema = (new ClassConverter($class, ignoreUnknownTypes: true))->convert();
+
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
+
+    $array = $objectSchema->toArray();
+
+    expect($array['properties'])->toHaveKey('name');
+    expect($array['properties'])->not->toHaveKey('createdAt');
+});
+
+it('can create array items schema from @var string[] docblock', function (): void {
+    $objectSchema = (new ClassConverter(new class () {
+        /**
+         * @var string[] The user's tags
+         */
+        public array $tags;
+    }))->convert();
+
+    expect($objectSchema->toArray())->toBe([
+        'type' => 'object',
+        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+        'properties' => [
+            'tags' => [
+                'type' => 'array',
+                'description' => "The user's tags",
+                'items' => [
+                    'type' => 'string',
+                    '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+                ],
+            ],
+        ],
+        'required' => [
+            'tags',
+        ],
+    ]);
+});
+
+it('can create array items schema from promoted @param int[] docblock', function (): void {
+    $class = new class ([]) {
+        /**
+         * @param int[] $ids The user identifiers
+         */
+        public function __construct(
+            public array $ids,
+        ) {}
+    };
+
+    $objectSchema = (new ClassConverter($class))->convert();
+
+    expect($objectSchema->toArray()['properties']['ids'])->toBe([
+        'type' => 'array',
+        'description' => 'The user identifiers',
+        'items' => [
+            'type' => 'integer',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+        ],
+    ]);
+});
+
+it('can create array items schema for nullable array properties', function (): void {
+    $objectSchema = (new ClassConverter(new class () {
+        /**
+         * @var string[] Optional tags
+         */
+        public ?array $tags = null;
+    }))->convert();
+
+    expect($objectSchema->toArray()['properties']['tags'])->toBe([
+        'type' => [
+            'array',
+            'null',
+        ],
+        'description' => 'Optional tags',
+        'default' => null,
+        'items' => [
+            'type' => 'string',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+        ],
+    ]);
+});
+
+it('leaves array properties without items when element type is unmappable', function (): void {
+    $objectSchema = (new ClassConverter(new class () {
+        /**
+         * @var DateTime[] Scheduled dates
+         */
+        public array $dates;
+    }))->convert();
+
+    expect($objectSchema->toArray()['properties']['dates'])->toBe([
+        'type' => 'array',
+        'description' => 'Scheduled dates',
+    ]);
 });

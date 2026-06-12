@@ -407,6 +407,35 @@ it('can detect multiple deprecated tags', function (): void {
     expect($parser->isDeprecated())->toBeTrue();
 });
 
+it(
+    'can parse array item types from docblocks',
+    function (string $docblock, array $expectedItemTypes, string $source): void {
+        $parser = new DocParser($docblock);
+
+        $node = $source === 'params'
+            ? $parser->params()->get('tags')
+            : $parser->variable();
+
+        expect($node?->itemTypes)->toBe($expectedItemTypes);
+    },
+)->with([
+    'string[]' => ['/** @var string[] $tags */', ['string'], 'variable'],
+    'array<string>' => ['/** @var array<string> $tags */', ['string'], 'variable'],
+    'array<string, int>' => ['/** @var array<string, int> $scores */', ['int'], 'variable'],
+    'list<bool>' => ['/** @var list<bool> $flags */', ['bool'], 'variable'],
+    'array<int|string>' => ['/** @var array<int|string> $values */', ['int', 'string'], 'variable'],
+    '(int|string)[]' => ['/** @var (int|string)[] $values */', ['int', 'string'], 'variable'],
+    'DateTime[]' => ['/** @var DateTime[] $dates */', ['DateTime'], 'variable'],
+    'param string[]' => ['/** @param string[] $tags The tags */', ['string'], 'params'],
+]);
+
+it('returns empty item types for non-array docblock types', function (): void {
+    $docblock = '/** @var string $name The name */';
+    $parser = new DocParser($docblock);
+
+    expect($parser->variable()?->itemTypes)->toBe([]);
+});
+
 it('handles deprecation with complex docblock', function (): void {
     $docblock = <<<'EOD'
         /**

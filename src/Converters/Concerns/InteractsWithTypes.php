@@ -9,6 +9,7 @@ use ReflectionNamedType;
 use ReflectionUnionType;
 use ReflectionIntersectionType;
 use Cortex\JsonSchema\Enums\SchemaType;
+use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Types\UnionSchema;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
@@ -56,5 +57,49 @@ trait InteractsWithTypes
         }
 
         return SchemaType::fromScalar($typeName);
+    }
+
+    /**
+     * Apply docblock-derived item types to an array schema when mappable.
+     *
+     * @param array<array-key, string> $itemTypes
+     */
+    protected function applyArrayItems(ArraySchema $arraySchema, array $itemTypes): void
+    {
+        $itemsSchema = $this->getItemsSchema($itemTypes);
+
+        if ($itemsSchema !== null) {
+            $arraySchema->items($itemsSchema);
+        }
+    }
+
+    /**
+     * Build an items schema from docblock element type strings.
+     *
+     * @param array<array-key, string> $itemTypes
+     */
+    protected function getItemsSchema(array $itemTypes): ?JsonSchema
+    {
+        if ($itemTypes === []) {
+            return null;
+        }
+
+        $schemaTypes = [];
+
+        foreach ($itemTypes as $itemType) {
+            $schemaType = SchemaType::tryFromScalar(ltrim($itemType, '\\'));
+
+            if (! $schemaType instanceof SchemaType) {
+                return null;
+            }
+
+            if (! in_array($schemaType, $schemaTypes, true)) {
+                $schemaTypes[] = $schemaType;
+            }
+        }
+
+        return count($schemaTypes) === 1
+            ? $schemaTypes[0]->instance(null, $this->version)
+            : new UnionSchema($schemaTypes, null, $this->version);
     }
 }

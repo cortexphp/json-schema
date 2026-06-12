@@ -123,11 +123,11 @@ it('can create a schema from a class', function (): void {
             ],
             'age' => [
                 'type' => 'integer',
+                'default' => 20,
             ],
         ],
         'required' => [
             'name',
-            'age',
         ],
     ]);
 
