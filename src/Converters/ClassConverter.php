@@ -9,11 +9,14 @@ use ReflectionEnum;
 use ReflectionClass;
 use ReflectionProperty;
 use ReflectionNamedType;
+use ReflectionParameter;
 use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Contracts\JsonSchema;
+use Cortex\JsonSchema\Support\NodeCollection;
+use Cortex\JsonSchema\Exceptions\UnknownTypeException;
 use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
 
 class ClassConverter implements Converter
@@ -32,6 +35,7 @@ class ClassConverter implements Converter
         protected object|string $class,
         protected bool $publicOnly = true,
         protected ?SchemaVersion $version = null,
+        protected bool $ignoreUnknownTypes = false,
     ) {
         $this->reflection = new ReflectionClass($this->class);
         $this->version = $version ?? SchemaVersion::default();
@@ -59,9 +63,26 @@ class ClassConverter implements Converter
             $this->publicOnly ? ReflectionProperty::IS_PUBLIC : null,
         );
 
+        // Constructor `@param` tags document promoted properties, which have no
+        // docblock of their own. Parse them once so we can resolve descriptions.
+        $promotedParams = $this->getConstructorParams();
+
         // Add the properties to the object schema
         foreach ($properties as $property) {
-            $objectSchema->properties(self::getSchemaFromReflectionProperty($property));
+            // Static properties are not part of the instance state, so skip them.
+            if ($property->isStatic()) {
+                continue;
+            }
+
+            try {
+                $objectSchema->properties(self::getSchemaFromReflectionProperty($property, $promotedParams));
+            } catch (UnknownTypeException $unknownTypeException) {
+                if ($this->ignoreUnknownTypes) {
+                    continue;
+                }
+
+                throw $unknownTypeException;
+            }
         }
 
         return $objectSchema;
@@ -69,9 +90,12 @@ class ClassConverter implements Converter
 
     /**
      * Create a schema from a given type.
+     *
+     * @param \Cortex\JsonSchema\Support\NodeCollection<array-key, \Cortex\JsonSchema\Support\NodeData>|null $promotedParams
      */
     protected function getSchemaFromReflectionProperty(
         ReflectionProperty $reflectionProperty,
+        ?NodeCollection $promotedParams = null,
     ): JsonSchema {
         $type = $reflectionProperty->getType();
 
@@ -88,17 +112,36 @@ class ClassConverter implements Converter
 
         $variable = $docParser?->variable();
 
+        // Prefer the `@var` description on the property, falling back to the
+        // matching constructor `@param` description for promoted properties.
+        $description = $variable?->description;
+
+        if ($description === null && $reflectionProperty->isPromoted()) {
+            $description = $promotedParams?->get($reflectionProperty->getName())?->description;
+        }
+
         // Add the description to the schema if it exists
-        if ($variable?->description !== null) {
-            $jsonSchema->description($variable->description);
+        if ($description !== null) {
+            $jsonSchema->description($description);
         }
 
         if ($type === null || $type->allowsNull()) {
             $jsonSchema->nullable();
         }
 
-        if ($reflectionProperty->hasDefaultValue()) {
-            $defaultValue = $reflectionProperty->getDefaultValue();
+        // Promoted properties report their default value on the constructor
+        // parameter rather than on the property itself.
+        $promotedParameter = $reflectionProperty->isPromoted()
+            ? $this->getConstructorParameter($reflectionProperty->getName())
+            : null;
+
+        $hasDefault = $reflectionProperty->hasDefaultValue()
+            || $promotedParameter?->isDefaultValueAvailable() === true;
+
+        if ($hasDefault) {
+            $defaultValue = $reflectionProperty->hasDefaultValue()
+                ? $reflectionProperty->getDefaultValue()
+                : $promotedParameter?->getDefaultValue();
 
             // If the default value is a backed enum, use its value
             if ($defaultValue instanceof BackedEnum) {
@@ -138,5 +181,36 @@ class ClassConverter implements Converter
         return is_string($docComment)
             ? new DocParser($docComment)
             : null;
+    }
+
+    /**
+     * Parse the constructor's `@param` tags, used to describe promoted properties.
+     *
+     * @return \Cortex\JsonSchema\Support\NodeCollection<array-key, \Cortex\JsonSchema\Support\NodeData>|null
+     */
+    protected function getConstructorParams(): ?NodeCollection
+    {
+        $constructor = $this->reflection->getConstructor();
+        $docComment = $constructor?->getDocComment();
+
+        return is_string($docComment)
+            ? (new DocParser($docComment))->params()
+            : null;
+    }
+
+    /**
+     * Resolve the constructor parameter matching the given (promoted) property name.
+     */
+    protected function getConstructorParameter(string $name): ?ReflectionParameter
+    {
+        $constructor = $this->reflection->getConstructor();
+
+        foreach ($constructor?->getParameters() ?? [] as $parameter) {
+            if ($parameter->getName() === $name) {
+                return $parameter;
+            }
+        }
+
+        return null;
     }
 }
