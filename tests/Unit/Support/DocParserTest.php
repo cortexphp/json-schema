@@ -407,15 +407,18 @@ it('can detect multiple deprecated tags', function (): void {
     expect($parser->isDeprecated())->toBeTrue();
 });
 
-it('can parse array item types from docblocks', function (string $docblock, array $expectedItemTypes, string $source): void {
-    $parser = new DocParser($docblock);
+it(
+    'can parse array item types from docblocks',
+    function (string $docblock, array $expectedItemTypes, string $source): void {
+        $parser = new DocParser($docblock);
 
-    $node = $source === 'params'
-        ? $parser->params()->get('tags')
-        : $parser->variable();
+        $node = $source === 'params'
+            ? $parser->params()->get('tags')
+            : $parser->variable();
 
-    expect($node?->itemTypes)->toBe($expectedItemTypes);
-})->with([
+        expect($node?->itemTypes)->toBe($expectedItemTypes);
+    },
+)->with([
     'string[]' => ['/** @var string[] $tags */', ['string'], 'variable'],
     'array<string>' => ['/** @var array<string> $tags */', ['string'], 'variable'],
     'array<string, int>' => ['/** @var array<string, int> $scores */', ['int'], 'variable'],
