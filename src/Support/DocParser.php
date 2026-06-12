@@ -47,11 +47,10 @@ class DocParser
     public function params(): NodeCollection
     {
         $nodes = array_map(
-            static fn(ParamTagValueNode|TypelessParamTagValueNode $param): NodeData => new NodeData(
-                name: ltrim($param->parameterName, '$'),
-                description: $param->description === '' ? null : $param->description,
-                types: self::mapValueNodeToTypes($param),
-                itemTypes: self::mapValueNodeToItemTypes($param),
+            static fn(ParamTagValueNode|TypelessParamTagValueNode $param): NodeData => self::createNodeData(
+                ltrim($param->parameterName, '$'),
+                $param->description,
+                $param,
             ),
             array_merge(
                 $this->parse()->getParamTagValues(),
@@ -68,11 +67,10 @@ class DocParser
     public function variable(): ?NodeData
     {
         $vars = array_map(
-            static fn(VarTagValueNode $varTagValueNode): NodeData => new NodeData(
-                name: ltrim($varTagValueNode->variableName, '$'),
-                description: $varTagValueNode->description === '' ? null : $varTagValueNode->description,
-                types: self::mapValueNodeToTypes($varTagValueNode),
-                itemTypes: self::mapValueNodeToItemTypes($varTagValueNode),
+            static fn(VarTagValueNode $varTagValueNode): NodeData => self::createNodeData(
+                ltrim($varTagValueNode->variableName, '$'),
+                $varTagValueNode->description,
+                $varTagValueNode,
             ),
             $this->parse()->getVarTagValues(),
         );
@@ -87,6 +85,19 @@ class DocParser
     public function isDeprecated(): bool
     {
         return $this->parse()->getTagsByName('@deprecated') !== [];
+    }
+
+    protected static function createNodeData(
+        string $name,
+        string $description,
+        ParamTagValueNode|TypelessParamTagValueNode|VarTagValueNode $tag,
+    ): NodeData {
+        return new NodeData(
+            name: $name,
+            description: $description === '' ? null : $description,
+            types: self::mapValueNodeToTypes($tag),
+            itemTypes: self::mapValueNodeToItemTypes($tag),
+        );
     }
 
     /**

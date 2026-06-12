@@ -113,33 +113,17 @@ class ClassConverter implements Converter
         }
 
         $variable = $docParser?->variable();
+        $description = $this->resolvePropertyDescription($variable, $reflectionProperty, $nodeCollection);
 
-        // Prefer the `@var` description on the property, falling back to the
-        // matching constructor `@param` description for promoted properties.
-        $description = $variable?->description;
-
-        if ($description === null && $reflectionProperty->isPromoted()) {
-            $description = $nodeCollection?->get($reflectionProperty->getName())?->description;
-        }
-
-        // Add the description to the schema if it exists
         if ($description !== null) {
             $jsonSchema->description($description);
         }
 
         if ($jsonSchema instanceof ArraySchema) {
-            $itemTypes = $variable instanceof NodeData ? $variable->itemTypes : [];
-
-            if ($itemTypes === [] && $reflectionProperty->isPromoted()) {
-                $promotedNode = $nodeCollection?->get($reflectionProperty->getName());
-                $itemTypes = $promotedNode instanceof NodeData ? $promotedNode->itemTypes : [];
-            }
-
-            $itemsSchema = $this->getItemsSchema($itemTypes);
-
-            if ($itemsSchema instanceof JsonSchema) {
-                $jsonSchema->items($itemsSchema);
-            }
+            $this->applyArrayItems(
+                $jsonSchema,
+                $this->resolvePropertyItemTypes($variable, $reflectionProperty, $nodeCollection),
+            );
         }
 
         if ($type === null || $type->allowsNull()) {
@@ -186,6 +170,50 @@ class ClassConverter implements Converter
         }
 
         return $jsonSchema;
+    }
+
+    /**
+     * Resolve a property description from `@var` or promoted constructor `@param` tags.
+     *
+     * @param \Cortex\JsonSchema\Support\NodeCollection<array-key, \Cortex\JsonSchema\Support\NodeData>|null $nodeCollection
+     */
+    protected function resolvePropertyDescription(
+        ?NodeData $nodeData,
+        ReflectionProperty $reflectionProperty,
+        ?NodeCollection $nodeCollection,
+    ): ?string {
+        if ($nodeData?->description !== null) {
+            return $nodeData->description;
+        }
+
+        if ($reflectionProperty->isPromoted()) {
+            return $nodeCollection?->get($reflectionProperty->getName())?->description;
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve array element types from `@var` or promoted constructor `@param` tags.
+     *
+     * @param \Cortex\JsonSchema\Support\NodeCollection<array-key, \Cortex\JsonSchema\Support\NodeData>|null $nodeCollection
+     *
+     * @return array<array-key, string>
+     */
+    protected function resolvePropertyItemTypes(
+        ?NodeData $nodeData,
+        ReflectionProperty $reflectionProperty,
+        ?NodeCollection $nodeCollection,
+    ): array {
+        $itemTypes = $nodeData instanceof NodeData ? $nodeData->itemTypes : [];
+
+        if ($itemTypes !== [] || ! $reflectionProperty->isPromoted()) {
+            return $itemTypes;
+        }
+
+        $promotedNode = $nodeCollection?->get($reflectionProperty->getName());
+
+        return $promotedNode instanceof NodeData ? $promotedNode->itemTypes : [];
     }
 
     /**

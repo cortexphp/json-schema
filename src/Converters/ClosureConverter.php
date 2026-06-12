@@ -99,12 +99,10 @@ class ClosureConverter implements Converter
         }
 
         if ($jsonSchema instanceof ArraySchema) {
-            $itemTypes = $docParam instanceof NodeData ? $docParam->itemTypes : [];
-            $itemsSchema = $this->getItemsSchema($itemTypes);
-
-            if ($itemsSchema instanceof JsonSchema) {
-                $jsonSchema->items($itemsSchema);
-            }
+            $this->applyArrayItems(
+                $jsonSchema,
+                $docParam instanceof NodeData ? $docParam->itemTypes : [],
+            );
         }
 
         if ($type === null || $type->allowsNull()) {
