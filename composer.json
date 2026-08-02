@@ -45,7 +45,7 @@
         }
     },
     "scripts": {
-        "test": "pest --parallel --tia",
+        "test": "pest --parallel",
         "ecs": "ecs check --fix",
         "ecs:check": "ecs check",
         "rector": "rector process",
