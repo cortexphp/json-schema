@@ -12,42 +12,43 @@ use Cortex\JsonSchema\Exceptions\UnknownTypeException;
 covers(ClassConverter::class);
 
 it('can create a schema from a class', function (): void {
-    $objectSchema = (new ClassConverter(new class () {
+    $objectSchema = new ClassConverter(new class () {
         public string $name;
 
         public ?int $age = null;
 
         public float $height = 1.7;
-    }))->convert();
+    })->convert();
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
-    expect($objectSchema->toArray())->toBe([
-        'type' => 'object',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'properties' => [
-            'name' => [
-                'type' => 'string',
-            ],
-            'age' => [
-                'type' => [
-                    'integer',
-                    'null',
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class)
+        ->and($objectSchema->toArray())
+        ->toBe([
+            'type' => 'object',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
                 ],
-                'default' => null,
+                'age' => [
+                    'type' => [
+                        'integer',
+                        'null',
+                    ],
+                    'default' => null,
+                ],
+                'height' => [
+                    'type' => 'number',
+                    'default' => 1.7,
+                ],
             ],
-            'height' => [
-                'type' => 'number',
-                'default' => 1.7,
+            'required' => [
+                'name',
             ],
-        ],
-        'required' => [
-            'name',
-        ],
-    ]);
+        ]);
 });
 
 it('can create a schema from a class with docblocks', function (): void {
-    $objectSchema = (new ClassConverter(new class () {
+    $objectSchema = new ClassConverter(new class () {
         /**
          * @var string The name of the user
          */
@@ -62,35 +63,36 @@ it('can create a schema from a class with docblocks', function (): void {
          * @var float The height of the user in meters
          */
         public float $height = 1.7;
-    }))->convert();
+    })->convert();
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
-    expect($objectSchema->toArray())->toBe([
-        'type' => 'object',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'properties' => [
-            'name' => [
-                'type' => 'string',
-                'description' => 'The name of the user',
-            ],
-            'age' => [
-                'type' => [
-                    'integer',
-                    'null',
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class)
+        ->and($objectSchema->toArray())
+        ->toBe([
+            'type' => 'object',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                    'description' => 'The name of the user',
                 ],
-                'description' => 'The age of the user',
-                'default' => null,
+                'age' => [
+                    'type' => [
+                        'integer',
+                        'null',
+                    ],
+                    'description' => 'The age of the user',
+                    'default' => null,
+                ],
+                'height' => [
+                    'type' => 'number',
+                    'description' => 'The height of the user in meters',
+                    'default' => 1.7,
+                ],
             ],
-            'height' => [
-                'type' => 'number',
-                'description' => 'The height of the user in meters',
-                'default' => 1.7,
+            'required' => [
+                'name',
             ],
-        ],
-        'required' => [
-            'name',
-        ],
-    ]);
+        ]);
 });
 
 it('can create a schema from a class with constructor property promotion', function (): void {
@@ -105,26 +107,27 @@ it('can create a schema from a class with constructor property promotion', funct
         ) {}
     };
 
-    $objectSchema = (new ClassConverter($class))->convert();
+    $objectSchema = new ClassConverter($class)->convert();
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
-    expect($objectSchema->toArray())->toBe([
-        'type' => 'object',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'description' => 'This is the description of the class',
-        'properties' => [
-            'name' => [
-                'type' => 'string',
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class)
+        ->and($objectSchema->toArray())
+        ->toBe([
+            'type' => 'object',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'description' => 'This is the description of the class',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                ],
+                'age' => [
+                    'type' => 'integer',
+                    'default' => 20,
+                ],
             ],
-            'age' => [
-                'type' => 'integer',
-                'default' => 20,
+            'required' => [
+                'name',
             ],
-        ],
-        'required' => [
-            'name',
-        ],
-    ]);
+        ]);
 });
 
 it('can create a schema from a class with an enum', function (): void {
@@ -135,30 +138,31 @@ it('can create a schema from a class with an enum', function (): void {
         case Pending = 'pending';
     }
 
-    $objectSchema = (new ClassConverter(new class () {
+    $objectSchema = new ClassConverter(new class () {
         public string $name;
 
         public UserStatus $status = UserStatus::Pending;
-    }))->convert();
+    })->convert();
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
-    expect($objectSchema->toArray())->toBe([
-        'type' => 'object',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'properties' => [
-            'name' => [
-                'type' => 'string',
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class)
+        ->and($objectSchema->toArray())
+        ->toBe([
+            'type' => 'object',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                ],
+                'status' => [
+                    'type' => 'string',
+                    'enum' => ['active', 'inactive', 'pending'],
+                    'default' => 'pending',
+                ],
             ],
-            'status' => [
-                'type' => 'string',
-                'enum' => ['active', 'inactive', 'pending'],
-                'default' => 'pending',
+            'required' => [
+                'name',
             ],
-        ],
-        'required' => [
-            'name',
-        ],
-    ]);
+        ]);
 });
 
 it('can create a schema from a deprecated class', function (): void {
@@ -184,37 +188,38 @@ it('can create a schema from a deprecated class', function (): void {
         public ?string $email = null;
     };
 
-    $objectSchema = (new ClassConverter($class))->convert();
+    $objectSchema = new ClassConverter($class)->convert();
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
-    expect($objectSchema->toArray())->toBe([
-        'type' => 'object',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'description' => 'A deprecated user model class',
-        'deprecated' => true,
-        'properties' => [
-            'name' => [
-                'type' => 'string',
-                'description' => "The user's name",
-            ],
-            'age' => [
-                'type' => 'integer',
-                'description' => "The user's age",
-            ],
-            'email' => [
-                'type' => [
-                    'string',
-                    'null',
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class)
+        ->and($objectSchema->toArray())
+        ->toBe([
+            'type' => 'object',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'description' => 'A deprecated user model class',
+            'deprecated' => true,
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                    'description' => "The user's name",
                 ],
-                'description' => "The user's email address",
-                'default' => null,
+                'age' => [
+                    'type' => 'integer',
+                    'description' => "The user's age",
+                ],
+                'email' => [
+                    'type' => [
+                        'string',
+                        'null',
+                    ],
+                    'description' => "The user's email address",
+                    'default' => null,
+                ],
             ],
-        ],
-        'required' => [
-            'name',
-            'age',
-        ],
-    ]);
+            'required' => [
+                'name',
+                'age',
+            ],
+        ]);
 });
 
 it('can create a schema from a class with deprecated properties', function (): void {
@@ -244,42 +249,43 @@ it('can create a schema from a class with deprecated properties', function (): v
         public string $birthDate;
     };
 
-    $objectSchema = (new ClassConverter($class))->convert();
+    $objectSchema = new ClassConverter($class)->convert();
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
-    expect($objectSchema->toArray())->toBe([
-        'type' => 'object',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'properties' => [
-            'name' => [
-                'type' => 'string',
-                'description' => "The user's name",
-            ],
-            'age' => [
-                'type' => 'integer',
-                'description' => "The user's age",
-                'deprecated' => true,
-            ],
-            'email' => [
-                'type' => [
-                    'string',
-                    'null',
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class)
+        ->and($objectSchema->toArray())
+        ->toBe([
+            'type' => 'object',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                    'description' => "The user's name",
                 ],
-                'description' => "The user's email address",
-                'default' => null,
-                'deprecated' => true,
+                'age' => [
+                    'type' => 'integer',
+                    'description' => "The user's age",
+                    'deprecated' => true,
+                ],
+                'email' => [
+                    'type' => [
+                        'string',
+                        'null',
+                    ],
+                    'description' => "The user's email address",
+                    'default' => null,
+                    'deprecated' => true,
+                ],
+                'birthDate' => [
+                    'type' => 'string',
+                    'description' => "The user's birth date",
+                ],
             ],
-            'birthDate' => [
-                'type' => 'string',
-                'description' => "The user's birth date",
+            'required' => [
+                'name',
+                'age',
+                'birthDate',
             ],
-        ],
-        'required' => [
-            'name',
-            'age',
-            'birthDate',
-        ],
-    ]);
+        ]);
 });
 
 it('can create a schema from a deprecated class with deprecated properties', function (): void {
@@ -302,30 +308,31 @@ it('can create a schema from a deprecated class with deprecated properties', fun
         public int $age;
     };
 
-    $objectSchema = (new ClassConverter($class))->convert();
+    $objectSchema = new ClassConverter($class)->convert();
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
-    expect($objectSchema->toArray())->toBe([
-        'type' => 'object',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'description' => 'Legacy user model',
-        'deprecated' => true,
-        'properties' => [
-            'name' => [
-                'type' => 'string',
-                'description' => "The user's name",
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class)
+        ->and($objectSchema->toArray())
+        ->toBe([
+            'type' => 'object',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'description' => 'Legacy user model',
+            'deprecated' => true,
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                    'description' => "The user's name",
+                ],
+                'age' => [
+                    'type' => 'integer',
+                    'description' => "The user's age",
+                    'deprecated' => true,
+                ],
             ],
-            'age' => [
-                'type' => 'integer',
-                'description' => "The user's age",
-                'deprecated' => true,
+            'required' => [
+                'name',
+                'age',
             ],
-        ],
-        'required' => [
-            'name',
-            'age',
-        ],
-    ]);
+        ]);
 });
 
 it('can create a schema from a deprecated class without description', function (): void {
@@ -338,26 +345,27 @@ it('can create a schema from a deprecated class without description', function (
         public int $age;
     };
 
-    $objectSchema = (new ClassConverter($class))->convert();
+    $objectSchema = new ClassConverter($class)->convert();
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
-    expect($objectSchema->toArray())->toBe([
-        'type' => 'object',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'deprecated' => true,
-        'properties' => [
-            'name' => [
-                'type' => 'string',
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class)
+        ->and($objectSchema->toArray())
+        ->toBe([
+            'type' => 'object',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'deprecated' => true,
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                ],
+                'age' => [
+                    'type' => 'integer',
+                ],
             ],
-            'age' => [
-                'type' => 'integer',
+            'required' => [
+                'name',
+                'age',
             ],
-        ],
-        'required' => [
-            'name',
-            'age',
-        ],
-    ]);
+        ]);
 });
 
 it('can create a schema from a class with inheritance', function (): void {
@@ -387,18 +395,18 @@ it('can create a schema from a class with inheritance', function (): void {
         public string $email;
     }
 
-    $objectSchema = (new ClassConverter(CompleteUserInheritanceTest::class))->convert();
+    $objectSchema = new ClassConverter(CompleteUserInheritanceTest::class)->convert();
 
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     $array = $objectSchema->toArray();
 
     // Should include properties from both base class and child class
     expect($array['properties'])->toHaveKey('id');
-    expect($array['properties'])->toHaveKey('created_at');
-    expect($array['properties'])->toHaveKey('name');
-    expect($array['properties'])->toHaveKey('email');
-    expect($array['properties']['id']['description'])->toBe('Unique identifier');
-    expect($array['properties']['created_at']['description'])->toBe('Creation timestamp');
+    expect($array['properties'])->toHaveKeys(['created_at', 'name', 'email'])
+        ->and($array['properties']['id']['description'])
+        ->toBe('Unique identifier')
+        ->and($array['properties']['created_at']['description'])
+        ->toBe('Creation timestamp');
 });
 
 it('can create a schema from a class with traits', function (): void {
@@ -425,17 +433,19 @@ it('can create a schema from a class with traits', function (): void {
         public string $email;
     }
 
-    $objectSchema = (new ClassConverter(UserWithTraitTest::class))->convert();
+    $objectSchema = new ClassConverter(UserWithTraitTest::class)->convert();
 
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     $array = $objectSchema->toArray();
 
     // Should include properties from trait and class
     expect($array['properties'])->toHaveKey('deleted_at');
-    expect($array['properties'])->toHaveKey('name');
-    expect($array['properties'])->toHaveKey('email');
-    expect($array['properties']['deleted_at']['description'])->toBe('Deletion timestamp (soft delete)');
-    expect($array['properties']['deleted_at']['default'])->toBe(null);
+    expect($array['properties'])->toHaveKeys(['name', 'email'])
+        ->and($array['properties']['deleted_at'])
+        ->toMatchArray([
+            'description' => 'Deletion timestamp (soft delete)',
+            'default' => null,
+        ]);
 });
 
 it('can create a schema from a class with inheritance and traits', function (): void {
@@ -469,35 +479,30 @@ it('can create a schema from a class with inheritance and traits', function (): 
         public string $email;
     }
 
-    $objectSchema = (new ClassConverter(CompleteUserCombinedTest::class))->convert();
+    $objectSchema = new ClassConverter(CompleteUserCombinedTest::class)->convert();
 
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
     $array = $objectSchema->toArray();
 
     // Should include properties from base class, trait, and child class
     expect($array['properties'])->toHaveKey('id');
-    expect($array['properties'])->toHaveKey('created_at');
-    expect($array['properties'])->toHaveKey('deleted_at');
-    expect($array['properties'])->toHaveKey('name');
-    expect($array['properties'])->toHaveKey('email');
+    expect($array['properties'])->toHaveKeys(['created_at', 'deleted_at', 'name', 'email']);
 });
 
 it('ignores static properties', function (): void {
-    $objectSchema = (new ClassConverter(new class () {
+    $objectSchema = new ClassConverter(new class () {
         public string $name = 'John';
 
         public static string $table = 'users';
 
         public static int $count = 0;
-    }))->convert();
+    })->convert();
 
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
 
     $array = $objectSchema->toArray();
 
-    expect($array['properties'])->toHaveKey('name');
-    expect($array['properties'])->not->toHaveKey('table');
-    expect($array['properties'])->not->toHaveKey('count');
+    expect($array['properties'])->toHaveKey('name')->not->toHaveKey('table')->not->toHaveKey('count');
 });
 
 it('uses constructor @param tags to describe promoted properties', function (): void {
@@ -515,28 +520,29 @@ it('uses constructor @param tags to describe promoted properties', function (): 
         ) {}
     };
 
-    $objectSchema = (new ClassConverter($class))->convert();
+    $objectSchema = new ClassConverter($class)->convert();
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
-    expect($objectSchema->toArray())->toBe([
-        'type' => 'object',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'description' => 'A user data transfer object',
-        'properties' => [
-            'name' => [
-                'type' => 'string',
-                'description' => 'The name of the user',
+    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class)
+        ->and($objectSchema->toArray())
+        ->toBe([
+            'type' => 'object',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'description' => 'A user data transfer object',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                    'description' => 'The name of the user',
+                ],
+                'age' => [
+                    'type' => 'integer',
+                    'description' => 'The age of the user in years',
+                    'default' => 20,
+                ],
             ],
-            'age' => [
-                'type' => 'integer',
-                'description' => 'The age of the user in years',
-                'default' => 20,
+            'required' => [
+                'name',
             ],
-        ],
-        'required' => [
-            'name',
-        ],
-    ]);
+        ]);
 });
 
 it('prefers a property @var description over the constructor @param description', function (): void {
@@ -552,7 +558,7 @@ it('prefers a property @var description over the constructor @param description'
         ) {}
     };
 
-    $objectSchema = (new ClassConverter($class))->convert();
+    $objectSchema = new ClassConverter($class)->convert();
 
     $array = $objectSchema->toArray();
 
@@ -564,7 +570,7 @@ it('throws for unknown property types by default', function (): void {
         public DateTime $createdAt;
     };
 
-    expect(fn(): ObjectSchema => (new ClassConverter($class))->convert())
+    expect(fn(): ObjectSchema => new ClassConverter($class)->convert())
         ->toThrow(UnknownTypeException::class);
 });
 
@@ -575,23 +581,22 @@ it('skips unknown property types when ignoreUnknownTypes is enabled', function (
         public DateTime $createdAt;
     };
 
-    $objectSchema = (new ClassConverter($class, ignoreUnknownTypes: true))->convert();
+    $objectSchema = new ClassConverter($class, ignoreUnknownTypes: true)->convert();
 
     expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
 
     $array = $objectSchema->toArray();
 
-    expect($array['properties'])->toHaveKey('name');
-    expect($array['properties'])->not->toHaveKey('createdAt');
+    expect($array['properties'])->toHaveKey('name')->not->toHaveKey('createdAt');
 });
 
 it('can create array items schema from @var string[] docblock', function (): void {
-    $objectSchema = (new ClassConverter(new class () {
+    $objectSchema = new ClassConverter(new class () {
         /**
          * @var string[] The user's tags
          */
         public array $tags;
-    }))->convert();
+    })->convert();
 
     expect($objectSchema->toArray())->toBe([
         'type' => 'object',
@@ -622,7 +627,7 @@ it('can create array items schema from promoted @param int[] docblock', function
         ) {}
     };
 
-    $objectSchema = (new ClassConverter($class))->convert();
+    $objectSchema = new ClassConverter($class)->convert();
 
     expect($objectSchema->toArray()['properties']['ids'])->toBe([
         'type' => 'array',
@@ -635,12 +640,12 @@ it('can create array items schema from promoted @param int[] docblock', function
 });
 
 it('can create array items schema for nullable array properties', function (): void {
-    $objectSchema = (new ClassConverter(new class () {
+    $objectSchema = new ClassConverter(new class () {
         /**
          * @var string[] Optional tags
          */
         public ?array $tags = null;
-    }))->convert();
+    })->convert();
 
     expect($objectSchema->toArray()['properties']['tags'])->toBe([
         'type' => [
@@ -657,12 +662,12 @@ it('can create array items schema for nullable array properties', function (): v
 });
 
 it('leaves array properties without items when element type is unmappable', function (): void {
-    $objectSchema = (new ClassConverter(new class () {
+    $objectSchema = new ClassConverter(new class () {
         /**
          * @var DateTime[] Scheduled dates
          */
         public array $dates;
-    }))->convert();
+    })->convert();
 
     expect($objectSchema->toArray()['properties']['dates'])->toBe([
         'type' => 'array',

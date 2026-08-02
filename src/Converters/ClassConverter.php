@@ -239,7 +239,7 @@ class ClassConverter implements Converter
         $docComment = $constructor?->getDocComment();
 
         return is_string($docComment)
-            ? (new DocParser($docComment))->params()
+            ? new DocParser($docComment)->params()
             : null;
     }
 

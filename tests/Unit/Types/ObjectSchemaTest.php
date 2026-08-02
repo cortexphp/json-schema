@@ -36,20 +36,21 @@ it('can create a basic object schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
-    expect($schemaArray)->toHaveKey('type', 'object');
-    expect($schemaArray)->toHaveKey('title', 'user');
-    expect($schemaArray)->toHaveKey('description', 'User schema');
-    expect($schemaArray)->toHaveKey('properties.name.type', 'string');
-    expect($schemaArray)->toHaveKey('properties.name.minLength', 3);
-    expect($schemaArray)->toHaveKey('properties.name.maxLength', 255);
-    expect($schemaArray)->toHaveKey('properties.email.type', 'string');
-    expect($schemaArray)->toHaveKey('properties.email.format', 'email');
-    expect($schemaArray)->toHaveKey('properties.age.type', 'integer');
-    expect($schemaArray)->toHaveKey('properties.age.minimum', 18);
-    expect($schemaArray)->toHaveKey('properties.age.maximum', 150);
-    expect($schemaArray)->toHaveKey('required', ['name', 'email']);
-    expect($objectSchema->getPropertyKeys())->toBe(['name', 'email', 'age']);
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema')
+        ->toHaveKey('type', 'object')
+        ->toHaveKey('title', 'user')
+        ->toHaveKey('description', 'User schema')
+        ->toHaveKey('properties.name.type', 'string')
+        ->toHaveKey('properties.name.minLength', 3)
+        ->toHaveKey('properties.name.maxLength', 255)
+        ->toHaveKey('properties.email.type', 'string')
+        ->toHaveKey('properties.email.format', 'email')
+        ->toHaveKey('properties.age.type', 'integer')
+        ->toHaveKey('properties.age.minimum', 18)
+        ->toHaveKey('properties.age.maximum', 150)
+        ->toHaveKey('required', ['name', 'email'])
+        ->and($objectSchema->getPropertyKeys())
+        ->toBe(['name', 'email', 'age']);
 
     // Validation tests
     expect(fn() => $objectSchema->validate([
@@ -101,13 +102,15 @@ it('can get the underlying errors', function (): void {
             'email' => 'foo',
         ]);
     } catch (SchemaException $schemaException) {
-        expect($schemaException->getMessage())->toBe('The properties must match schema: email');
-        expect($schemaException->getErrors())->toBe([
-            '/email' => [
-                "The data must match the 'email' format",
-            ],
-        ]);
-        expect($schemaException->getError())->toBeInstanceOf(ValidationError::class);
+        expect($schemaException->getMessage())->toBe('The properties must match schema: email')
+            ->and($schemaException->getErrors())
+            ->toBe([
+                '/email' => [
+                    "The data must match the 'email' format",
+                ],
+            ])
+            ->and($schemaException->getError())
+            ->toBeInstanceOf(ValidationError::class);
 
         throw $schemaException;
     }
@@ -122,10 +125,10 @@ it('can set the property title separately from the property key', function (): v
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('properties.foo.type', 'string');
-    expect($schemaArray)->toHaveKey('properties.foo.title', 'Foo');
-    expect($schemaArray)->toHaveKey('properties.bar.type', 'string');
-    expect($schemaArray['properties']['bar'])->not->toHaveKey('title');
+    expect($schemaArray)->toHaveKey('properties.foo.type', 'string')
+        ->toHaveKey('properties.foo.title', 'Foo')
+        ->toHaveKey('properties.bar.type', 'string')
+        ->and($schemaArray['properties']['bar'])->not->toHaveKey('title');
 });
 
 it('can create an object schema with additional properties control', function (): void {
@@ -139,8 +142,8 @@ it('can create an object schema with additional properties control', function ()
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('additionalProperties', false);
-    expect($schemaArray)->toHaveKey('required', ['name', 'type']);
+    expect($schemaArray)->toHaveKey('additionalProperties', false)
+        ->toHaveKey('required', ['name', 'type']);
 
     // Validation tests
     expect(fn() => $objectSchema->validate([
@@ -169,8 +172,8 @@ it('can create an object schema with additional properties schema', function ():
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray['additionalProperties'])->toHaveKey('type', 'string');
-    expect($schemaArray['additionalProperties'])->toHaveKey('minLength', 3);
+    expect($schemaArray['additionalProperties'])->toHaveKey('type', 'string')
+        ->toHaveKey('minLength', 3);
 
     // Validation tests - valid additional property
     expect(fn() => $objectSchema->validate([
@@ -213,8 +216,8 @@ it('can create an object schema with property count constraints', function (): v
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('minProperties', 2);
-    expect($schemaArray)->toHaveKey('maxProperties', 3);
+    expect($schemaArray)->toHaveKey('minProperties', 2)
+        ->toHaveKey('maxProperties', 3);
 
     // Validation tests
     expect(fn() => $objectSchema->validate([
@@ -232,12 +235,11 @@ it('can create an object schema with property count constraints', function (): v
     ]))->toThrow(
         SchemaException::class,
         'Object must have at most 3 properties, 4 found',
-    );
-
-    expect(fn() => $objectSchema->validate([
-        'key1' => 'value1',
-        'key2' => 'value2',
-    ]))->not->toThrow(SchemaException::class);
+    )
+        ->and(fn() => $objectSchema->validate([
+            'key1' => 'value1',
+            'key2' => 'value2',
+        ]))->not->toThrow(SchemaException::class);
 });
 
 it('can specify a propertyNames schema', function (): void {
@@ -274,9 +276,7 @@ it('can create an object schema with pattern properties', function (): void {
 
     // Check schema structure
     expect($schemaArray)->toHaveKey('patternProperties');
-    expect($schemaArray['patternProperties'])->toHaveKey('^prefix_');
-    expect($schemaArray['patternProperties'])->toHaveKey('^[A-Z][a-z]+$');
-    expect($schemaArray['patternProperties'])->toHaveKey('^\d+$');
+    expect($schemaArray['patternProperties'])->toHaveKeys(['^prefix_', '^[A-Z][a-z]+$', '^\d+$']);
 
     // Valid data tests
     expect(fn() => $objectSchema->validate([
@@ -309,8 +309,8 @@ it('can combine pattern properties with regular properties', function (): void {
 
     // Check schema structure
     expect($schemaArray)->toHaveKey('properties');
-    expect($schemaArray)->toHaveKey('patternProperties');
-    expect($schemaArray)->toHaveKey('additionalProperties', false);
+    expect($schemaArray)->toHaveKey('patternProperties')
+        ->toHaveKey('additionalProperties', false);
 
     // Valid data
     expect(fn() => $objectSchema->validate([
@@ -350,8 +350,8 @@ it('correctly collects used features from all sources', function (): void {
     // Should contain UnevaluatedProperties and DependentSchemas features
     $featureValues = array_map(fn($feature) => $feature->value, $features);
 
-    expect($featureValues)->toContain('unevaluatedProperties');
-    expect($featureValues)->toContain('dependentSchemas');
+    expect($featureValues)->toContain('unevaluatedProperties')
+        ->toContain('dependentSchemas');
 
     // Verify features are properly deduplicated (no duplicates in array)
     expect($featureValues)->toBe(array_unique($featureValues));
@@ -443,14 +443,11 @@ it('returns correct array structure from getUsedFeatures', function (): void {
 
     // Should return an array
     expect($features)->toBeArray();
+    expect($features)
+        ->toContainOnlyInstancesOf(SchemaFeature::class);
 
     // Should not be empty (has at least unevaluated properties feature)
     expect($features)->not->toBeEmpty();
-
-    // Each item should be a SchemaFeature enum
-    foreach ($features as $feature) {
-        expect($feature)->toBeInstanceOf(SchemaFeature::class);
-    }
 
     // Should be a regular indexed array, not associative
     expect(array_keys($features))->toBe(range(0, count($features) - 1));
@@ -474,8 +471,8 @@ it('includes parent class features in getUsedFeatures', function (): void {
 
     // Should contain parent conditional features
     expect($featureValues)->toContain('if');
-    expect($featureValues)->toContain('then');
-    expect($featureValues)->toContain('else');
+    expect($featureValues)->toContain('then')
+        ->toContain('else');
 
     // Test that an ObjectSchema without parent features has fewer features
     $simpleObjectSchema = Schema::object('simple')
@@ -486,8 +483,7 @@ it('includes parent class features in getUsedFeatures', function (): void {
 
     // Simple object should not have conditional features
     expect($simpleFeatureValues)->not->toContain('if');
-    expect($simpleFeatureValues)->not->toContain('then');
-    expect($simpleFeatureValues)->not->toContain('else');
+    expect($simpleFeatureValues)->not->toContain('then')->not->toContain('else');
 
     // This proves that parent::getUsedFeatures() is necessary to collect these parent features
 });
@@ -595,11 +591,10 @@ it('can mark all properties as required with requireAll method', function (): vo
     ]))->toThrow(
         SchemaException::class,
         'The required properties (age) are missing',
-    );
-
-    expect(fn() => $objectSchema->validate([
-        'name' => 'John Doe',
-        'age' => 30,
-        'email' => 'john@example.com',
-    ]))->not->toThrow(SchemaException::class);
+    )
+        ->and(fn() => $objectSchema->validate([
+            'name' => 'John Doe',
+            'age' => 30,
+            'email' => 'john@example.com',
+        ]))->not->toThrow(SchemaException::class);
 });

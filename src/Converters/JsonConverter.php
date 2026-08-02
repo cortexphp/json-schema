@@ -161,7 +161,7 @@ class JsonConverter implements Converter
         }
 
         if (is_array($value)) {
-            return (new self($value, $this->schemaVersion))->convert();
+            return new self($value, $this->schemaVersion)->convert();
         }
 
         return null;
@@ -348,7 +348,7 @@ class JsonConverter implements Converter
                 continue;
             }
 
-            $schema->addDefinition($name, (new self($definitionData, $this->schemaVersion))->convert());
+            $schema->addDefinition($name, new self($definitionData, $this->schemaVersion)->convert());
         }
     }
 
@@ -372,7 +372,7 @@ class JsonConverter implements Converter
                     continue;
                 }
 
-                $propertySchemas[$name] = (new self($propertyData, $this->schemaVersion))->convert();
+                $propertySchemas[$name] = new self($propertyData, $this->schemaVersion)->convert();
 
                 if (in_array($name, $required, true)) {
                     $requiredProps[] = $name;
@@ -401,12 +401,12 @@ class JsonConverter implements Converter
                     continue;
                 }
 
-                $objectSchema->patternProperty($pattern, (new self($propertyData, $this->schemaVersion))->convert());
+                $objectSchema->patternProperty($pattern, new self($propertyData, $this->schemaVersion)->convert());
             }
         }
 
         if (($propertyNames = $this->getArray('propertyNames')) !== null) {
-            $objectSchema->propertyNames((new self($propertyNames, $this->schemaVersion))->convert());
+            $objectSchema->propertyNames(new self($propertyNames, $this->schemaVersion)->convert());
         }
 
         if (($additionalProperties = $this->getBoolOrSchema('additionalProperties')) !== null) {
@@ -427,7 +427,7 @@ class JsonConverter implements Converter
                     continue;
                 }
 
-                $objectSchema->dependentSchema($property, (new self($dependentData, $this->schemaVersion))->convert());
+                $objectSchema->dependentSchema($property, new self($dependentData, $this->schemaVersion)->convert());
             }
         }
 
@@ -471,7 +471,7 @@ class JsonConverter implements Converter
         if (is_array($items)) {
             if (array_is_list($items)) {
                 $tupleSchemas = array_values(array_map(
-                    fn(array $item): JsonSchema => (new self($item, $this->schemaVersion))->convert(),
+                    fn(array $item): JsonSchema => new self($item, $this->schemaVersion)->convert(),
                     array_filter($items, is_array(...)),
                 ));
 
@@ -479,7 +479,7 @@ class JsonConverter implements Converter
                     $arraySchema->tupleItems($tupleSchemas);
                 }
             } else {
-                $arraySchema->items((new self($items, $this->schemaVersion))->convert());
+                $arraySchema->items(new self($items, $this->schemaVersion)->convert());
             }
         }
 
@@ -489,7 +489,7 @@ class JsonConverter implements Converter
 
         if (($prefixItems = $this->getArray('prefixItems')) !== null && array_is_list($prefixItems)) {
             $prefixSchemas = array_values(array_map(
-                fn(array $item): JsonSchema => (new self($item, $this->schemaVersion))->convert(),
+                fn(array $item): JsonSchema => new self($item, $this->schemaVersion)->convert(),
                 array_filter($prefixItems, is_array(...)),
             ));
 
@@ -511,7 +511,7 @@ class JsonConverter implements Converter
         }
 
         if (($contains = $this->getArray('contains')) !== null) {
-            $arraySchema->contains((new self($contains, $this->schemaVersion))->convert());
+            $arraySchema->contains(new self($contains, $this->schemaVersion)->convert());
         }
 
         if (($minContains = $this->getInt('minContains')) !== null) {
@@ -604,7 +604,7 @@ class JsonConverter implements Converter
             return null;
         }
 
-        return (new self($value, $this->schemaVersion))->convert();
+        return new self($value, $this->schemaVersion)->convert();
     }
 
     /**
@@ -621,7 +621,7 @@ class JsonConverter implements Converter
         }
 
         return array_values(array_map(
-            fn(array $item): JsonSchema => (new self($item, $this->schemaVersion))->convert(),
+            fn(array $item): JsonSchema => new self($item, $this->schemaVersion)->convert(),
             array_filter($value, is_array(...)),
         ));
     }
@@ -668,7 +668,7 @@ class JsonConverter implements Converter
         $contentSchema = $this->getValue('contentSchema');
 
         if (is_array($contentSchema)) {
-            $stringSchema->contentSchema((new self($contentSchema, $this->schemaVersion))->convert());
+            $stringSchema->contentSchema(new self($contentSchema, $this->schemaVersion)->convert());
         } elseif (is_bool($contentSchema)) {
             $stringSchema->contentSchema($contentSchema);
         }

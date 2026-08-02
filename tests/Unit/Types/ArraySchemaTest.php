@@ -27,16 +27,16 @@ it('can create an array schema', function (): void {
 
     $schemaArray = $arraySchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
-    expect($schemaArray)->toHaveKey('type', 'array');
-    expect($schemaArray)->toHaveKey('title', 'tags');
-    expect($schemaArray)->toHaveKey('description', 'List of tags');
-    expect($schemaArray)->toHaveKey('minItems', 1);
-    expect($schemaArray)->toHaveKey('maxItems', 10);
-    expect($schemaArray)->toHaveKey('uniqueItems', true);
-    expect($schemaArray)->toHaveKey('items.type', 'string');
-    expect($schemaArray)->toHaveKey('items.minLength', 2);
-    expect($schemaArray)->toHaveKey('items.maxLength', 50);
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema')
+        ->toHaveKey('type', 'array')
+        ->toHaveKey('title', 'tags')
+        ->toHaveKey('description', 'List of tags')
+        ->toHaveKey('minItems', 1)
+        ->toHaveKey('maxItems', 10)
+        ->toHaveKey('uniqueItems', true)
+        ->toHaveKey('items.type', 'string')
+        ->toHaveKey('items.minLength', 2)
+        ->toHaveKey('items.maxLength', 50);
 
     // Validation tests
     expect(fn() => $arraySchema->validate([
@@ -109,15 +109,15 @@ it('can validate array contains', function (): void {
 
     $schemaArray = $schema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2019-09/schema');
-    expect($schemaArray)->toHaveKey('type', 'array');
-    expect($schemaArray)->toHaveKey('title', 'numbers');
-    expect($schemaArray)->toHaveKey('description', 'List of numbers');
-    expect($schemaArray)->toHaveKey('contains.type', 'number');
-    expect($schemaArray)->toHaveKey('contains.minimum', 10);
-    expect($schemaArray)->toHaveKey('contains.maximum', 20);
-    expect($schemaArray)->toHaveKey('minContains', 2);
-    expect($schemaArray)->toHaveKey('maxContains', 3);
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2019-09/schema')
+        ->toHaveKey('type', 'array')
+        ->toHaveKey('title', 'numbers')
+        ->toHaveKey('description', 'List of numbers')
+        ->toHaveKey('contains.type', 'number')
+        ->toHaveKey('contains.minimum', 10)
+        ->toHaveKey('contains.maximum', 20)
+        ->toHaveKey('minContains', 2)
+        ->toHaveKey('maxContains', 3);
 
     // Valid cases - arrays with 2-3 numbers between 10-20
     expect(fn() => $schema->validate([15, 12, 5]))->not->toThrow(SchemaException::class);
@@ -163,8 +163,8 @@ it('accepts boundary values for minContains and maxContains', function (): void 
         ->maxContains(0)
         ->contains(Schema::number());
 
-    expect($arraySchema->toArray())->toHaveKey('minContains', 0);
-    expect($arraySchema->toArray())->toHaveKey('maxContains', 0);
+    expect($arraySchema->toArray())->toHaveKey('minContains', 0)
+        ->toHaveKey('maxContains', 0);
 
     // Test that equal values are acceptable
     $schema2 = Schema::array('numbers', SchemaVersion::Draft_2019_09)
@@ -172,8 +172,8 @@ it('accepts boundary values for minContains and maxContains', function (): void 
         ->maxContains(3)
         ->contains(Schema::number());
 
-    expect($schema2->toArray())->toHaveKey('minContains', 3);
-    expect($schema2->toArray())->toHaveKey('maxContains', 3);
+    expect($schema2->toArray())->toHaveKey('minContains', 3)
+        ->toHaveKey('maxContains', 3);
 });
 
 it('allows equal values for minContains and maxContains', function (): void {
@@ -235,9 +235,9 @@ it('can handle unevaluated items feature', function (): void {
         ->unevaluatedItems(Schema::number());
 
     $arrayWithSchema = $schemaWithSchema->toArray();
-    expect($arrayWithSchema)->toHaveKey('unevaluatedItems');
-    expect($arrayWithSchema['unevaluatedItems'])->toHaveKey('type', 'number');
-    expect($arrayWithSchema['unevaluatedItems'])->not->toHaveKey('$schema');  // Should not include schema ref
+    expect($arrayWithSchema)->toHaveKey('unevaluatedItems')
+        ->and($arrayWithSchema['unevaluatedItems'])
+        ->toHaveKey('type', 'number')->not->toHaveKey('$schema');  // Should not include schema ref
     expect($arrayWithSchema['unevaluatedItems'])->not->toHaveKey('title');  // Should not include title
 });
 
@@ -271,8 +271,8 @@ it('correctly collects array-specific features', function (): void {
 
     // Should contain all array-specific features
     expect($featureValues)->toContain('minContains');
-    expect($featureValues)->toContain('maxContains');
-    expect($featureValues)->toContain('unevaluatedItems');
+    expect($featureValues)->toContain('maxContains')
+        ->toContain('unevaluatedItems');
 
     // Test schema without array features returns empty array
     $simpleSchema = Schema::array('simple')->items(Schema::string());
@@ -299,8 +299,8 @@ it('properly merges parent and array features in getUsedFeatures', function (): 
 
     // Should contain array-specific features
     expect($featureValues)->toContain('minContains');
-    expect($featureValues)->toContain('maxContains');
-    expect($featureValues)->toContain('unevaluatedItems');
+    expect($featureValues)->toContain('maxContains')
+        ->toContain('unevaluatedItems');
 
     // Should also contain parent features from conditionals
     expect($featureValues)->toContain('if');
@@ -334,17 +334,13 @@ it('returns correct feature collection structure', function (): void {
 
     // Should return an array (not empty as per AlwaysReturnEmptyArray mutation)
     expect($features)->toBeArray();
-    expect($features)->not->toBeEmpty();
-
-    // Each item should be a SchemaFeature enum
-    foreach ($features as $feature) {
-        expect($feature)->toBeInstanceOf(SchemaFeature::class);
-    }
+    expect($features)
+        ->toContainOnlyInstancesOf(SchemaFeature::class)->not->toBeEmpty();
 
     // Should contain the expected features
     $featureValues = array_map(fn($feature) => $feature->value, $features);
-    expect($featureValues)->toContain('minContains');
-    expect($featureValues)->toContain('unevaluatedItems');
+    expect($featureValues)->toContain('minContains')
+        ->toContain('unevaluatedItems');
 });
 
 it('handles toArray parameters correctly for unevaluated items', function (): void {
@@ -356,8 +352,8 @@ it('handles toArray parameters correctly for unevaluated items', function (): vo
 
     // UnevaluatedItems schema should not include $schema or title (testing the FalseToTrue mutations)
     expect($schemaArray['unevaluatedItems'])->not->toHaveKey('$schema');
-    expect($schemaArray['unevaluatedItems'])->not->toHaveKey('title');
-    expect($schemaArray['unevaluatedItems'])->toHaveKey('type', 'number');
+    expect($schemaArray['unevaluatedItems'])->not->toHaveKey('title')
+        ->toHaveKey('type', 'number');
 });
 
 it('can set prefixItems for tuple validation', function (): void {
@@ -370,12 +366,15 @@ it('can set prefixItems for tuple validation', function (): void {
 
     $schemaArray = $arraySchema->toArray();
 
-    expect($schemaArray)->toHaveKey('prefixItems');
-    expect($schemaArray['prefixItems'])->toBeArray();
-    expect($schemaArray['prefixItems'])->toHaveCount(3);
-    expect($schemaArray['prefixItems'][0])->toHaveKey('type', 'string');
-    expect($schemaArray['prefixItems'][1])->toHaveKey('type', 'integer');
-    expect($schemaArray['prefixItems'][2])->toHaveKey('type', 'boolean');
+    expect($schemaArray)->toHaveKey('prefixItems')
+        ->and($schemaArray['prefixItems'])
+        ->toBeArray()
+        ->toHaveCount(3)
+        ->sequence(
+            fn($e) => $e->toHaveKey('type', 'string'),
+            fn($e) => $e->toHaveKey('type', 'integer'),
+            fn($e) => $e->toHaveKey('type', 'boolean'),
+        );
 
     // Test basic validation
     expect($arraySchema->isValid(['hello', 42, true]))->toBeTrue();
@@ -392,10 +391,11 @@ it('can combine prefixItems with items for additional items', function (): void 
 
     $schemaArray = $arraySchema->toArray();
 
-    expect($schemaArray)->toHaveKey('prefixItems');
-    expect($schemaArray)->toHaveKey('items');
-    expect($schemaArray['prefixItems'])->toHaveCount(2);
-    expect($schemaArray['items'])->toHaveKey('type', 'boolean');
+    expect($schemaArray)->toHaveKeys(['prefixItems', 'items'])
+        ->and($schemaArray['prefixItems'])
+        ->toHaveCount(2)
+        ->and($schemaArray['items'])
+        ->toHaveKey('type', 'boolean');
 
     // Valid: prefix items match, additional items match items schema
     expect($arraySchema->isValid(['name', 42]))->toBeTrue();
@@ -429,8 +429,8 @@ it('works with Draft 2020-12', function (): void {
     $arraySchema = Schema::array('tuple', SchemaVersion::Draft_2020_12)
         ->prefixItems([Schema::string()]);
 
-    expect($arraySchema->toArray())->toHaveKey('prefixItems');
-    expect($arraySchema->toArray())->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
+    expect($arraySchema->toArray())->toHaveKey('prefixItems')
+        ->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
 });
 
 it('detects prefixItems feature correctly', function (): void {
@@ -472,9 +472,9 @@ it('handles toArray parameters correctly for prefixItems', function (): void {
 
     // PrefixItems schemas should not include $schema or title
     expect($schemaArray['prefixItems'][0])->not->toHaveKey('$schema');
-    expect($schemaArray['prefixItems'][0])->not->toHaveKey('title');
-    expect($schemaArray['prefixItems'][0])->toHaveKey('type', 'string');
-    expect($schemaArray['prefixItems'][1])->not->toHaveKey('$schema');
-    expect($schemaArray['prefixItems'][1])->not->toHaveKey('title');
-    expect($schemaArray['prefixItems'][1])->toHaveKey('type', 'integer');
+    expect($schemaArray['prefixItems'][0])->not->toHaveKey('title')
+        ->and($schemaArray['prefixItems'])
+        ->sequence(fn($e) => $e->toHaveKey('type', 'string'), fn($e) => $e->not->toHaveKey('$schema'))
+        ->and($schemaArray['prefixItems'][1])->not->toHaveKey('title')
+        ->toHaveKey('type', 'integer');
 });

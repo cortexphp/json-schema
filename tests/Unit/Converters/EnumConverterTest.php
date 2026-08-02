@@ -22,16 +22,17 @@ it('can create a schema from an string backed enum', function (): void {
         case Archived = 'archived';
     }
 
-    $schema = (new EnumConverter(PostStatus::class))->convert();
+    $schema = new EnumConverter(PostStatus::class)->convert();
 
-    expect($schema)->toBeInstanceOf(StringSchema::class);
-    expect($schema->toArray())->toBe([
-        'type' => 'string',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'title' => 'PostStatus',
-        'description' => 'This is the description of the string backed enum',
-        'enum' => ['draft', 'published', 'archived'],
-    ]);
+    expect($schema)->toBeInstanceOf(StringSchema::class)
+        ->and($schema->toArray())
+        ->toBe([
+            'type' => 'string',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'title' => 'PostStatus',
+            'description' => 'This is the description of the string backed enum',
+            'enum' => ['draft', 'published', 'archived'],
+        ]);
 });
 
 it('can create a schema from an integer backed enum', function (): void {
@@ -45,16 +46,17 @@ it('can create a schema from an integer backed enum', function (): void {
         case Tutorial = 3;
     }
 
-    $schema = (new EnumConverter(PostType::class))->convert();
+    $schema = new EnumConverter(PostType::class)->convert();
 
-    expect($schema)->toBeInstanceOf(IntegerSchema::class);
-    expect($schema->toArray())->toBe([
-        'type' => 'integer',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'title' => 'PostType',
-        'description' => 'This is the description of the integer backed enum',
-        'enum' => [1, 2, 3],
-    ]);
+    expect($schema)->toBeInstanceOf(IntegerSchema::class)
+        ->and($schema->toArray())
+        ->toBe([
+            'type' => 'integer',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'title' => 'PostType',
+            'description' => 'This is the description of the integer backed enum',
+            'enum' => [1, 2, 3],
+        ]);
 });
 
 it('throws an exception if the enum is not a backed enum', function (): void {
