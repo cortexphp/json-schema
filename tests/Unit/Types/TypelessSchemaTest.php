@@ -22,8 +22,6 @@ it('can create a typeless schema via the Schema facade', function (): void {
             ),
         );
 
-    expect($typelessSchema)->toBeInstanceOf(TypelessSchema::class);
-
     $schemaArray = $typelessSchema->toArray();
 
     expect($schemaArray)->not->toHaveKey('type')
@@ -39,6 +37,7 @@ it('can create a typeless definition-only schema', function (): void {
             Schema::string('city')->required(),
         ));
 
+    /** @var array{'$defs': array<string, array{type: string}>} $schemaArray */
     $schemaArray = $typelessSchema->toArray();
 
     expect($schemaArray)->not->toHaveKey('type')
@@ -49,6 +48,5 @@ it('can create a typeless definition-only schema', function (): void {
 it('stays typeless when nullable is called', function (): void {
     $typelessSchema = Schema::typeless('shape')->nullable();
 
-    expect($typelessSchema)->toBeInstanceOf(TypelessSchema::class)
-        ->and($typelessSchema->toArray())->not->toHaveKey('type');
+    expect($typelessSchema->toArray())->not->toHaveKey('type');
 });

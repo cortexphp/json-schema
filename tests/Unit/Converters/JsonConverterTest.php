@@ -70,15 +70,19 @@ it('can convert object JSON schema with properties', function (): void {
     expect($jsonSchema)->toBeInstanceOf(ObjectSchema::class);
 
     $output = $jsonSchema->toArray();
+
+    /** @var array<string, array<string, mixed>> $properties */
+    $properties = $output['properties'];
+
     expect($output)
         ->toMatchArray([
             'type' => 'object',
             'title' => 'User',
             'additionalProperties' => false,
         ])
-        ->and($output['properties']['name']['type'])
+        ->and($properties['name']['type'])
         ->toBe('string')
-        ->and($output['properties']['age']['type'])
+        ->and($properties['age']['type'])
         ->toBe('integer')
         ->and($output['required'])
         ->toBe(['name']);
@@ -102,12 +106,16 @@ it('can convert array JSON schema with items', function (): void {
     expect($jsonSchema)->toBeInstanceOf(ArraySchema::class);
 
     $output = $jsonSchema->toArray();
+
+    /** @var array<string, mixed> $items */
+    $items = $output['items'];
+
     expect($output)
         ->toMatchArray([
             'type' => 'array',
             'title' => 'String Array',
         ])
-        ->and($output['items']['type'])
+        ->and($items['type'])
         ->toBe('string')
         ->and($output)
         ->toMatchArray([
@@ -298,10 +306,20 @@ it('can handle nested schemas', function (): void {
     expect($jsonSchema)->toBeInstanceOf(ObjectSchema::class);
 
     $output = $jsonSchema->toArray();
-    expect($output['properties']['address']['type'])->toBe('object')
-        ->and($output['properties']['address']['properties']['street']['type'])
+
+    /** @var array<string, array<string, mixed>> $properties */
+    $properties = $output['properties'];
+
+    /** @var array<string, mixed> $address */
+    $address = $properties['address'];
+
+    /** @var array<string, array<string, mixed>> $addressProperties */
+    $addressProperties = $address['properties'];
+
+    expect($address['type'])->toBe('object')
+        ->and($addressProperties['street']['type'])
         ->toBe('string')
-        ->and($output['properties']['address']['required'])
+        ->and($address['required'])
         ->toBe(['street']);
 });
 
@@ -354,8 +372,12 @@ it('can handle array with contains and min/max contains', function (): void {
     expect($jsonSchema)->toBeInstanceOf(ArraySchema::class);
 
     $output = $jsonSchema->toArray();
+
+    /** @var array<string, mixed> $contains */
+    $contains = $output['contains'];
+
     expect($output['type'])->toBe('array')
-        ->and($output['contains']['type'])
+        ->and($contains['type'])
         ->toBe('string')
         ->and($output)
         ->toMatchArray([
@@ -406,14 +428,21 @@ it('can handle string content annotations', function (): void {
     expect($jsonSchema)->toBeInstanceOf(StringSchema::class);
 
     $output = $jsonSchema->toArray();
+
+    /** @var array<string, mixed> $contentSchema */
+    $contentSchema = $output['contentSchema'];
+
+    /** @var array<string, array<string, mixed>> $contentSchemaProperties */
+    $contentSchemaProperties = $contentSchema['properties'];
+
     expect($output)
         ->toMatchArray([
             'contentEncoding' => 'base64',
             'contentMediaType' => 'application/json',
         ])
-        ->and($output['contentSchema']['type'])
+        ->and($contentSchema['type'])
         ->toBe('object')
-        ->and($output['contentSchema']['properties']['name']['type'])
+        ->and($contentSchemaProperties['name']['type'])
         ->toBe('string');
 });
 
@@ -469,6 +498,10 @@ it('can handle conditional keywords', function (): void {
     expect($jsonSchema)->toBeInstanceOf(ObjectSchema::class);
 
     $output = $jsonSchema->toArray(includeSchemaRef: false);
+
+    /** @var array<string, mixed> $not */
+    $not = $output['not'];
+
     expect($output)->toHaveKeys(['if', 'then', 'else'])
         ->and($output['allOf'])
         ->toHaveCount(1)
@@ -476,7 +509,7 @@ it('can handle conditional keywords', function (): void {
         ->toHaveCount(1)
         ->and($output['oneOf'])
         ->toHaveCount(1)
-        ->and($output['not']['type'])
+        ->and($not['type'])
         ->toBe('null');
 });
 
@@ -506,7 +539,11 @@ it('can handle $defs keyword', function (): void {
     $jsonSchema = $converter->convert();
 
     $output = $jsonSchema->toArray(includeSchemaRef: false);
-    expect($output['$defs']['name']['type'])->toBe('string');
+
+    /** @var array<string, array<string, mixed>> $defs */
+    $defs = $output['$defs'];
+
+    expect($defs['name']['type'])->toBe('string');
 });
 
 it('can handle metadata keywords', function (): void {
@@ -551,8 +588,15 @@ it('can handle object pattern and property name keywords', function (): void {
     $jsonSchema = $converter->convert();
 
     $output = $jsonSchema->toArray(includeSchemaRef: false);
-    expect($output['patternProperties']['^S_']['type'])->toBe('string')
-        ->and($output['propertyNames']['pattern'])
+
+    /** @var array<string, array<string, mixed>> $patternProperties */
+    $patternProperties = $output['patternProperties'];
+
+    /** @var array<string, mixed> $propertyNames */
+    $propertyNames = $output['propertyNames'];
+
+    expect($patternProperties['^S_']['type'])->toBe('string')
+        ->and($propertyNames['pattern'])
         ->toBe('^[A-Za-z_]*$')
         ->and($output)
         ->toMatchArray([
@@ -578,10 +622,14 @@ it('can handle dependentSchemas and dependentRequired', function (): void {
     $jsonSchema = $converter->convert();
 
     $output = $jsonSchema->toArray(includeSchemaRef: false);
+
+    /** @var array<string, array<string, mixed>> $dependentSchemas */
+    $dependentSchemas = $output['dependentSchemas'];
+
     expect($output['dependentRequired'])->toBe([
         'foo' => ['bar'],
     ])
-        ->and($output['dependentSchemas']['foo']['required'])
+        ->and($dependentSchemas['foo']['required'])
         ->toBe(['bar']);
 });
 
@@ -616,10 +664,14 @@ it('can handle prefixItems and unevaluatedItems', function (): void {
     $jsonSchema = $converter->convert();
 
     $output = $jsonSchema->toArray(includeSchemaRef: false);
-    expect($output['prefixItems'])->toHaveCount(2)
-        ->and($output['prefixItems'][0]['type'])
+
+    /** @var list<array<string, mixed>> $prefixItems */
+    $prefixItems = $output['prefixItems'];
+
+    expect($prefixItems)->toHaveCount(2)
+        ->and($prefixItems[0]['type'])
         ->toBe('string')
-        ->and($output['prefixItems'][1]['type'])
+        ->and($prefixItems[1]['type'])
         ->toBe('integer')
         ->and($output['unevaluatedItems'])
         ->toBeFalse();
@@ -643,10 +695,14 @@ it('can handle tuple items and additionalItems', function (): void {
     $jsonSchema = $converter->convert();
 
     $output = $jsonSchema->toArray(includeSchemaRef: false);
-    expect($output['items'])->toHaveCount(2)
-        ->and($output['items'][0]['type'])
+
+    /** @var list<array<string, mixed>> $items */
+    $items = $output['items'];
+
+    expect($items)->toHaveCount(2)
+        ->and($items[0]['type'])
         ->toBe('string')
-        ->and($output['items'][1]['type'])
+        ->and($items[1]['type'])
         ->toBe('integer')
         ->and($output['additionalItems'])
         ->toBeFalse();
@@ -684,8 +740,12 @@ it('can handle typeless structured schemas', function (): void {
     expect($jsonSchema)->toBeInstanceOf(TypelessSchema::class);
 
     $output = $jsonSchema->toArray(includeSchemaRef: false);
+
+    /** @var array<string, array<string, mixed>> $defs */
+    $defs = $output['$defs'];
+
     expect($output)->not->toHaveKey('type')
-        ->and($output['$defs']['product']['type'])
+        ->and($defs['product']['type'])
         ->toBe('object');
 });
 

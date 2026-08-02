@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
 use ReflectionClass;
+use Pest\Expectation;
+use RuntimeException;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Enums\SchemaFeature;
@@ -266,8 +268,9 @@ it('correctly collects array-specific features', function (): void {
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getArrayFeatures');
 
+    /** @var SchemaFeature[] $arrayFeatures */
     $arrayFeatures = $reflectionMethod->invoke($arraySchema);
-    $featureValues = array_map(fn($feature) => $feature->value, $arrayFeatures);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $arrayFeatures);
 
     // Should contain all array-specific features
     expect($featureValues)->toContain('minContains');
@@ -294,8 +297,9 @@ it('properly merges parent and array features in getUsedFeatures', function (): 
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var SchemaFeature[] $allFeatures */
     $allFeatures = $reflectionMethod->invoke($arraySchema);
-    $featureValues = array_map(fn($feature) => $feature->value, $allFeatures);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $allFeatures);
 
     // Should contain array-specific features
     expect($featureValues)->toContain('minContains');
@@ -308,12 +312,20 @@ it('properly merges parent and array features in getUsedFeatures', function (): 
 
     // Test that array_merge is working correctly (testing the UnwrapArrayMerge mutation)
     // Compare with direct call to parent method to ensure merger is happening
-    $getParentFeaturesMethod = $reflection->getParentClass()->getMethod('getUsedFeatures');
+    $parentClass = $reflection->getParentClass();
 
+    if ($parentClass === false) {
+        throw new RuntimeException('Expected ArraySchema to have a parent class.');
+    }
+
+    $getParentFeaturesMethod = $parentClass->getMethod('getUsedFeatures');
+
+    /** @var SchemaFeature[] $parentFeatures */
     $parentFeatures = $getParentFeaturesMethod->invoke($arraySchema);
 
     $getArrayFeaturesMethod = $reflection->getMethod('getArrayFeatures');
 
+    /** @var SchemaFeature[] $arrayOnlyFeatures */
     $arrayOnlyFeatures = $getArrayFeaturesMethod->invoke($arraySchema);
 
     // Total features should be more than just array features or just parent features
@@ -330,15 +342,15 @@ it('returns correct feature collection structure', function (): void {
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getArrayFeatures');
 
+    /** @var SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($arraySchema);
 
-    // Should return an array (not empty as per AlwaysReturnEmptyArray mutation)
-    expect($features)->toBeArray();
+    // Should return a non-empty array (not empty as per AlwaysReturnEmptyArray mutation)
     expect($features)
         ->toContainOnlyInstancesOf(SchemaFeature::class)->not->toBeEmpty();
 
     // Should contain the expected features
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->toContain('minContains')
         ->toContain('unevaluatedItems');
 });
@@ -371,9 +383,9 @@ it('can set prefixItems for tuple validation', function (): void {
         ->toBeArray()
         ->toHaveCount(3)
         ->sequence(
-            fn($e) => $e->toHaveKey('type', 'string'),
-            fn($e) => $e->toHaveKey('type', 'integer'),
-            fn($e) => $e->toHaveKey('type', 'boolean'),
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey('type', 'string'),
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey('type', 'integer'),
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey('type', 'boolean'),
         );
 
     // Test basic validation
@@ -441,9 +453,10 @@ it('detects prefixItems feature correctly', function (): void {
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($arraySchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->toContain('prefixItems');
 });
 
@@ -455,9 +468,10 @@ it('does not include prefixItems feature when not used', function (): void {
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($arraySchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->not->toContain('prefixItems');
 });
 
@@ -470,11 +484,17 @@ it('handles toArray parameters correctly for prefixItems', function (): void {
 
     $schemaArray = $arraySchema->toArray();
 
+    /** @var list<array<string, mixed>> $prefixItems */
+    $prefixItems = $schemaArray['prefixItems'];
+
     // PrefixItems schemas should not include $schema or title
-    expect($schemaArray['prefixItems'][0])->not->toHaveKey('$schema');
-    expect($schemaArray['prefixItems'][0])->not->toHaveKey('title')
-        ->and($schemaArray['prefixItems'])
-        ->sequence(fn($e) => $e->toHaveKey('type', 'string'), fn($e) => $e->not->toHaveKey('$schema'))
-        ->and($schemaArray['prefixItems'][1])->not->toHaveKey('title')
+    expect($prefixItems[0])->not->toHaveKey('$schema');
+    expect($prefixItems[0])->not->toHaveKey('title')
+        ->and($prefixItems)
+        ->sequence(
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey('type', 'string'),
+            fn(Expectation $expectation): Expectation => $expectation->not->toHaveKey('$schema'),
+        )
+        ->and($prefixItems[1])->not->toHaveKey('title')
         ->toHaveKey('type', 'integer');
 });

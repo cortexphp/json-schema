@@ -8,6 +8,7 @@ use ReflectionClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\ObjectSchema;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -26,10 +27,13 @@ it('can set a single dependent schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
+    /** @var array<string, mixed> $dependentSchemas */
+    $dependentSchemas = $schemaArray['dependentSchemas'];
+
     expect($schemaArray)->toHaveKey('dependentSchemas')
-        ->and($schemaArray['dependentSchemas'])
+        ->and($dependentSchemas)
         ->toHaveKey('credit_card')
-        ->and($schemaArray['dependentSchemas']['credit_card'])
+        ->and($dependentSchemas['credit_card'])
         ->toBe([
             'type' => 'object',
             'properties' => [
@@ -161,9 +165,10 @@ it('detects dependentSchemas feature correctly', function (): void {
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($objectSchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->toContain('dependentSchemas');
 });
 
@@ -177,9 +182,10 @@ it('does not include dependentSchemas feature when not used', function (): void 
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($objectSchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->not->toContain('dependentSchemas');
 });
 
@@ -306,8 +312,12 @@ it('generates correct dependent schema JSON output', function (): void {
 
     // Verify dependent schema structure
     expect($schemaArray)->toHaveKey('dependentSchemas');
-    expect($schemaArray['dependentSchemas'])->toHaveKey('credit_card')
-        ->and($schemaArray['dependentSchemas']['credit_card'])
+
+    /** @var array<string, mixed> $dependentSchemas */
+    $dependentSchemas = $schemaArray['dependentSchemas'];
+
+    expect($dependentSchemas)->toHaveKey('credit_card')
+        ->and($dependentSchemas['credit_card'])
         ->toBe([
             'type' => 'object',
             'properties' => [

@@ -7,6 +7,7 @@ namespace Cortex\JsonSchema\Tests\Unit\Types;
 use ReflectionClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\ArraySchema;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -103,9 +104,10 @@ it('detects unevaluatedItems feature correctly', function (): void {
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var \Cortex\JsonSchema\Enums\SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($arraySchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->toContain('unevaluatedItems');
 });
 
@@ -117,9 +119,10 @@ it('does not include unevaluatedItems feature when not used', function (): void 
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var \Cortex\JsonSchema\Enums\SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($arraySchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->not->toContain('unevaluatedItems');
 });
 

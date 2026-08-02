@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit;
 
 use ArrayObject;
+use Pest\Expectation;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\ObjectSchema;
@@ -186,8 +187,14 @@ it('can create a schema with anyOf condition', function (): void {
         ->and($schemaArray['anyOf'])
         ->toHaveCount(2)
         ->sequence(
-            fn($e) => $e->toHaveKey('required', ['credit_card']),
-            fn($e) => $e->toHaveKey('required', ['bank_transfer']),
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey(
+                'required',
+                ['credit_card'],
+            ),
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey(
+                'required',
+                ['bank_transfer'],
+            ),
         );
 
     // Validation tests
@@ -228,7 +235,10 @@ it('can create a schema with oneOf condition', function (): void {
     expect($schemaArray)->toHaveKey('oneOf')
         ->and($schemaArray['oneOf'])
         ->toHaveCount(2)
-        ->sequence(fn($e) => $e->toHaveKey('required', ['email']), fn($e) => $e->toHaveKey('required', ['phone']));
+        ->sequence(
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey('required', ['email']),
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey('required', ['phone']),
+        );
 
     // Validation tests
     // Only email is valid

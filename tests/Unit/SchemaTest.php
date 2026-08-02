@@ -7,15 +7,10 @@ namespace Cortex\JsonSchema\Tests\Unit;
 use stdClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
-use Cortex\JsonSchema\Types\NullSchema;
-use Cortex\JsonSchema\Types\ArraySchema;
-use Cortex\JsonSchema\Types\UnionSchema;
-use Cortex\JsonSchema\Types\NumberSchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\BooleanSchema;
-use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -23,31 +18,31 @@ covers(Schema::class);
 
 it('can create different schema types', function (): void {
     // Test array schema creation
-    expect(Schema::array('items'))->toBeInstanceOf(ArraySchema::class);
+    expect(Schema::array('items')->getTitle())->toBe('items');
 
     // Test boolean schema creation
-    expect(Schema::boolean('active'))->toBeInstanceOf(BooleanSchema::class);
+    expect(Schema::boolean('active')->getTitle())->toBe('active');
 
     // Test integer schema creation
-    expect(Schema::integer('count'))->toBeInstanceOf(IntegerSchema::class);
+    expect(Schema::integer('count')->getTitle())->toBe('count');
 
     // Test null schema creation
-    expect(Schema::null('deleted_at'))->toBeInstanceOf(NullSchema::class);
+    expect(Schema::null('deleted_at')->getTitle())->toBe('deleted_at');
 
     // Test number schema creation
-    expect(Schema::number('price'))->toBeInstanceOf(NumberSchema::class);
+    expect(Schema::number('price')->getTitle())->toBe('price');
 
     // Test object schema creation
-    expect(Schema::object('user'))->toBeInstanceOf(ObjectSchema::class);
+    expect(Schema::object('user')->getTitle())->toBe('user');
 
     // Test string schema creation
-    expect(Schema::string('name'))->toBeInstanceOf(StringSchema::class);
+    expect(Schema::string('name')->getTitle())->toBe('name');
 
     // Test union schema creation
-    expect(Schema::union([SchemaType::String, SchemaType::Integer]))->toBeInstanceOf(UnionSchema::class);
+    expect(Schema::union([SchemaType::String, SchemaType::Integer])->toArray()['type'])->toBe(['string', 'integer']);
 
     // Test mixed schema creation
-    expect(Schema::mixed())->toBeInstanceOf(UnionSchema::class);
+    expect(Schema::mixed()->toArray()['type'])->toHaveCount(7);
 });
 
 it('can create schemas with default metadata', function (): void {
@@ -69,8 +64,7 @@ it('can create a schema from a closure', function (): void {
     $closure = function (string $name, array $fooArray, ?int $age = null): void {};
     $objectSchema = Schema::fromClosure($closure);
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class)
-        ->and($objectSchema->toArray())
+    expect($objectSchema->toArray())
         ->toBe([
             'type' => 'object',
             '$schema' => 'https://json-schema.org/draft/2020-12/schema',
@@ -113,8 +107,7 @@ it('can create a schema from a class', function (): void {
 
     $objectSchema = Schema::fromClass($class, publicOnly: true);
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class)
-        ->and($objectSchema->toArray())
+    expect($objectSchema->toArray())
         ->toBe([
             'type' => 'object',
             '$schema' => 'https://json-schema.org/draft/2020-12/schema',

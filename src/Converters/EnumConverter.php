@@ -15,12 +15,12 @@ use Cortex\JsonSchema\Exceptions\SchemaException;
 class EnumConverter implements Converter
 {
     /**
-     * @var \ReflectionEnum<\BackedEnum>
+     * @var \ReflectionEnum<\UnitEnum>
      */
     protected ReflectionEnum $reflection;
 
     /**
-     * @param class-string<\BackedEnum> $enum
+     * @param class-string<\UnitEnum> $enum
      */
     public function __construct(
         protected string $enum,

@@ -53,7 +53,7 @@ it('returns null from tryFromScalar for unknown types', function (): void {
 });
 
 it('can create schema instance', function (SchemaType $schemaType, string $expectedClass): void {
-    expect($schemaType->instance())->toBeInstanceOf($expectedClass);
+    expect($schemaType->instance()::class)->toBe($expectedClass);
 })->with([
     'string schema' => [SchemaType::String, StringSchema::class],
     'number schema' => [SchemaType::Number, NumberSchema::class],

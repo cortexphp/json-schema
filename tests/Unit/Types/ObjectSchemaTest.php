@@ -12,7 +12,6 @@ use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\IntegerSchema;
-use Opis\JsonSchema\Errors\ValidationError;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 covers(ObjectSchema::class);
@@ -108,9 +107,7 @@ it('can get the underlying errors', function (): void {
                 '/email' => [
                     "The data must match the 'email' format",
                 ],
-            ])
-            ->and($schemaException->getError())
-            ->toBeInstanceOf(ValidationError::class);
+            ]);
 
         throw $schemaException;
     }
@@ -125,10 +122,13 @@ it('can set the property title separately from the property key', function (): v
 
     $schemaArray = $objectSchema->toArray();
 
+    /** @var array<string, mixed> $properties */
+    $properties = $schemaArray['properties'];
+
     expect($schemaArray)->toHaveKey('properties.foo.type', 'string')
         ->toHaveKey('properties.foo.title', 'Foo')
         ->toHaveKey('properties.bar.type', 'string')
-        ->and($schemaArray['properties']['bar'])->not->toHaveKey('title');
+        ->and($properties['bar'])->not->toHaveKey('title');
 });
 
 it('can create an object schema with additional properties control', function (): void {
@@ -345,10 +345,11 @@ it('correctly collects used features from all sources', function (): void {
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($objectSchema);
 
     // Should contain UnevaluatedProperties and DependentSchemas features
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
 
     expect($featureValues)->toContain('unevaluatedProperties')
         ->toContain('dependentSchemas');
@@ -370,7 +371,10 @@ it('collects unevaluated properties features when set', function (): void {
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUnevaluatedPropertiesFeatures');
 
+    /** @var SchemaFeature[] $featuresWithUnevaluated */
     $featuresWithUnevaluated = $reflectionMethod->invoke($objectSchema);
+
+    /** @var SchemaFeature[] $featuresWithoutUnevaluated */
     $featuresWithoutUnevaluated = $reflectionMethod->invoke($objectWithoutUnevaluated);
 
     // Object with unevaluated properties should return the feature
@@ -394,7 +398,10 @@ it('collects dependent schemas features when set', function (): void {
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getDependentSchemasFeatures');
 
+    /** @var SchemaFeature[] $featuresWithDependent */
     $featuresWithDependent = $reflectionMethod->invoke($objectSchema);
+
+    /** @var SchemaFeature[] $featuresWithoutDependent */
     $featuresWithoutDependent = $reflectionMethod->invoke($objectWithoutDependent);
 
     // Object with dependent schemas should return the feature
@@ -417,10 +424,11 @@ it('properly deduplicates features in getUsedFeatures', function (): void {
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($objectSchema);
 
     // Get feature values for comparison
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
 
     // Should not contain duplicates
     expect($featureValues)->toBe(array_unique($featureValues));
@@ -439,10 +447,10 @@ it('returns correct array structure from getUsedFeatures', function (): void {
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($objectSchema);
 
-    // Should return an array
-    expect($features)->toBeArray();
+    // Should return an array of SchemaFeature instances
     expect($features)
         ->toContainOnlyInstancesOf(SchemaFeature::class);
 
@@ -466,8 +474,9 @@ it('includes parent class features in getUsedFeatures', function (): void {
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($objectSchema);
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
 
     // Should contain parent conditional features
     expect($featureValues)->toContain('if');
@@ -478,8 +487,9 @@ it('includes parent class features in getUsedFeatures', function (): void {
     $simpleObjectSchema = Schema::object('simple')
         ->properties(Schema::string('name'));
 
+    /** @var SchemaFeature[] $simpleFeaturesResult */
     $simpleFeaturesResult = $reflectionMethod->invoke($simpleObjectSchema);
-    $simpleFeatureValues = array_map(fn($feature) => $feature->value, $simpleFeaturesResult);
+    $simpleFeatureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $simpleFeaturesResult);
 
     // Simple object should not have conditional features
     expect($simpleFeatureValues)->not->toContain('if');
@@ -498,8 +508,7 @@ it('returns correct properties with getProperties method', function (): void {
 
     $properties = $objectSchema->getProperties();
 
-    expect($properties)->toBeArray()
-        ->and($properties)->toHaveCount(3)
+    expect($properties)->toHaveCount(3)
         ->and($properties)->toHaveKey('name')
         ->and($properties)->toHaveKey('age')
         ->and($properties)->toHaveKey('email');
@@ -520,8 +529,7 @@ it('returns correct required properties with getRequiredProperties method', func
 
     $requiredProperties = $objectSchema->getRequiredProperties();
 
-    expect($requiredProperties)->toBeArray()
-        ->and($requiredProperties)->toHaveCount(2)
+    expect($requiredProperties)->toHaveCount(2)
         ->and($requiredProperties)->toContain('name')
         ->and($requiredProperties)->toContain('email')
         ->and($requiredProperties)->not->toContain('age');

@@ -6,7 +6,6 @@ namespace Cortex\JsonSchema\Tests\Unit;
 
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
-use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
@@ -248,8 +247,7 @@ it('has correct default and latest versions', function (): void {
 it('can create schema factory with version parameter', function (): void {
     $stringSchema = Schema::string('test', SchemaVersion::Draft_2020_12);
 
-    expect($stringSchema)->toBeInstanceOf(StringSchema::class)
-        ->and($stringSchema->getVersion())
+    expect($stringSchema->getVersion())
         ->toBe(SchemaVersion::Draft_2020_12);
 });
 

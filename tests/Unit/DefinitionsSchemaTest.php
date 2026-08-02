@@ -22,8 +22,11 @@ it('can add a single definition to a schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
+    /** @var array<string, array<string, mixed>> $defs */
+    $defs = $schemaArray['$defs'];
+
     expect($schemaArray)->toHaveKey('$defs.address')
-        ->and($schemaArray['$defs']['address'])
+        ->and($defs['address'])
         ->toHaveKey('type', 'object')
         ->toHaveKey('required', ['street', 'city', 'country']);
 });
@@ -47,10 +50,13 @@ it('can add multiple definitions to a schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
+    /** @var array<string, array<string, mixed>> $defs */
+    $defs = $schemaArray['$defs'];
+
     expect($schemaArray)->toHaveKeys(['$defs.address', '$defs.contact'])
-        ->and($schemaArray['$defs']['address'])
+        ->and($defs['address'])
         ->toHaveKey('required', ['street', 'city'])
-        ->and($schemaArray['$defs']['contact'])
+        ->and($defs['contact'])
         ->toHaveKey('required', ['email']);
 });
 
