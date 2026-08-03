@@ -5,13 +5,9 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Converters;
 
 use Closure;
-use BackedEnum;
-use ReflectionEnum;
 use ReflectionFunction;
-use ReflectionNamedType;
 use ReflectionParameter;
 use Cortex\JsonSchema\Support\NodeData;
-use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
@@ -19,40 +15,37 @@ use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Support\NodeCollection;
 use Cortex\JsonSchema\Exceptions\UnknownTypeException;
+use Cortex\JsonSchema\Converters\Concerns\InteractsWithEnums;
 use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
+use Cortex\JsonSchema\Converters\Concerns\InteractsWithMembers;
+use Cortex\JsonSchema\Converters\Concerns\InteractsWithDocblocks;
 
 class ClosureConverter implements Converter
 {
     use InteractsWithTypes;
+    use InteractsWithEnums;
+    use InteractsWithMembers;
+    use InteractsWithDocblocks;
 
     protected ReflectionFunction $reflection;
 
+    protected SchemaVersion $version;
+
     public function __construct(
         protected Closure $closure,
-        protected ?SchemaVersion $version = null,
+        ?SchemaVersion $schemaVersion = null,
         protected bool $ignoreUnknownTypes = false,
     ) {
         $this->reflection = new ReflectionFunction($this->closure);
-        $this->version = $version ?? SchemaVersion::default();
+        $this->version = $schemaVersion ?? SchemaVersion::default();
     }
 
     public function convert(): ObjectSchema
     {
         $objectSchema = new ObjectSchema(schemaVersion: $this->version);
 
-        $docParser = $this->getDocParser();
-
-        if ($docParser?->isDeprecated() === true || $this->reflection->isDeprecated()) {
-            $objectSchema->deprecated();
-        }
-
-        // Get the description from the doc parser
-        $description = $docParser?->description() ?? null;
-
-        // Add the description to the schema if it exists
-        if ($description !== null) {
-            $objectSchema->description($description);
-        }
+        $docParser = $this->docParser($this->reflection);
+        $this->applySchemaDocblock($objectSchema, $docParser, $this->reflection->isDeprecated());
 
         // Get the parameters from the doc parser
         $params = $docParser?->params();
@@ -60,7 +53,7 @@ class ClosureConverter implements Converter
         // Add the parameters to the objectschema
         foreach ($this->reflection->getParameters() as $reflectionParameter) {
             try {
-                $objectSchema->properties(self::getSchemaFromReflectionParameter($reflectionParameter, $params));
+                $objectSchema->properties($this->getSchemaFromReflectionParameter($reflectionParameter, $params));
             } catch (UnknownTypeException $e) {
                 // If ignoreUnknownTypes is true, skip this parameter
                 if ($this->ignoreUnknownTypes) {
@@ -84,12 +77,7 @@ class ClosureConverter implements Converter
         ReflectionParameter $reflectionParameter,
         ?NodeCollection $nodeCollection = null,
     ): JsonSchema {
-        $type = $reflectionParameter->getType();
-
-        // @phpstan-ignore argument.type
-        $jsonSchema = self::getSchemaFromReflectionType($type);
-
-        $jsonSchema->title($reflectionParameter->getName());
+        $jsonSchema = $this->baseMemberSchema($reflectionParameter);
 
         $docParam = $nodeCollection?->get($reflectionParameter->getName());
 
@@ -105,49 +93,19 @@ class ClosureConverter implements Converter
             );
         }
 
-        if ($type === null || $type->allowsNull()) {
-            $jsonSchema->nullable();
-        }
-
         if ($reflectionParameter->isDefaultValueAvailable() && ! $reflectionParameter->isDefaultValueConstant()) {
-            $defaultValue = $reflectionParameter->getDefaultValue();
-
-            // If the default value is a backed enum, use its value
-            if ($defaultValue instanceof BackedEnum) {
-                $defaultValue = $defaultValue->value;
-            }
-
-            $jsonSchema->default($defaultValue);
+            $jsonSchema->default($this->unwrapEnumValue($reflectionParameter->getDefaultValue()));
         }
 
         if (! $reflectionParameter->isOptional()) {
             $jsonSchema->required();
         }
 
-        // If it's an enum, add the possible values
-        if ($type instanceof ReflectionNamedType) {
-            $typeName = $type->getName();
-
-            if (enum_exists($typeName)) {
-                $reflectionEnum = new ReflectionEnum($typeName);
-
-                if ($reflectionEnum->isBacked()) {
-                    /** @var non-empty-array<int, string|int> $values */
-                    $values = array_column($typeName::cases(), 'value');
-                    $jsonSchema->enum($values);
-                }
-            }
-        }
-
         return $jsonSchema;
     }
 
-    protected function getDocParser(?string $docComment = null): ?DocParser
+    protected function schemaVersion(): SchemaVersion
     {
-        $docComment ??= $this->reflection->getDocComment();
-
-        return is_string($docComment)
-            ? new DocParser($docComment)
-            : null;
+        return $this->version;
     }
 }

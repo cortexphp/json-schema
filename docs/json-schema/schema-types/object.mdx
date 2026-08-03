@@ -103,6 +103,25 @@ $productSchema = Schema::object('product')
 ```
 </Accordion>
 
+## Named Properties
+
+When the property key should not come from the schema title, use `property()` to set the name explicitly. You can also mark properties as required in bulk with `requireProperties()`:
+
+```php
+$userSchema = Schema::object('user')
+    ->property('name', Schema::string()->minLength(1), required: true)
+    ->property('email', Schema::string()->format(SchemaFormat::Email), required: true)
+    ->property('bio', Schema::string()->maxLength(500));
+
+// Or mark required properties separately
+$configSchema = Schema::object('config')
+    ->property('host', Schema::string())
+    ->property('port', Schema::integer())
+    ->requireProperties('host', 'port');
+```
+
+`property()` is especially useful when converting from raw JSON Schema, where property keys are independent of any `title` metadata.
+
 ## Property Titles
 
 Property names are defined by the schema constructor argument, while `title()` is metadata and only included when it differs from the property name:

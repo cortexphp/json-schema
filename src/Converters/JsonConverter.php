@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Converters;
 
 use JsonException;
-use ReflectionClass;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\NullSchema;
 use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Types\UnionSchema;
+use Cortex\JsonSchema\Support\SchemaData;
 use Cortex\JsonSchema\Types\NumberSchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
@@ -24,10 +24,7 @@ use Cortex\JsonSchema\Exceptions\SchemaException;
 
 class JsonConverter implements Converter
 {
-    /**
-     * @var array<int|string, mixed>
-     */
-    private array $data;
+    private SchemaData $schemaData;
 
     private SchemaVersion $schemaVersion;
 
@@ -48,13 +45,13 @@ class JsonConverter implements Converter
                 throw new SchemaException('Invalid JSON Schema: root must be an object');
             }
 
-            $this->data = $decoded;
+            $this->schemaData = new SchemaData($decoded);
         } else {
-            $this->data = $json;
+            $this->schemaData = new SchemaData($json);
         }
 
-        if (isset($this->data['$schema']) && is_string($this->data['$schema'])) {
-            $this->schemaVersion = $this->detectSchemaVersion($this->data['$schema']);
+        if (($schemaUri = $this->schemaData->getString('$schema')) !== null) {
+            $this->schemaVersion = $this->detectSchemaVersion($schemaUri) ?? $schemaVersion;
         } else {
             $this->schemaVersion = $schemaVersion;
         }
@@ -62,91 +59,56 @@ class JsonConverter implements Converter
 
     public function convert(): JsonSchema
     {
-        $type = $this->data['type'] ?? null;
-        $title = isset($this->data['title']) && is_string($this->data['title']) ? $this->data['title'] : null;
+        $title = $this->schemaData->getString('title');
 
         if ($this->shouldUseTypelessSchema()) {
             return $this->createTypelessSchema($title);
         }
 
-        if ($type === null && ($inferredType = $this->inferTypeFromKeywords()) !== null) {
-            return match ($inferredType) {
-                'string' => $this->createStringSchema($title),
-                'number' => $this->createNumberSchema($title),
-                'integer' => $this->createIntegerSchema($title),
-                'boolean' => $this->createBooleanSchema($title),
-                'array' => $this->createArraySchema($title),
-                default => $this->createUnionSchema($title),
-            };
-        }
+        $type = $this->resolveType();
+
+        return $this->createFor($type, $title);
+    }
+
+    /**
+     * Resolve the schema type from an explicit type keyword or inferred keywords.
+     */
+    private function resolveType(): ?SchemaType
+    {
+        $type = $this->schemaData->getValue('type');
 
         if (is_array($type)) {
-            return $this->createUnionSchema($title);
+            return null;
         }
 
-        return match ($type) {
-            'string' => $this->createStringSchema($title),
-            'number' => $this->createNumberSchema($title),
-            'integer' => $this->createIntegerSchema($title),
-            'boolean' => $this->createBooleanSchema($title),
-            'array' => $this->createArraySchema($title),
-            'object' => $this->createObjectSchema($title),
-            'null' => $this->createNullSchema($title),
+        if (is_string($type)) {
+            return SchemaType::tryFrom($type) ?? throw new SchemaException(
+                'Unsupported schema type: ' . $type,
+            );
+        }
+
+        if ($type === null) {
+            return $this->inferTypeFromKeywords();
+        }
+
+        throw new SchemaException('Unsupported schema type: ' . gettype($type));
+    }
+
+    /**
+     * Create a schema for the given type.
+     */
+    private function createFor(?SchemaType $schemaType, ?string $title): JsonSchema
+    {
+        return match ($schemaType) {
+            SchemaType::String => $this->createStringSchema($title),
+            SchemaType::Number => $this->createNumberSchema($title),
+            SchemaType::Integer => $this->createIntegerSchema($title),
+            SchemaType::Boolean => $this->createBooleanSchema($title),
+            SchemaType::Array => $this->createArraySchema($title),
+            SchemaType::Object => $this->createObjectSchema($title),
+            SchemaType::Null => $this->createNullSchema($title),
             null => $this->createUnionSchema($title),
-            default => throw new SchemaException(
-                'Unsupported schema type: ' . (is_string($type) ? $type : gettype($type)),
-            ),
         };
-    }
-
-    /**
-     * Safely get a string value from the data array.
-     */
-    private function getString(string $key): ?string
-    {
-        return isset($this->data[$key]) && is_string($this->data[$key]) ? $this->data[$key] : null;
-    }
-
-    /**
-     * Safely get an integer value from the data array.
-     */
-    private function getInt(string $key): ?int
-    {
-        return isset($this->data[$key]) && is_numeric($this->data[$key]) ? (int) $this->data[$key] : null;
-    }
-
-    /**
-     * Safely get a float value from the data array.
-     */
-    private function getFloat(string $key): ?float
-    {
-        return isset($this->data[$key]) && is_numeric($this->data[$key]) ? (float) $this->data[$key] : null;
-    }
-
-    /**
-     * Safely get a boolean value from the data array.
-     */
-    private function getBool(string $key): bool
-    {
-        return isset($this->data[$key]) && (bool) $this->data[$key];
-    }
-
-    /**
-     * Safely get an array value from the data array.
-     *
-     * @return array<int|string, mixed>|null
-     */
-    private function getArray(string $key): ?array
-    {
-        return isset($this->data[$key]) && is_array($this->data[$key]) ? $this->data[$key] : null;
-    }
-
-    /**
-     * Get a mixed value from the data array.
-     */
-    private function getValue(string $key): mixed
-    {
-        return $this->data[$key] ?? null;
     }
 
     /**
@@ -154,55 +116,50 @@ class JsonConverter implements Converter
      */
     private function getBoolOrSchema(string $key): bool|JsonSchema|null
     {
-        $value = $this->getValue($key);
+        $value = $this->schemaData->getValue($key);
 
         if (is_bool($value)) {
             return $value;
         }
 
-        if (is_array($value)) {
-            return new self($value, $this->schemaVersion)->convert();
-        }
-
-        return null;
+        return $this->convertSubschema($value);
     }
 
     /**
      * Infer a schema type from present validation keywords when no explicit type is given.
      */
-    private function inferTypeFromKeywords(): ?string
+    private function inferTypeFromKeywords(): ?SchemaType
     {
-        $stringKeywords = array_flip(
-            [
-                'pattern', 'minLength', 'maxLength', 'format', 'contentEncoding', 'contentMediaType'],
-        );
-
-        if (array_intersect_key($this->data, $stringKeywords) !== []) {
-            return 'string';
+        if ($this->schemaData->hasAny([
+            'pattern', 'minLength', 'maxLength', 'format', 'contentEncoding', 'contentMediaType',
+        ])) {
+            return SchemaType::String;
         }
 
         foreach (['minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf'] as $keyword) {
-            if (array_key_exists($keyword, $this->data)) {
-                $value = $this->getValue($keyword);
+            if ($this->schemaData->has($keyword)) {
+                $value = $this->schemaData->getValue($keyword);
 
-                return is_int($value) || (is_float($value) && floor($value) === $value) ? 'integer' : 'number';
+                return is_int($value) || (is_float($value) && floor($value) === $value)
+                    ? SchemaType::Integer
+                    : SchemaType::Number;
             }
         }
 
-        if (array_key_exists('items', $this->data) || array_key_exists('prefixItems', $this->data)) {
-            return 'array';
+        if ($this->schemaData->has('items') || $this->schemaData->has('prefixItems')) {
+            return SchemaType::Array;
         }
 
-        if (array_key_exists('const', $this->data)) {
-            $const = $this->getValue('const');
+        if ($this->schemaData->has('const')) {
+            $const = $this->schemaData->getValue('const');
 
             return match (true) {
-                is_string($const) => 'string',
-                is_int($const) => 'integer',
-                is_float($const) => 'number',
-                is_bool($const) => 'boolean',
-                is_array($const) => 'array',
-                $const === null => 'null',
+                is_string($const) => SchemaType::String,
+                is_int($const) => SchemaType::Integer,
+                is_float($const) => SchemaType::Number,
+                is_bool($const) => SchemaType::Boolean,
+                is_array($const) => SchemaType::Array,
+                $const === null => SchemaType::Null,
                 default => null,
             };
         }
@@ -215,17 +172,15 @@ class JsonConverter implements Converter
      */
     private function shouldUseTypelessSchema(): bool
     {
-        if (array_key_exists('type', $this->data)) {
+        if ($this->schemaData->has('type')) {
             return false;
         }
 
-        $structuralKeywords = array_flip([
+        return $this->schemaData->hasAny([
             '$ref', 'allOf', 'anyOf', 'oneOf', 'not', 'if', 'then', 'else',
             '$defs', 'definitions', 'properties', 'patternProperties',
             'dependentSchemas', 'dependentRequired', 'required',
         ]);
-
-        return array_intersect_key($this->data, $structuralKeywords) !== [];
     }
 
     /**
@@ -233,60 +188,60 @@ class JsonConverter implements Converter
      */
     private function applyCommonKeywords(AbstractSchema $schema): void
     {
-        if (($id = $this->getString('$id')) !== null) {
+        if (($id = $this->schemaData->getString('$id')) !== null) {
             $schema->id($id);
         }
 
-        if (($anchor = $this->getString('$anchor')) !== null) {
+        if (($anchor = $this->schemaData->getString('$anchor')) !== null) {
             $schema->anchor($anchor);
         }
 
-        if (($description = $this->getString('description')) !== null) {
+        if (($description = $this->schemaData->getString('description')) !== null) {
             $schema->description($description);
         }
 
-        if (($comment = $this->getString('$comment')) !== null) {
+        if (($comment = $this->schemaData->getString('$comment')) !== null) {
             $schema->comment($comment);
         }
 
-        if (array_key_exists('default', $this->data)) {
-            $schema->default($this->getValue('default'));
+        if ($this->schemaData->has('default')) {
+            $schema->default($this->schemaData->getValue('default'));
         }
 
-        if ($this->getBool('deprecated')) {
+        if ($this->schemaData->getBool('deprecated')) {
             $schema->deprecated();
         }
 
-        if ($this->getBool('readOnly')) {
+        if ($this->schemaData->getBool('readOnly')) {
             $schema->readOnly();
         }
 
-        if ($this->getBool('writeOnly')) {
+        if ($this->schemaData->getBool('writeOnly')) {
             $schema->writeOnly();
         }
 
-        if (($enum = $this->getArray('enum')) !== null && $enum !== []) {
+        if (($enum = $this->schemaData->getArray('enum')) !== null && $enum !== []) {
             /** @var non-empty-array<bool|float|int|string|null> $enum */
             $schema->enum($enum);
         }
 
-        if (array_key_exists('const', $this->data)) {
-            $const = $this->getValue('const');
+        if ($this->schemaData->has('const')) {
+            $const = $this->schemaData->getValue('const');
 
             if (is_bool($const) || is_float($const) || is_int($const) || is_string($const) || $const === null) {
                 $schema->const($const);
             }
         }
 
-        if (($examples = $this->getArray('examples')) !== null) {
+        if (($examples = $this->schemaData->getArray('examples')) !== null) {
             $schema->examples($examples);
         }
 
-        if (($format = $this->getString('format')) !== null) {
+        if (($format = $this->schemaData->getString('format')) !== null) {
             $schema->format($format);
         }
 
-        if (($ref = $this->getString('$ref')) !== null) {
+        if (($ref = $this->schemaData->getString('$ref')) !== null) {
             $schema->ref($ref);
         }
 
@@ -311,18 +266,18 @@ class JsonConverter implements Converter
             $schema->oneOf(...$oneOf);
         }
 
-        if (($not = $this->convertSubschema($this->getValue('not'))) instanceof JsonSchema) {
+        if (($not = $this->convertSubschema($this->schemaData->getValue('not'))) instanceof JsonSchema) {
             $schema->not($not);
         }
 
-        if (($if = $this->convertSubschema($this->getValue('if'))) instanceof JsonSchema) {
+        if (($if = $this->convertSubschema($this->schemaData->getValue('if'))) instanceof JsonSchema) {
             $schema->if($if);
 
-            if (($then = $this->convertSubschema($this->getValue('then'))) instanceof JsonSchema) {
+            if (($then = $this->convertSubschema($this->schemaData->getValue('then'))) instanceof JsonSchema) {
                 $schema->then($then);
             }
 
-            if (($else = $this->convertSubschema($this->getValue('else'))) instanceof JsonSchema) {
+            if (($else = $this->convertSubschema($this->schemaData->getValue('else'))) instanceof JsonSchema) {
                 $schema->else($else);
             }
         }
@@ -333,7 +288,7 @@ class JsonConverter implements Converter
      */
     private function applyDefinitions(AbstractSchema $schema): void
     {
-        $definitions = $this->getArray('$defs') ?? $this->getArray('definitions');
+        $definitions = $this->schemaData->getArray('$defs') ?? $this->schemaData->getArray('definitions');
 
         if ($definitions === null) {
             return;
@@ -344,11 +299,11 @@ class JsonConverter implements Converter
                 continue;
             }
 
-            if (! is_array($definitionData)) {
-                continue;
-            }
+            $definition = $this->convertSubschema($definitionData);
 
-            $schema->addDefinition($name, new self($definitionData, $this->schemaVersion)->convert());
+            if ($definition instanceof JsonSchema) {
+                $schema->addDefinition($name, $definition);
+            }
         }
     }
 
@@ -357,56 +312,48 @@ class JsonConverter implements Converter
      */
     private function applyObjectKeywords(ObjectSchema|UnionSchema|TypelessSchema $objectSchema): void
     {
-        $required = $this->getArray('required') ?? [];
+        $required = $this->schemaData->getArray('required') ?? [];
 
-        if (($properties = $this->getArray('properties')) !== null) {
-            $propertySchemas = [];
-            $requiredProps = [];
-
+        if (($properties = $this->schemaData->getArray('properties')) !== null) {
             foreach ($properties as $name => $propertyData) {
                 if (! is_string($name)) {
                     continue;
                 }
 
-                if (! is_array($propertyData)) {
+                $propertySchema = $this->convertSubschema($propertyData);
+
+                if (! $propertySchema instanceof JsonSchema) {
                     continue;
                 }
 
-                $propertySchemas[$name] = new self($propertyData, $this->schemaVersion)->convert();
-
-                if (in_array($name, $required, true)) {
-                    $requiredProps[] = $name;
-                }
+                $objectSchema->property($name, $propertySchema, in_array($name, $required, true));
             }
-
-            $reflection = new ReflectionClass($objectSchema);
-            $reflection->getProperty('properties')->setValue($objectSchema, $propertySchemas);
-            $reflection->getProperty('requiredProperties')->setValue($objectSchema, $requiredProps);
         } elseif ($required !== []) {
             $requiredProps = array_values(array_filter($required, is_string(...)));
 
             if ($requiredProps !== []) {
-                $reflection = new ReflectionClass($objectSchema);
-                $reflection->getProperty('requiredProperties')->setValue($objectSchema, $requiredProps);
+                $objectSchema->requireProperties(...$requiredProps);
             }
         }
 
-        if (($patternProperties = $this->getArray('patternProperties')) !== null) {
+        if (($patternProperties = $this->schemaData->getArray('patternProperties')) !== null) {
             foreach ($patternProperties as $pattern => $propertyData) {
                 if (! is_string($pattern)) {
                     continue;
                 }
 
-                if (! is_array($propertyData)) {
-                    continue;
-                }
+                $propertySchema = $this->convertSubschema($propertyData);
 
-                $objectSchema->patternProperty($pattern, new self($propertyData, $this->schemaVersion)->convert());
+                if ($propertySchema instanceof JsonSchema) {
+                    $objectSchema->patternProperty($pattern, $propertySchema);
+                }
             }
         }
 
-        if (($propertyNames = $this->getArray('propertyNames')) !== null) {
-            $objectSchema->propertyNames(new self($propertyNames, $this->schemaVersion)->convert());
+        if (($propertyNames = $this->convertSubschema(
+            $this->schemaData->getValue('propertyNames'),
+        )) instanceof JsonSchema) {
+            $objectSchema->propertyNames($propertyNames);
         }
 
         if (($additionalProperties = $this->getBoolOrSchema('additionalProperties')) !== null) {
@@ -417,21 +364,21 @@ class JsonConverter implements Converter
             $objectSchema->unevaluatedProperties($unevaluatedProperties);
         }
 
-        if (($dependentSchemas = $this->getArray('dependentSchemas')) !== null) {
+        if (($dependentSchemas = $this->schemaData->getArray('dependentSchemas')) !== null) {
             foreach ($dependentSchemas as $property => $dependentData) {
                 if (! is_string($property)) {
                     continue;
                 }
 
-                if (! is_array($dependentData)) {
-                    continue;
-                }
+                $dependentSchema = $this->convertSubschema($dependentData);
 
-                $objectSchema->dependentSchema($property, new self($dependentData, $this->schemaVersion)->convert());
+                if ($dependentSchema instanceof JsonSchema) {
+                    $objectSchema->dependentSchema($property, $dependentSchema);
+                }
             }
         }
 
-        if (($dependentRequired = $this->getArray('dependentRequired')) !== null) {
+        if (($dependentRequired = $this->schemaData->getArray('dependentRequired')) !== null) {
             /** @var array<string, list<string>> $normalized */
             $normalized = [];
 
@@ -452,11 +399,11 @@ class JsonConverter implements Converter
             }
         }
 
-        if (($minProperties = $this->getInt('minProperties')) !== null) {
+        if (($minProperties = $this->schemaData->getInt('minProperties')) !== null) {
             $objectSchema->minProperties($minProperties);
         }
 
-        if (($maxProperties = $this->getInt('maxProperties')) !== null) {
+        if (($maxProperties = $this->schemaData->getInt('maxProperties')) !== null) {
             $objectSchema->maxProperties($maxProperties);
         }
     }
@@ -466,20 +413,19 @@ class JsonConverter implements Converter
      */
     private function applyArrayKeywords(ArraySchema $arraySchema): void
     {
-        $items = $this->getValue('items');
+        $items = $this->schemaData->getValue('items');
 
         if (is_array($items)) {
             if (array_is_list($items)) {
-                $tupleSchemas = array_values(array_map(
-                    fn(array $item): JsonSchema => new self($item, $this->schemaVersion)->convert(),
-                    array_filter($items, is_array(...)),
+                $tupleSchemas = array_values(array_filter(
+                    array_map($this->convertSubschema(...), $items),
                 ));
 
                 if ($tupleSchemas !== []) {
                     $arraySchema->tupleItems($tupleSchemas);
                 }
-            } else {
-                $arraySchema->items(new self($items, $this->schemaVersion)->convert());
+            } elseif (($itemsSchema = $this->convertSubschema($items)) instanceof JsonSchema) {
+                $arraySchema->items($itemsSchema);
             }
         }
 
@@ -487,10 +433,9 @@ class JsonConverter implements Converter
             $arraySchema->additionalItems($additionalItems);
         }
 
-        if (($prefixItems = $this->getArray('prefixItems')) !== null && array_is_list($prefixItems)) {
-            $prefixSchemas = array_values(array_map(
-                fn(array $item): JsonSchema => new self($item, $this->schemaVersion)->convert(),
-                array_filter($prefixItems, is_array(...)),
+        if (($prefixItems = $this->schemaData->getArray('prefixItems')) !== null && array_is_list($prefixItems)) {
+            $prefixSchemas = array_values(array_filter(
+                array_map($this->convertSubschema(...), $prefixItems),
             ));
 
             if ($prefixSchemas !== []) {
@@ -498,27 +443,27 @@ class JsonConverter implements Converter
             }
         }
 
-        if (($minItems = $this->getInt('minItems')) !== null) {
+        if (($minItems = $this->schemaData->getInt('minItems')) !== null) {
             $arraySchema->minItems($minItems);
         }
 
-        if (($maxItems = $this->getInt('maxItems')) !== null) {
+        if (($maxItems = $this->schemaData->getInt('maxItems')) !== null) {
             $arraySchema->maxItems($maxItems);
         }
 
-        if ($this->getBool('uniqueItems')) {
+        if ($this->schemaData->getBool('uniqueItems')) {
             $arraySchema->uniqueItems();
         }
 
-        if (($contains = $this->getArray('contains')) !== null) {
-            $arraySchema->contains(new self($contains, $this->schemaVersion)->convert());
+        if (($contains = $this->convertSubschema($this->schemaData->getValue('contains'))) instanceof JsonSchema) {
+            $arraySchema->contains($contains);
         }
 
-        if (($minContains = $this->getInt('minContains')) !== null) {
+        if (($minContains = $this->schemaData->getInt('minContains')) !== null) {
             $arraySchema->minContains($minContains);
         }
 
-        if (($maxContains = $this->getInt('maxContains')) !== null) {
+        if (($maxContains = $this->schemaData->getInt('maxContains')) !== null) {
             $arraySchema->maxContains($maxContains);
         }
 
@@ -528,55 +473,53 @@ class JsonConverter implements Converter
     }
 
     /**
-     * Apply numeric constraint keywords.
+     * Apply integer-specific numeric constraints.
      */
-    private function applyNumericKeywords(AbstractSchema $schema): void
+    private function applyIntegerConstraints(IntegerSchema $integerSchema): void
     {
-        if ($schema instanceof IntegerSchema) {
-            if (($minimum = $this->getInt('minimum')) !== null) {
-                $schema->minimum($minimum);
-            }
-
-            if (($maximum = $this->getInt('maximum')) !== null) {
-                $schema->maximum($maximum);
-            }
-
-            if (($exclusiveMinimum = $this->getInt('exclusiveMinimum')) !== null) {
-                $schema->exclusiveMinimum($exclusiveMinimum);
-            }
-
-            if (($exclusiveMaximum = $this->getInt('exclusiveMaximum')) !== null) {
-                $schema->exclusiveMaximum($exclusiveMaximum);
-            }
-
-            if (($multipleOf = $this->getInt('multipleOf')) !== null) {
-                $schema->multipleOf($multipleOf);
-            }
-
-            return;
+        if (($minimum = $this->schemaData->getInt('minimum')) !== null) {
+            $integerSchema->minimum($minimum);
         }
 
-        if (! $schema instanceof NumberSchema && ! $schema instanceof UnionSchema && ! $schema instanceof TypelessSchema) {
-            return;
+        if (($maximum = $this->schemaData->getInt('maximum')) !== null) {
+            $integerSchema->maximum($maximum);
         }
 
-        if (($minimum = $this->getFloat('minimum')) !== null) {
+        if (($exclusiveMinimum = $this->schemaData->getInt('exclusiveMinimum')) !== null) {
+            $integerSchema->exclusiveMinimum($exclusiveMinimum);
+        }
+
+        if (($exclusiveMaximum = $this->schemaData->getInt('exclusiveMaximum')) !== null) {
+            $integerSchema->exclusiveMaximum($exclusiveMaximum);
+        }
+
+        if (($multipleOf = $this->schemaData->getInt('multipleOf')) !== null) {
+            $integerSchema->multipleOf($multipleOf);
+        }
+    }
+
+    /**
+     * Apply float numeric constraints.
+     */
+    private function applyNumberConstraints(NumberSchema|UnionSchema|TypelessSchema $schema): void
+    {
+        if (($minimum = $this->schemaData->getFloat('minimum')) !== null) {
             $schema->minimum($minimum);
         }
 
-        if (($maximum = $this->getFloat('maximum')) !== null) {
+        if (($maximum = $this->schemaData->getFloat('maximum')) !== null) {
             $schema->maximum($maximum);
         }
 
-        if (($exclusiveMinimum = $this->getFloat('exclusiveMinimum')) !== null) {
+        if (($exclusiveMinimum = $this->schemaData->getFloat('exclusiveMinimum')) !== null) {
             $schema->exclusiveMinimum($exclusiveMinimum);
         }
 
-        if (($exclusiveMaximum = $this->getFloat('exclusiveMaximum')) !== null) {
+        if (($exclusiveMaximum = $this->schemaData->getFloat('exclusiveMaximum')) !== null) {
             $schema->exclusiveMaximum($exclusiveMaximum);
         }
 
-        if (($multipleOf = $this->getFloat('multipleOf')) !== null) {
+        if (($multipleOf = $this->schemaData->getFloat('multipleOf')) !== null) {
             $schema->multipleOf($multipleOf);
         }
     }
@@ -584,14 +527,14 @@ class JsonConverter implements Converter
     /**
      * Detect schema version from a $schema URI.
      */
-    private function detectSchemaVersion(string $schemaUri): SchemaVersion
+    private function detectSchemaVersion(string $schemaUri): ?SchemaVersion
     {
         return match (true) {
             str_contains($schemaUri, 'draft-06') => SchemaVersion::Draft_06,
             str_contains($schemaUri, 'draft-07') => SchemaVersion::Draft_07,
             str_contains($schemaUri, 'draft/2019-09') => SchemaVersion::Draft_2019_09,
             str_contains($schemaUri, 'draft/2020-12') => SchemaVersion::Draft_2020_12,
-            default => $this->schemaVersion,
+            default => null,
         };
     }
 
@@ -614,15 +557,14 @@ class JsonConverter implements Converter
      */
     private function getArrayOfSchemas(string $key): array
     {
-        $value = $this->getArray($key);
+        $value = $this->schemaData->getArray($key);
 
         if ($value === null || ! array_is_list($value)) {
             return [];
         }
 
-        return array_values(array_map(
-            fn(array $item): JsonSchema => new self($item, $this->schemaVersion)->convert(),
-            array_filter($value, is_array(...)),
+        return array_values(array_filter(
+            array_map($this->convertSubschema(...), $value),
         ));
     }
 
@@ -631,9 +573,7 @@ class JsonConverter implements Converter
         $typelessSchema = new TypelessSchema($title, $this->schemaVersion);
         $this->applyCommonKeywords($typelessSchema);
 
-        $objectKeywords = array_flip(['properties', 'patternProperties', 'required']);
-
-        if (array_intersect_key($this->data, $objectKeywords) !== []) {
+        if ($this->schemaData->hasAny(['properties', 'patternProperties', 'required'])) {
             $this->applyObjectKeywords($typelessSchema);
         }
 
@@ -645,32 +585,32 @@ class JsonConverter implements Converter
         $stringSchema = new StringSchema($title, $this->schemaVersion);
         $this->applyCommonKeywords($stringSchema);
 
-        if (($minLength = $this->getInt('minLength')) !== null) {
+        if (($minLength = $this->schemaData->getInt('minLength')) !== null) {
             $stringSchema->minLength($minLength);
         }
 
-        if (($maxLength = $this->getInt('maxLength')) !== null) {
+        if (($maxLength = $this->schemaData->getInt('maxLength')) !== null) {
             $stringSchema->maxLength($maxLength);
         }
 
-        if (($pattern = $this->getString('pattern')) !== null) {
+        if (($pattern = $this->schemaData->getString('pattern')) !== null) {
             $stringSchema->pattern($pattern);
         }
 
-        if (($contentEncoding = $this->getString('contentEncoding')) !== null) {
+        if (($contentEncoding = $this->schemaData->getString('contentEncoding')) !== null) {
             $stringSchema->contentEncoding($contentEncoding);
         }
 
-        if (($contentMediaType = $this->getString('contentMediaType')) !== null) {
+        if (($contentMediaType = $this->schemaData->getString('contentMediaType')) !== null) {
             $stringSchema->contentMediaType($contentMediaType);
         }
 
-        $contentSchema = $this->getValue('contentSchema');
+        $contentSchema = $this->schemaData->getValue('contentSchema');
 
-        if (is_array($contentSchema)) {
-            $stringSchema->contentSchema(new self($contentSchema, $this->schemaVersion)->convert());
-        } elseif (is_bool($contentSchema)) {
+        if (is_bool($contentSchema)) {
             $stringSchema->contentSchema($contentSchema);
+        } elseif (($converted = $this->convertSubschema($contentSchema)) instanceof JsonSchema) {
+            $stringSchema->contentSchema($converted);
         }
 
         return $stringSchema;
@@ -680,7 +620,7 @@ class JsonConverter implements Converter
     {
         $numberSchema = new NumberSchema($title, $this->schemaVersion);
         $this->applyCommonKeywords($numberSchema);
-        $this->applyNumericKeywords($numberSchema);
+        $this->applyNumberConstraints($numberSchema);
 
         return $numberSchema;
     }
@@ -689,7 +629,7 @@ class JsonConverter implements Converter
     {
         $integerSchema = new IntegerSchema($title, $this->schemaVersion);
         $this->applyCommonKeywords($integerSchema);
-        $this->applyNumericKeywords($integerSchema);
+        $this->applyIntegerConstraints($integerSchema);
 
         return $integerSchema;
     }
@@ -730,7 +670,7 @@ class JsonConverter implements Converter
 
     private function createUnionSchema(?string $title): UnionSchema
     {
-        $typeData = $this->getValue('type');
+        $typeData = $this->schemaData->getValue('type');
 
         if (is_array($typeData)) {
             $types = array_values(array_map(
@@ -743,7 +683,7 @@ class JsonConverter implements Converter
         }
 
         $this->applyCommonKeywords($schema);
-        $this->applyNumericKeywords($schema);
+        $this->applyNumberConstraints($schema);
 
         return $schema;
     }

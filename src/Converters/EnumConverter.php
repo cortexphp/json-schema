@@ -5,29 +5,35 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Converters;
 
 use ReflectionEnum;
-use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Contracts\Converter;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
+use Cortex\JsonSchema\Converters\Concerns\InteractsWithEnums;
+use Cortex\JsonSchema\Converters\Concerns\InteractsWithDocblocks;
 
 class EnumConverter implements Converter
 {
+    use InteractsWithEnums;
+    use InteractsWithDocblocks;
+
     /**
      * @var \ReflectionEnum<\UnitEnum>
      */
     protected ReflectionEnum $reflection;
+
+    protected SchemaVersion $version;
 
     /**
      * @param class-string<\UnitEnum> $enum
      */
     public function __construct(
         protected string $enum,
-        protected ?SchemaVersion $version = null,
+        ?SchemaVersion $schemaVersion = null,
     ) {
         $this->reflection = new ReflectionEnum($this->enum);
-        $this->version = $version ?? SchemaVersion::default();
+        $this->version = $schemaVersion ?? SchemaVersion::default();
 
         if (! $this->reflection->isBacked()) {
             throw new SchemaException('Enum must be a backed enum');
@@ -36,8 +42,7 @@ class EnumConverter implements Converter
 
     public function convert(): StringSchema|IntegerSchema
     {
-        // Get the basename of the enum namespace
-        $enumName = basename(str_replace('\\', '/', $this->enum));
+        $enumName = $this->reflection->getShortName();
 
         // Determine the backing type
         $schema = match ($this->reflection->getBackingType()?->getName()) {
@@ -48,28 +53,16 @@ class EnumConverter implements Converter
             ),
         };
 
-        /** @var non-empty-array<int, string|int> $values */
-        $values = array_column($this->enum::cases(), 'value');
+        $values = $this->backedEnumValues($this->enum);
+
+        if ($values === null) {
+            throw new SchemaException('Enum must be a backed enum');
+        }
 
         $schema->enum($values);
 
-        // Get the description from the doc parser
-        $description = $this->getDocParser()?->description() ?? null;
-
-        // Add the description to the schema if it exists
-        if ($description !== null) {
-            $schema->description($description);
-        }
+        $this->applySchemaDocblock($schema, $this->docParser($this->reflection));
 
         return $schema;
-    }
-
-    protected function getDocParser(): ?DocParser
-    {
-        $docComment = $this->reflection->getDocComment();
-
-        return is_string($docComment)
-            ? new DocParser($docComment)
-            : null;
     }
 }

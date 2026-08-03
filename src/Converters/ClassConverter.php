@@ -4,14 +4,10 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Converters;
 
-use BackedEnum;
-use ReflectionEnum;
 use ReflectionClass;
 use ReflectionProperty;
-use ReflectionNamedType;
 use ReflectionParameter;
 use Cortex\JsonSchema\Support\NodeData;
-use Cortex\JsonSchema\Support\DocParser;
 use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Contracts\Converter;
@@ -19,16 +15,29 @@ use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Support\NodeCollection;
 use Cortex\JsonSchema\Exceptions\UnknownTypeException;
+use Cortex\JsonSchema\Converters\Concerns\InteractsWithEnums;
 use Cortex\JsonSchema\Converters\Concerns\InteractsWithTypes;
+use Cortex\JsonSchema\Converters\Concerns\InteractsWithMembers;
+use Cortex\JsonSchema\Converters\Concerns\InteractsWithDocblocks;
 
 class ClassConverter implements Converter
 {
     use InteractsWithTypes;
+    use InteractsWithEnums;
+    use InteractsWithMembers;
+    use InteractsWithDocblocks;
 
     /**
      * @var \ReflectionClass<object>
      */
     protected ReflectionClass $reflection;
+
+    protected SchemaVersion $version;
+
+    /**
+     * @var array<string, ReflectionParameter>|null
+     */
+    private ?array $constructorParameters = null;
 
     /**
      * @param object|class-string $class
@@ -36,30 +45,18 @@ class ClassConverter implements Converter
     public function __construct(
         protected object|string $class,
         protected bool $publicOnly = true,
-        protected ?SchemaVersion $version = null,
+        ?SchemaVersion $schemaVersion = null,
         protected bool $ignoreUnknownTypes = false,
     ) {
         $this->reflection = new ReflectionClass($this->class);
-        $this->version = $version ?? SchemaVersion::default();
+        $this->version = $schemaVersion ?? SchemaVersion::default();
     }
 
     public function convert(): ObjectSchema
     {
         $objectSchema = new ObjectSchema(schemaVersion: $this->version);
 
-        $docParser = $this->getDocParser($this->reflection);
-
-        if ($docParser?->isDeprecated() === true) {
-            $objectSchema->deprecated();
-        }
-
-        // Get the description from the doc parser
-        $description = $docParser?->description() ?? null;
-
-        // Add the description to the schema if it exists
-        if ($description !== null) {
-            $objectSchema->description($description);
-        }
+        $this->applySchemaDocblock($objectSchema, $this->docParser($this->reflection));
 
         $properties = $this->reflection->getProperties(
             $this->publicOnly ? ReflectionProperty::IS_PUBLIC : null,
@@ -77,7 +74,7 @@ class ClassConverter implements Converter
             }
 
             try {
-                $objectSchema->properties(self::getSchemaFromReflectionProperty($property, $promotedParams));
+                $objectSchema->properties($this->getSchemaFromReflectionProperty($property, $promotedParams));
             } catch (UnknownTypeException $unknownTypeException) {
                 if ($this->ignoreUnknownTypes) {
                     continue;
@@ -99,14 +96,9 @@ class ClassConverter implements Converter
         ReflectionProperty $reflectionProperty,
         ?NodeCollection $nodeCollection = null,
     ): JsonSchema {
-        $type = $reflectionProperty->getType();
+        $jsonSchema = $this->baseMemberSchema($reflectionProperty);
 
-        // @phpstan-ignore argument.type
-        $jsonSchema = self::getSchemaFromReflectionType($type);
-
-        $jsonSchema->title($reflectionProperty->getName());
-
-        $docParser = $this->getDocParser($reflectionProperty);
+        $docParser = $this->docParser($reflectionProperty);
 
         if ($docParser?->isDeprecated() === true) {
             $jsonSchema->deprecated();
@@ -126,10 +118,6 @@ class ClassConverter implements Converter
             );
         }
 
-        if ($type === null || $type->allowsNull()) {
-            $jsonSchema->nullable();
-        }
-
         // Promoted properties report their default value on the constructor
         // parameter rather than on the property itself.
         $promotedParameter = $reflectionProperty->isPromoted()
@@ -144,29 +132,9 @@ class ClassConverter implements Converter
                 ? $reflectionProperty->getDefaultValue()
                 : $promotedParameter?->getDefaultValue();
 
-            // If the default value is a backed enum, use its value
-            if ($defaultValue instanceof BackedEnum) {
-                $defaultValue = $defaultValue->value;
-            }
-
-            $jsonSchema->default($defaultValue);
+            $jsonSchema->default($this->unwrapEnumValue($defaultValue));
         } else {
             $jsonSchema->required();
-        }
-
-        // If it's an enum, add the possible values
-        if ($type instanceof ReflectionNamedType) {
-            $typeName = $type->getName();
-
-            if (enum_exists($typeName)) {
-                $reflectionEnum = new ReflectionEnum($typeName);
-
-                if ($reflectionEnum->isBacked()) {
-                    /** @var non-empty-array<int, string|int> $values */
-                    $values = array_column($typeName::cases(), 'value');
-                    $jsonSchema->enum($values);
-                }
-            }
         }
 
         return $jsonSchema;
@@ -186,11 +154,7 @@ class ClassConverter implements Converter
             return $nodeData->description;
         }
 
-        if ($reflectionProperty->isPromoted()) {
-            return $nodeCollection?->get($reflectionProperty->getName())?->description;
-        }
-
-        return null;
+        return $this->promotedNode($reflectionProperty, $nodeCollection)?->description;
     }
 
     /**
@@ -211,21 +175,25 @@ class ClassConverter implements Converter
             return $itemTypes;
         }
 
-        $promotedNode = $nodeCollection?->get($reflectionProperty->getName());
+        $promotedNode = $this->promotedNode($reflectionProperty, $nodeCollection);
 
         return $promotedNode instanceof NodeData ? $promotedNode->itemTypes : [];
     }
 
     /**
-     * @param ReflectionProperty|ReflectionClass<object> $reflection
+     * Look up the constructor `@param` node for a promoted property.
+     *
+     * @param \Cortex\JsonSchema\Support\NodeCollection<array-key, \Cortex\JsonSchema\Support\NodeData>|null $nodeCollection
      */
-    protected function getDocParser(ReflectionProperty|ReflectionClass $reflection): ?DocParser
-    {
-        $docComment = $reflection->getDocComment();
+    protected function promotedNode(
+        ReflectionProperty $reflectionProperty,
+        ?NodeCollection $nodeCollection,
+    ): ?NodeData {
+        if (! $reflectionProperty->isPromoted()) {
+            return null;
+        }
 
-        return is_string($docComment)
-            ? new DocParser($docComment)
-            : null;
+        return $nodeCollection?->get($reflectionProperty->getName());
     }
 
     /**
@@ -236,11 +204,12 @@ class ClassConverter implements Converter
     protected function getConstructorParams(): ?NodeCollection
     {
         $constructor = $this->reflection->getConstructor();
-        $docComment = $constructor?->getDocComment();
 
-        return is_string($docComment)
-            ? new DocParser($docComment)->params()
-            : null;
+        if ($constructor === null) {
+            return null;
+        }
+
+        return $this->docParser($constructor)?->params();
     }
 
     /**
@@ -248,14 +217,31 @@ class ClassConverter implements Converter
      */
     protected function getConstructorParameter(string $name): ?ReflectionParameter
     {
-        $constructor = $this->reflection->getConstructor();
+        return $this->getConstructorParameters()[$name] ?? null;
+    }
 
-        foreach ($constructor?->getParameters() ?? [] as $parameter) {
-            if ($parameter->getName() === $name) {
-                return $parameter;
-            }
+    /**
+     * Cache constructor parameters keyed by name.
+     *
+     * @return array<string, ReflectionParameter>
+     */
+    protected function getConstructorParameters(): array
+    {
+        if ($this->constructorParameters !== null) {
+            return $this->constructorParameters;
         }
 
-        return null;
+        $parameters = [];
+
+        foreach ($this->reflection->getConstructor()?->getParameters() ?? [] as $parameter) {
+            $parameters[$parameter->getName()] = $parameter;
+        }
+
+        return $this->constructorParameters = $parameters;
+    }
+
+    protected function schemaVersion(): SchemaVersion
+    {
+        return $this->version;
     }
 }
