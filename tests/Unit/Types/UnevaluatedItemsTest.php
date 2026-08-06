@@ -7,6 +7,7 @@ namespace Cortex\JsonSchema\Tests\Unit\Types;
 use ReflectionClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\ArraySchema;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -17,8 +18,8 @@ it('can set unevaluatedItems to false', function (): void {
 
     $schemaArray = $arraySchema->toArray();
 
-    expect($schemaArray)->toHaveKey('unevaluatedItems', false);
-    expect($schemaArray)->toHaveKey('items');
+    expect($schemaArray)->toHaveKey('unevaluatedItems', false)
+        ->toHaveKey('items');
 
     // Test basic validation (unevaluatedItems validation requires a full JSON Schema validator)
     expect($arraySchema->isValid(['hello', 'world']))->toBeTrue();
@@ -52,11 +53,12 @@ it('can set unevaluatedItems to a schema', function (): void {
 
     $schemaArray = $arraySchema->toArray();
 
-    expect($schemaArray)->toHaveKey('unevaluatedItems');
-    expect($schemaArray['unevaluatedItems'])->toBe([
-        'type' => 'integer',
-        'minimum' => 0,
-    ]);
+    expect($schemaArray)->toHaveKey('unevaluatedItems')
+        ->and($schemaArray['unevaluatedItems'])
+        ->toBe([
+            'type' => 'integer',
+            'minimum' => 0,
+        ]);
 
     // Test basic validation
     expect($arraySchema->isValid(['hello']))->toBeTrue();
@@ -80,8 +82,8 @@ it('works with Draft 2019-09', function (): void {
         ->items(Schema::string())
         ->unevaluatedItems(false);
 
-    expect($arraySchema->toArray())->toHaveKey('unevaluatedItems', false);
-    expect($arraySchema->toArray())->toHaveKey('$schema', 'https://json-schema.org/draft/2019-09/schema');
+    expect($arraySchema->toArray())->toHaveKey('unevaluatedItems', false)
+        ->toHaveKey('$schema', 'https://json-schema.org/draft/2019-09/schema');
 });
 
 it('works with Draft 2020-12', function (): void {
@@ -89,8 +91,8 @@ it('works with Draft 2020-12', function (): void {
         ->items(Schema::string())
         ->unevaluatedItems(false);
 
-    expect($arraySchema->toArray())->toHaveKey('unevaluatedItems', false);
-    expect($arraySchema->toArray())->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
+    expect($arraySchema->toArray())->toHaveKey('unevaluatedItems', false)
+        ->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
 });
 
 it('detects unevaluatedItems feature correctly', function (): void {
@@ -102,9 +104,10 @@ it('detects unevaluatedItems feature correctly', function (): void {
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var \Cortex\JsonSchema\Enums\SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($arraySchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->toContain('unevaluatedItems');
 });
 
@@ -116,9 +119,10 @@ it('does not include unevaluatedItems feature when not used', function (): void 
     $reflection = new ReflectionClass($arraySchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var \Cortex\JsonSchema\Enums\SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($arraySchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->not->toContain('unevaluatedItems');
 });
 
@@ -134,13 +138,12 @@ it('can combine with other array properties', function (): void {
 
     $schemaArray = $arraySchema->toArray();
 
-    expect($schemaArray)->toHaveKey('items');
-    expect($schemaArray)->toHaveKey('contains');
-    expect($schemaArray)->toHaveKey('minContains', 1);
-    expect($schemaArray)->toHaveKey('maxContains', 5);
-    expect($schemaArray)->toHaveKey('unevaluatedItems', false);
-    expect($schemaArray)->toHaveKey('minItems', 2);
-    expect($schemaArray)->toHaveKey('maxItems', 10);
+    expect($schemaArray)->toHaveKeys(['items', 'contains'])
+        ->toHaveKey('minContains', 1)
+        ->toHaveKey('maxContains', 5)
+        ->toHaveKey('unevaluatedItems', false)
+        ->toHaveKey('minItems', 2)
+        ->toHaveKey('maxItems', 10);
 });
 
 it('validates version during schema output', function (): void {
@@ -172,13 +175,14 @@ it('generates correct schema structure for complex scenarios', function (): void
 
     // Verify schema structure
     expect($schemaArray)->toHaveKey('items');
-    expect($schemaArray)->toHaveKey('contains');
-    expect($schemaArray)->toHaveKey('minContains', 1);
-    expect($schemaArray)->toHaveKey('unevaluatedItems');
-    expect($schemaArray['unevaluatedItems'])->toBe([
-        'type' => 'integer',
-        'minimum' => 0,
-    ]);
+    expect($schemaArray)->toHaveKey('contains')
+        ->toHaveKey('minContains', 1)
+        ->toHaveKey('unevaluatedItems')
+        ->and($schemaArray['unevaluatedItems'])
+        ->toBe([
+            'type' => 'integer',
+            'minimum' => 0,
+        ]);
 
     // Test basic validation (items validation still works)
     expect($arraySchema->isValid(['hello', 'world']))->toBeTrue();

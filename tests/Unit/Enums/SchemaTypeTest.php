@@ -47,12 +47,13 @@ it('can resolve scalar types with tryFromScalar', function (string $input, Schem
 ]);
 
 it('returns null from tryFromScalar for unknown types', function (): void {
-    expect(SchemaType::tryFromScalar('DateTime'))->toBeNull();
-    expect(SchemaType::tryFromScalar('mixed'))->toBeNull();
+    expect(SchemaType::tryFromScalar('DateTime'))->toBeNull()
+        ->and(SchemaType::tryFromScalar('mixed'))
+        ->toBeNull();
 });
 
 it('can create schema instance', function (SchemaType $schemaType, string $expectedClass): void {
-    expect($schemaType->instance())->toBeInstanceOf($expectedClass);
+    expect($schemaType->instance()::class)->toBe($expectedClass);
 })->with([
     'string schema' => [SchemaType::String, StringSchema::class],
     'number schema' => [SchemaType::Number, NumberSchema::class],

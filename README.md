@@ -13,7 +13,7 @@
 - ✅ **Validation** - Validate data against schemas with detailed error messages
 - 🤝 **Conditional Schemas** - Support for if/then/else, allOf, anyOf, and not conditions
 - 🔄 **Reflection** - Generate schemas from PHP classes, enums, and closures — including docblock array generics and constructor property promotion
-- 💪 **Type Safety** - Built with PHP 8.3+ features and strict typing
+- 💪 **Type Safety** - Built with PHP 8.4+ features and strict typing
 - 🔍 **Version-Aware Features** - Automatic validation of version-specific features with helpful error messages
 
 ## JSON Schema Version Support
@@ -29,7 +29,7 @@ This package supports multiple JSON Schema specification versions with automatic
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 
 ## Installation
 

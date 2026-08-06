@@ -18,8 +18,8 @@ final class SchemaRoundTrip
     /**
      * Assert every keyword from the source schema is captured in the converted output.
      *
-     * @param array<string, mixed> $source
-     * @param array<string, mixed> $output
+     * @param array<array-key, mixed> $source
+     * @param array<array-key, mixed> $output
      */
     public static function assertSourceSubset(array $source, array $output, string $path = 'root'): void
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Converters;
 
+use RuntimeException;
 use DirectoryIterator;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Tests\Support\SchemaRoundTrip;
@@ -48,6 +49,10 @@ it('round-trips json-schema.org fixtures', function (string $fixturePath): void 
     $sourceJson = file_get_contents($fixturePath);
 
     expect($sourceJson)->not->toBeFalse();
+
+    if ($sourceJson === false) {
+        throw new RuntimeException('Unable to read fixture: ' . $fixturePath);
+    }
 
     /** @var array<string, mixed> $source */
     $source = json_decode($sourceJson, true, flags: JSON_THROW_ON_ERROR);

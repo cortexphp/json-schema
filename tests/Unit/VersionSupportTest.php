@@ -6,7 +6,6 @@ namespace Cortex\JsonSchema\Tests\Unit;
 
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
-use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 
@@ -16,24 +15,33 @@ afterEach(function (): void {
 });
 
 it('has correct schema version enum values', function (): void {
-    expect(SchemaVersion::Draft_06->value)->toBe('http://json-schema.org/draft-06/schema#');
-    expect(SchemaVersion::Draft_07->value)->toBe('http://json-schema.org/draft-07/schema#');
-    expect(SchemaVersion::Draft_2019_09->value)->toBe('https://json-schema.org/draft/2019-09/schema');
-    expect(SchemaVersion::Draft_2020_12->value)->toBe('https://json-schema.org/draft/2020-12/schema');
+    expect(SchemaVersion::Draft_06->value)->toBe('http://json-schema.org/draft-06/schema#')
+        ->and(SchemaVersion::Draft_07->value)
+        ->toBe('http://json-schema.org/draft-07/schema#')
+        ->and(SchemaVersion::Draft_2019_09->value)
+        ->toBe('https://json-schema.org/draft/2019-09/schema')
+        ->and(SchemaVersion::Draft_2020_12->value)
+        ->toBe('https://json-schema.org/draft/2020-12/schema');
 });
 
 it('has correct schema version names', function (): void {
-    expect(SchemaVersion::Draft_06->getName())->toBe('Draft 6');
-    expect(SchemaVersion::Draft_07->getName())->toBe('Draft 7');
-    expect(SchemaVersion::Draft_2019_09->getName())->toBe('Draft 2019-09');
-    expect(SchemaVersion::Draft_2020_12->getName())->toBe('Draft 2020-12');
+    expect(SchemaVersion::Draft_06->getName())->toBe('Draft 6')
+        ->and(SchemaVersion::Draft_07->getName())
+        ->toBe('Draft 7')
+        ->and(SchemaVersion::Draft_2019_09->getName())
+        ->toBe('Draft 2019-09')
+        ->and(SchemaVersion::Draft_2020_12->getName())
+        ->toBe('Draft 2020-12');
 });
 
 it('has correct schema version years', function (): void {
-    expect(SchemaVersion::Draft_06->getYear())->toBe(2017);
-    expect(SchemaVersion::Draft_07->getYear())->toBe(2018);
-    expect(SchemaVersion::Draft_2019_09->getYear())->toBe(2019);
-    expect(SchemaVersion::Draft_2020_12->getYear())->toBe(2020);
+    expect(SchemaVersion::Draft_06->getYear())->toBe(2017)
+        ->and(SchemaVersion::Draft_07->getYear())
+        ->toBe(2018)
+        ->and(SchemaVersion::Draft_2019_09->getYear())
+        ->toBe(2019)
+        ->and(SchemaVersion::Draft_2020_12->getYear())
+        ->toBe(2020);
 });
 
 it('has correct schema version feature support', function (): void {
@@ -44,104 +52,155 @@ it('has correct schema version feature support', function (): void {
 
     // Draft 07 features
     expect($draft06->supports(SchemaFeature::IfThenElse))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::IfThenElse))->toBeTrue();
-    expect($draft201909->supports(SchemaFeature::IfThenElse))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::IfThenElse))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::ContentMediaType))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::ContentMediaType))->toBeTrue();
-    expect($draft201909->supports(SchemaFeature::ContentMediaType))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::ContentMediaType))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::Comment))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::Comment))->toBeTrue();
-    expect($draft201909->supports(SchemaFeature::Comment))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::Comment))->toBeTrue();
+    expect($draft07->supports(SchemaFeature::IfThenElse))->toBeTrue()
+        ->and($draft201909->supports(SchemaFeature::IfThenElse))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::IfThenElse))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::ContentMediaType))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::ContentMediaType))
+        ->toBeTrue()
+        ->and($draft201909->supports(SchemaFeature::ContentMediaType))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::ContentMediaType))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::Comment))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::Comment))
+        ->toBeTrue()
+        ->and($draft201909->supports(SchemaFeature::Comment))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::Comment))
+        ->toBeTrue();
 
     // Draft 2019-09 new features
     expect($draft06->supports(SchemaFeature::Anchor))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::Anchor))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::Anchor))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::Anchor))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::Defs))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::Defs))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::Defs))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::Defs))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::UnevaluatedProperties))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::UnevaluatedProperties))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::UnevaluatedProperties))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::UnevaluatedProperties))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::DependentRequired))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::DependentRequired))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::DependentRequired))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::DependentRequired))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::ContentSchema))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::ContentSchema))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::ContentSchema))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::ContentSchema))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::Deprecated))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::Deprecated))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::Deprecated))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::Deprecated))->toBeTrue();
+    expect($draft07->supports(SchemaFeature::Anchor))->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::Anchor))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::Anchor))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::Defs))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::Defs))
+        ->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::Defs))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::Defs))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::UnevaluatedProperties))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::UnevaluatedProperties))
+        ->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::UnevaluatedProperties))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::UnevaluatedProperties))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::DependentRequired))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::DependentRequired))
+        ->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::DependentRequired))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::DependentRequired))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::ContentSchema))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::ContentSchema))
+        ->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::ContentSchema))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::ContentSchema))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::Deprecated))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::Deprecated))
+        ->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::Deprecated))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::Deprecated))
+        ->toBeTrue();
 
     // 2019-09 only features (replaced in 2020-12)
     expect($draft06->supports(SchemaFeature::RecursiveRefLegacy))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::RecursiveRefLegacy))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::RecursiveRefLegacy))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::RecursiveRefLegacy))->toBeFalse();
-
-    expect($draft06->supports(SchemaFeature::RecursiveRef))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::RecursiveRef))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::RecursiveRef))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::RecursiveRef))->toBeFalse(); // Replaced by $dynamicRef in 2020-12
+    expect($draft07->supports(SchemaFeature::RecursiveRefLegacy))->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::RecursiveRefLegacy))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::RecursiveRefLegacy))
+        ->toBeFalse()
+        ->and($draft06->supports(SchemaFeature::RecursiveRef))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::RecursiveRef))
+        ->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::RecursiveRef))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::RecursiveRef))
+        ->toBeFalse(); // Replaced by $dynamicRef in 2020-12
 
     // Draft 2020-12 features
     expect($draft06->supports(SchemaFeature::DynamicRef))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::DynamicRef))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::DynamicRef))->toBeFalse();
-    expect($draft202012->supports(SchemaFeature::DynamicRef))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::PrefixItems))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::PrefixItems))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::PrefixItems))->toBeFalse();
-    expect($draft202012->supports(SchemaFeature::PrefixItems))->toBeTrue();
+    expect($draft07->supports(SchemaFeature::DynamicRef))->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::DynamicRef))
+        ->toBeFalse()
+        ->and($draft202012->supports(SchemaFeature::DynamicRef))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::PrefixItems))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::PrefixItems))
+        ->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::PrefixItems))
+        ->toBeFalse()
+        ->and($draft202012->supports(SchemaFeature::PrefixItems))
+        ->toBeTrue();
 
     // 2020-12 vocabulary and format changes
     expect($draft06->supports(SchemaFeature::FormatAnnotation))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::FormatAnnotation))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::FormatAnnotation))->toBeFalse();
-    expect($draft202012->supports(SchemaFeature::FormatAnnotation))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::UnevaluatedVocabulary))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::UnevaluatedVocabulary))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::UnevaluatedVocabulary))->toBeFalse();
-    expect($draft202012->supports(SchemaFeature::UnevaluatedVocabulary))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::UnicodeRegex))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::UnicodeRegex))->toBeFalse();
-    expect($draft201909->supports(SchemaFeature::UnicodeRegex))->toBeFalse();
-    expect($draft202012->supports(SchemaFeature::UnicodeRegex))->toBeTrue();
+    expect($draft07->supports(SchemaFeature::FormatAnnotation))->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::FormatAnnotation))
+        ->toBeFalse()
+        ->and($draft202012->supports(SchemaFeature::FormatAnnotation))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::UnevaluatedVocabulary))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::UnevaluatedVocabulary))
+        ->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::UnevaluatedVocabulary))
+        ->toBeFalse()
+        ->and($draft202012->supports(SchemaFeature::UnevaluatedVocabulary))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::UnicodeRegex))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::UnicodeRegex))
+        ->toBeFalse()
+        ->and($draft201909->supports(SchemaFeature::UnicodeRegex))
+        ->toBeFalse()
+        ->and($draft202012->supports(SchemaFeature::UnicodeRegex))
+        ->toBeTrue();
 
     // Draft 07 format additions
     expect($draft06->supports(SchemaFeature::FormatDate))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::FormatDate))->toBeTrue();
-    expect($draft201909->supports(SchemaFeature::FormatDate))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::FormatDate))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::FormatIdnEmail))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::FormatIdnEmail))->toBeTrue();
-    expect($draft201909->supports(SchemaFeature::FormatIdnEmail))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::FormatIdnEmail))->toBeTrue();
-
-    expect($draft06->supports(SchemaFeature::FormatIdnHostname))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::FormatIdnHostname))->toBeTrue();
-    expect($draft201909->supports(SchemaFeature::FormatIdnHostname))->toBeTrue();
-    expect($draft202012->supports(SchemaFeature::FormatIdnHostname))->toBeTrue();
+    expect($draft07->supports(SchemaFeature::FormatDate))->toBeTrue()
+        ->and($draft201909->supports(SchemaFeature::FormatDate))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::FormatDate))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::FormatIdnEmail))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::FormatIdnEmail))
+        ->toBeTrue()
+        ->and($draft201909->supports(SchemaFeature::FormatIdnEmail))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::FormatIdnEmail))
+        ->toBeTrue()
+        ->and($draft06->supports(SchemaFeature::FormatIdnHostname))
+        ->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::FormatIdnHostname))
+        ->toBeTrue()
+        ->and($draft201909->supports(SchemaFeature::FormatIdnHostname))
+        ->toBeTrue()
+        ->and($draft202012->supports(SchemaFeature::FormatIdnHostname))
+        ->toBeTrue();
 });
 
 it('supports enum-based feature checks', function (): void {
@@ -152,36 +211,44 @@ it('supports enum-based feature checks', function (): void {
     expect($draft202012->supports(SchemaFeature::UnicodeRegex))->toBeTrue();
 
     $draft07 = SchemaVersion::Draft_07;
-    expect($draft07->supports(SchemaFeature::PrefixItems))->toBeFalse();
-    expect($draft07->supports(SchemaFeature::IfThenElse))->toBeTrue();
+    expect($draft07->supports(SchemaFeature::PrefixItems))->toBeFalse()
+        ->and($draft07->supports(SchemaFeature::IfThenElse))
+        ->toBeTrue();
 });
 
 it('provides feature metadata through enum', function (): void {
     $feature = SchemaFeature::PrefixItems;
 
-    expect($feature->getMinimumVersion())->toBe(SchemaVersion::Draft_2020_12);
-    expect($feature->getMaximumVersion())->toBeNull();
-    expect($feature->getDescription())->toContain('tuple');
-    expect($feature->wasIntroducedIn(SchemaVersion::Draft_2020_12))->toBeTrue();
-    expect($feature->wasIntroducedIn(SchemaVersion::Draft_2019_09))->toBeFalse();
-    expect($feature->wasRemovedIn(SchemaVersion::Draft_2020_12))->toBeFalse();
+    expect($feature->getMinimumVersion())->toBe(SchemaVersion::Draft_2020_12)
+        ->and($feature->getMaximumVersion())
+        ->toBeNull()
+        ->and($feature->getDescription())
+        ->toContain('tuple')
+        ->and($feature->wasIntroducedIn(SchemaVersion::Draft_2020_12))
+        ->toBeTrue()
+        ->and($feature->wasIntroducedIn(SchemaVersion::Draft_2019_09))
+        ->toBeFalse()
+        ->and($feature->wasRemovedIn(SchemaVersion::Draft_2020_12))
+        ->toBeFalse();
 
     // Test a feature that was removed
     $recursiveFeature = SchemaFeature::RecursiveRef;
-    expect($recursiveFeature->getMaximumVersion())->toBe(SchemaVersion::Draft_2019_09);
-    expect($recursiveFeature->wasRemovedIn(SchemaVersion::Draft_2020_12))->toBeTrue();
+    expect($recursiveFeature->getMaximumVersion())->toBe(SchemaVersion::Draft_2019_09)
+        ->and($recursiveFeature->wasRemovedIn(SchemaVersion::Draft_2020_12))
+        ->toBeTrue();
 });
 
 it('has correct default and latest versions', function (): void {
-    expect(SchemaVersion::default())->toBe(SchemaVersion::Draft_2020_12);
-    expect(SchemaVersion::latest())->toBe(SchemaVersion::Draft_2020_12);
+    expect(SchemaVersion::default())->toBe(SchemaVersion::Draft_2020_12)
+        ->and(SchemaVersion::latest())
+        ->toBe(SchemaVersion::Draft_2020_12);
 });
 
 it('can create schema factory with version parameter', function (): void {
     $stringSchema = Schema::string('test', SchemaVersion::Draft_2020_12);
 
-    expect($stringSchema)->toBeInstanceOf(StringSchema::class);
-    expect($stringSchema->getVersion())->toBe(SchemaVersion::Draft_2020_12);
+    expect($stringSchema->getVersion())
+        ->toBe(SchemaVersion::Draft_2020_12);
 });
 
 it('can manage schema factory default version', function (): void {
@@ -209,9 +276,11 @@ it('includes correct schema version in output', function (): void {
     $draft07Array = $stringSchema->toArray();
     $draft202012Array = $draft202012Schema->toArray();
 
-    expect($draft06Array['$schema'])->toBe('http://json-schema.org/draft-06/schema#');
-    expect($draft07Array['$schema'])->toBe('http://json-schema.org/draft-07/schema#');
-    expect($draft202012Array['$schema'])->toBe('https://json-schema.org/draft/2020-12/schema');
+    expect($draft06Array['$schema'])->toBe('http://json-schema.org/draft-06/schema#')
+        ->and($draft07Array['$schema'])
+        ->toBe('http://json-schema.org/draft-07/schema#')
+        ->and($draft202012Array['$schema'])
+        ->toBe('https://json-schema.org/draft/2020-12/schema');
 });
 
 it('can change schema version on existing schema', function (): void {
@@ -273,6 +342,7 @@ it('can exclude schema version from output', function (): void {
     $arrayWithoutRef = $stringSchema->toArray(false);
     $arrayWithRef = $stringSchema->toArray(true);
 
-    expect($arrayWithoutRef)->not->toHaveKey('$schema');
-    expect($arrayWithRef)->toHaveKey('$schema', SchemaVersion::Draft_2020_12->value);
+    expect($arrayWithoutRef)->not->toHaveKey('$schema')
+        ->and($arrayWithRef)
+        ->toHaveKey('$schema', SchemaVersion::Draft_2020_12->value);
 });

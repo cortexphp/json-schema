@@ -16,10 +16,10 @@ it('can create a boolean schema', function (): void {
 
     $schemaArray = $booleanSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
-    expect($schemaArray)->toHaveKey('type', 'boolean');
-    expect($schemaArray)->toHaveKey('title', 'is_active');
-    expect($schemaArray)->toHaveKey('description', 'User active status');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema')
+        ->toHaveKey('type', 'boolean')
+        ->toHaveKey('title', 'is_active')
+        ->toHaveKey('description', 'User active status');
 
     // Validation tests
     expect(fn() => $booleanSchema->validate(true))->not->toThrow(SchemaException::class);
@@ -34,12 +34,9 @@ it('can create a boolean schema', function (): void {
     expect(fn() => $booleanSchema->validate('true'))->toThrow(
         SchemaException::class,
         'The data (string) must match the type: boolean',
-    );
-
-    expect(fn() => $booleanSchema->validate(null))->toThrow(
-        SchemaException::class,
-        'The data (null) must match the type: boolean',
-    );
+    )
+        ->and(fn() => $booleanSchema->validate(null))
+        ->toThrow(SchemaException::class, 'The data (null) must match the type: boolean');
 });
 
 it('can create a boolean schema with read-only property', function (): void {
@@ -49,10 +46,10 @@ it('can create a boolean schema with read-only property', function (): void {
 
     $schemaArray = $booleanSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'boolean');
-    expect($schemaArray)->toHaveKey('title', 'is_verified');
-    expect($schemaArray)->toHaveKey('description', 'Email verification status');
-    expect($schemaArray)->toHaveKey('readOnly', true);
+    expect($schemaArray)->toHaveKey('type', 'boolean')
+        ->toHaveKey('title', 'is_verified')
+        ->toHaveKey('description', 'Email verification status')
+        ->toHaveKey('readOnly', true);
 
     // Validation tests
     expect(fn() => $booleanSchema->validate(true))->not->toThrow(SchemaException::class);
@@ -72,14 +69,14 @@ it('can create a nullable boolean schema', function (): void {
 
     $schemaArray = $booleanSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', ['boolean', 'null']);
-    expect($schemaArray)->toHaveKey('title', 'is_subscribed');
-    expect($schemaArray)->toHaveKey('description', 'Newsletter subscription status');
+    expect($schemaArray)->toHaveKey('type', ['boolean', 'null'])
+        ->toHaveKey('title', 'is_subscribed')
+        ->toHaveKey('description', 'Newsletter subscription status');
 
     // Validation tests
     expect(fn() => $booleanSchema->validate(true))->not->toThrow(SchemaException::class);
-    expect(fn() => $booleanSchema->validate(false))->not->toThrow(SchemaException::class);
-    expect(fn() => $booleanSchema->validate(null))->not->toThrow(SchemaException::class);
+    expect(fn() => $booleanSchema->validate(false))->not->toThrow(SchemaException::class)
+        ->and(fn() => $booleanSchema->validate(null))->not->toThrow(SchemaException::class);
 
     // Test invalid types
     expect(fn() => $booleanSchema->validate(0))->toThrow(

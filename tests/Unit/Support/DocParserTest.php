@@ -5,12 +5,22 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit\Support;
 
 use ReflectionClass;
+use RuntimeException;
 use Cortex\JsonSchema\Support\NodeData;
 use Cortex\JsonSchema\Support\DocParser;
-use Cortex\JsonSchema\Support\NodeCollection;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode;
 
 covers(DocParser::class);
+
+function requireNodeData(?NodeData $nodeData): NodeData
+{
+    if (! $nodeData instanceof NodeData) {
+        throw new RuntimeException('Expected a NodeData instance.');
+    }
+
+    return $nodeData;
+}
 
 it('can parse description', function (): void {
     $docblock = '/** This is a test docblock */';
@@ -43,58 +53,70 @@ it('can parse params and description', function (): void {
 
     $params = $parser->params();
 
-    expect($params)->toBeInstanceOf(NodeCollection::class);
+    $nodeData = requireNodeData($params->get('nickname'));
+    $age = requireNodeData($params->get('age'));
+    $price = requireNodeData($params->get('price'));
+    $test = requireNodeData($params->get('test'));
+    $any = requireNodeData($params->get('any'));
 
-    expect($params->get('nickname'))->toBeInstanceOf(NodeData::class);
-    expect($params->get('nickname')->name)->toBe('nickname');
-    expect($params->get('nickname')->description)->toBe('The nickname of the user');
-    expect($params->get('nickname')->types)->toBe(['string', 'null']);
-
-    expect($params->get('age'))->toBeInstanceOf(NodeData::class);
-    expect($params->get('age')->name)->toBe('age');
-    expect($params->get('age')->description)->toBe('The age of the user');
-    expect($params->get('age')->types)->toBe(['int', 'null']);
-
-    expect($params->get('price'))->toBeInstanceOf(NodeData::class);
-    expect($params->get('price')->name)->toBe('price');
-    expect($params->get('price')->description)->toBe('The price of the product');
-    expect($params->get('price')->types)->toBe(['float', 'int']);
-
-    expect($params->get('test'))->toBeInstanceOf(NodeData::class);
-    expect($params->get('test')->name)->toBe('test');
-    expect($params->get('test')->description)->toBe('The test');
-    expect($params->get('test')->types)->toBe(['\Cortex\JsonSchema\Tests\Unit\Support\DocParserTest']);
-
-    expect($params->get('any'))->toBeInstanceOf(NodeData::class);
-    expect($params->get('any')->name)->toBe('any');
-    expect($params->get('any')->description)->toBeNull();
-    expect($params->get('any')->types)->toBe([]);
+    expect($nodeData->name)
+        ->toBe('nickname')
+        ->and($nodeData->description)
+        ->toBe('The nickname of the user')
+        ->and($nodeData->types)
+        ->toBe(['string', 'null'])
+        ->and($age->name)
+        ->toBe('age')
+        ->and($age->description)
+        ->toBe('The age of the user')
+        ->and($age->types)
+        ->toBe(['int', 'null'])
+        ->and($price->name)
+        ->toBe('price')
+        ->and($price->description)
+        ->toBe('The price of the product')
+        ->and($price->types)
+        ->toBe(['float', 'int'])
+        ->and($test->name)
+        ->toBe('test')
+        ->and($test->description)
+        ->toBe('The test')
+        ->and($test->types)
+        ->toBe(['\Cortex\JsonSchema\Tests\Unit\Support\DocParserTest'])
+        ->and($any->name)
+        ->toBe('any')
+        ->and($any->description)
+        ->toBeNull()
+        ->and($any->types)
+        ->toBeEmpty();
 });
 
 it('can parse variables', function (): void {
     $docblock = '/** @var string $nickname The nickname of the user */';
     $parser = new DocParser($docblock);
 
-    $variable = $parser->variable();
+    $nodeData = requireNodeData($parser->variable());
 
-    expect($variable)->toBeInstanceOf(NodeData::class);
-
-    expect($variable->name)->toBe('nickname');
-    expect($variable->types)->toBe(['string']);
-    expect($variable->description)->toBe('The nickname of the user');
+    expect($nodeData->name)
+        ->toBe('nickname')
+        ->and($nodeData->types)
+        ->toBe(['string'])
+        ->and($nodeData->description)
+        ->toBe('The nickname of the user');
 });
 
 it('can parse variables with multiple types', function (): void {
     $docblock = '/** @var string|int $nickname The nickname of the user */';
     $parser = new DocParser($docblock);
 
-    $variable = $parser->variable();
+    $nodeData = requireNodeData($parser->variable());
 
-    expect($variable)->toBeInstanceOf(NodeData::class);
-
-    expect($variable->name)->toBe('nickname');
-    expect($variable->types)->toBe(['string', 'int']);
-    expect($variable->description)->toBe('The nickname of the user');
+    expect($nodeData->name)
+        ->toBe('nickname')
+        ->and($nodeData->types)
+        ->toBe(['string', 'int'])
+        ->and($nodeData->description)
+        ->toBe('The nickname of the user');
 });
 
 it('can parse a multiline description', function (): void {
@@ -113,17 +135,19 @@ it('handles empty descriptions in variables correctly', function (): void {
     $docblock = '/** @var string $name */';
     $parser = new DocParser($docblock);
 
-    $variable = $parser->variable();
+    $nodeData = requireNodeData($parser->variable());
 
-    expect($variable)->toBeInstanceOf(NodeData::class);
-    expect($variable->name)->toBe('name');
-    expect($variable->types)->toBe(['string']);
-    expect($variable->description)->toBeNull(); // Empty description should be null
+    expect($nodeData->name)
+        ->toBe('name')
+        ->and($nodeData->types)
+        ->toBe(['string'])
+        ->and($nodeData->description)
+        ->toBeNull(); // Empty description should be null
 
     // Compare with non-empty description
     $docblockWithDescription = '/** @var string $name The user name */';
     $parserWithDescription = new DocParser($docblockWithDescription);
-    $variableWithDescription = $parserWithDescription->variable();
+    $variableWithDescription = requireNodeData($parserWithDescription->variable());
 
     expect($variableWithDescription->description)->toBe('The user name');
 });
@@ -134,12 +158,14 @@ it('handles empty descriptions in parameters correctly', function (): void {
     $parser = new DocParser($docblock);
 
     $params = $parser->params();
-    $nameParam = $params->get('name');
+    $nodeData = requireNodeData($params->get('name'));
 
-    expect($nameParam)->toBeInstanceOf(NodeData::class);
-    expect($nameParam->name)->toBe('name');
-    expect($nameParam->types)->toBe(['string']);
-    expect($nameParam->description)->toBeNull(); // Empty description should be null
+    expect($nodeData->name)
+        ->toBe('name')
+        ->and($nodeData->types)
+        ->toBe(['string'])
+        ->and($nodeData->description)
+        ->toBeNull(); // Empty description should be null
 });
 
 it('correctly maps different type node scenarios', function (): void {
@@ -148,18 +174,19 @@ it('correctly maps different type node scenarios', function (): void {
     $parser = new DocParser($docblock);
 
     $params = $parser->params();
-    $typelessParam = $params->get('typeless');
+    $nodeData = requireNodeData($params->get('typeless'));
 
-    expect($typelessParam)->toBeInstanceOf(NodeData::class);
-    expect($typelessParam->name)->toBe('typeless');
-    expect($typelessParam->types)->toBe([]); // Should be empty array for typeless
-    expect($typelessParam->description)->toBeNull();
+    expect($nodeData->name)
+        ->toBe('typeless')
+        ->and($nodeData->types)
+        ->toBeEmpty(); // Should be empty array for typeless
+    expect($nodeData->description)->toBeNull();
 
     // Test UnionTypeNode
     $docblockUnion = '/** @param string|int|float $union */';
     $parserUnion = new DocParser($docblockUnion);
     $nodeCollection = $parserUnion->params();
-    $unionParam = $nodeCollection->get('union');
+    $unionParam = requireNodeData($nodeCollection->get('union'));
 
     expect($unionParam->types)->toBe(['string', 'int', 'float']);
 
@@ -167,7 +194,7 @@ it('correctly maps different type node scenarios', function (): void {
     $docblockNullable = '/** @param ?string $nullable */';
     $parserNullable = new DocParser($docblockNullable);
     $paramsNullable = $parserNullable->params();
-    $nullableParam = $paramsNullable->get('nullable');
+    $nullableParam = requireNodeData($paramsNullable->get('nullable'));
 
     expect($nullableParam->types)->toBe(['string', 'null']);
 
@@ -175,7 +202,7 @@ it('correctly maps different type node scenarios', function (): void {
     $docblockSimple = '/** @param int $simple */';
     $parserSimple = new DocParser($docblockSimple);
     $paramsSimple = $parserSimple->params();
-    $simpleParam = $paramsSimple->get('simple');
+    $simpleParam = requireNodeData($paramsSimple->get('simple'));
 
     expect($simpleParam->types)->toBe(['int']);
 });
@@ -197,17 +224,14 @@ it('correctly filters text nodes in getTextNodes method', function (): void {
 
     $getTextNodesMethod = $reflection->getMethod('getTextNodes');
 
+    /** @var PhpDocNode $phpDocNode */
     $phpDocNode = $reflectionMethod->invoke($parser);
     $textNodes = $getTextNodesMethod->invoke($parser, $phpDocNode->children);
 
     // Should only return PhpDocTextNode instances, filtering out param/var nodes
     expect($textNodes)->toBeArray();
-    expect($textNodes)->not->toBeEmpty();
-
-    // All returned nodes should be PhpDocTextNode instances
-    foreach ($textNodes as $textNode) {
-        expect($textNode)->toBeInstanceOf(PhpDocTextNode::class);
-    }
+    expect($textNodes)->not->toBeEmpty()
+        ->toContainOnlyInstancesOf(PhpDocTextNode::class);
 
     // Test that description parsing works correctly with filtered nodes
     expect($parser->description())->toBe('This is a description');
@@ -231,21 +255,30 @@ it('handles docblocks with mixed content correctly', function (): void {
     // Test parameter parsing
     $params = $parser->params();
 
-    expect($params->get('name')->types)->toBe(['string', 'null']);
-    expect($params->get('name')->description)->toBe('The name parameter');
+    $nodeData = requireNodeData($params->get('name'));
+    $ageParam = requireNodeData($params->get('age'));
+    $typelessParam = requireNodeData($params->get('typeless'));
 
-    expect($params->get('age')->types)->toBe(['int', 'null']);
-    expect($params->get('age')->description)->toBe('The age parameter');
-
-    expect($params->get('typeless')->types)->toBe([]);
-    expect($params->get('typeless')->description)->toBe('A parameter without type');
+    expect($nodeData->types)->toBe(['string', 'null'])
+        ->and($nodeData->description)
+        ->toBe('The name parameter')
+        ->and($ageParam->types)
+        ->toBe(['int', 'null'])
+        ->and($ageParam->description)
+        ->toBe('The age parameter')
+        ->and($typelessParam->types)
+        ->toBeEmpty()
+        ->and($typelessParam->description)
+        ->toBe('A parameter without type');
 
     // Test variable parsing
-    $variable = $parser->variable();
-    expect($variable)->toBeInstanceOf(NodeData::class);
-    expect($variable->name)->toBe('data');
-    expect($variable->types)->toBe(['array<string, mixed>']);
-    expect($variable->description)->toBe('Some data');
+    $variable = requireNodeData($parser->variable());
+    expect($variable->name)
+        ->toBe('data')
+        ->and($variable->types)
+        ->toBe(['array<string, mixed>'])
+        ->and($variable->description)
+        ->toBe('Some data');
 });
 
 it('handles edge cases in text node filtering', function (): void {
@@ -259,9 +292,11 @@ it('handles edge cases in text node filtering', function (): void {
     $textOnlyBlock = '/** Just a simple description */';
     $textOnlyParser = new DocParser($textOnlyBlock);
 
-    expect($textOnlyParser->description())->toBe('Just a simple description');
-    expect($textOnlyParser->params()->nodes)->toBeEmpty();
-    expect($textOnlyParser->variable())->toBeNull();
+    expect($textOnlyParser->description())->toBe('Just a simple description')
+        ->and($textOnlyParser->params()->nodes)
+        ->toBeEmpty()
+        ->and($textOnlyParser->variable())
+        ->toBeNull();
 });
 
 it('exercises all type mapping branches in mapValueNodeToTypes', function (): void {
@@ -272,16 +307,17 @@ it('exercises all type mapping branches in mapValueNodeToTypes', function (): vo
     $complexUnionDocblock = '/** @param string|int|float|bool|null $complex Multi-type parameter */';
     $parser = new DocParser($complexUnionDocblock);
     $params = $parser->params();
-    $complexParam = $params->get('complex');
+    $nodeData = requireNodeData($params->get('complex'));
 
-    expect($complexParam->types)->toBe(['string', 'int', 'float', 'bool', 'null']);
-    expect($complexParam->description)->toBe('Multi-type parameter');
+    expect($nodeData->types)->toBe(['string', 'int', 'float', 'bool', 'null'])
+        ->and($nodeData->description)
+        ->toBe('Multi-type parameter');
 
     // Test deeply nested nullable type
     $nestedDocblock = '/** @param ?\Cortex\JsonSchema\Support\NodeData $nested */';
     $nestedParser = new DocParser($nestedDocblock);
     $nodeCollection = $nestedParser->params();
-    $nestedParam = $nodeCollection->get('nested');
+    $nestedParam = requireNodeData($nodeCollection->get('nested'));
 
     expect($nestedParam->types)->toBe([sprintf('\%s', NodeData::class), 'null']);
 
@@ -289,17 +325,18 @@ it('exercises all type mapping branches in mapValueNodeToTypes', function (): vo
     $arrayDocblock = '/** @param array<string, int> $arrayType */';
     $arrayParser = new DocParser($arrayDocblock);
     $arrayParams = $arrayParser->params();
-    $arrayParam = $arrayParams->get('arrayType');
+    $arrayParam = requireNodeData($arrayParams->get('arrayType'));
 
     expect($arrayParam->types)->toBe(['array<string, int>']);
 
     // Test variable with complex types to exercise the same code path
     $varDocblock = '/** @var \DateTime|\DateTimeImmutable $dateVar Date variable */';
     $varParser = new DocParser($varDocblock);
-    $variable = $varParser->variable();
+    $variable = requireNodeData($varParser->variable());
 
-    expect($variable->types)->toBe(['\DateTime', '\DateTimeImmutable']);
-    expect($variable->description)->toBe('Date variable');
+    expect($variable->types)->toBe(['\DateTime', '\DateTimeImmutable'])
+        ->and($variable->description)
+        ->toBe('Date variable');
 });
 
 it('directly tests mapValueNodeToTypes method coverage', function (): void {
@@ -319,6 +356,7 @@ it('directly tests mapValueNodeToTypes method coverage', function (): void {
     $reflection = new ReflectionClass($parser);
     $reflectionMethod = $reflection->getMethod('parse');
 
+    /** @var PhpDocNode $phpDocNode */
     $phpDocNode = $reflectionMethod->invoke($parser);
     $paramTags = $phpDocNode->getParamTagValues();
     $typelessTags = $phpDocNode->getTypelessParamTagValues();
@@ -377,8 +415,9 @@ it('can detect deprecated with other tags', function (): void {
         EOD;
     $parser = new DocParser($docblock);
 
-    expect($parser->isDeprecated())->toBeTrue();
-    expect($parser->description())->toBe('This is a test method');
+    expect($parser->isDeprecated())->toBeTrue()
+        ->and($parser->description())
+        ->toBe('This is a test method');
 });
 
 it('can detect deprecated without description', function (): void {
@@ -451,10 +490,16 @@ it('handles deprecation with complex docblock', function (): void {
         EOD;
     $parser = new DocParser($docblock);
 
-    expect($parser->isDeprecated())->toBeTrue();
-    expect($parser->description())->toBe('A complex method that does many things');
+    expect($parser->isDeprecated())->toBeTrue()
+        ->and($parser->description())
+        ->toBe('A complex method that does many things');
 
     $params = $parser->params();
-    expect($params->get('name')->types)->toBe(['string', 'null']);
-    expect($params->get('age')->types)->toBe(['int']);
+
+    $nodeData = requireNodeData($params->get('name'));
+    $ageParam = requireNodeData($params->get('age'));
+
+    expect($nodeData->types)->toBe(['string', 'null'])
+        ->and($ageParam->types)
+        ->toBe(['int']);
 });

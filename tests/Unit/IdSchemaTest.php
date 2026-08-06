@@ -12,8 +12,8 @@ it('can create a schema with a $id', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$id', 'https://example.com/schemas/name');
-    expect($schemaArray)->toHaveKey('type', 'string');
+    expect($schemaArray)->toHaveKey('$id', 'https://example.com/schemas/name')
+        ->toHaveKey('type', 'string');
 });
 
 it('can convert $id from JSON', function (): void {

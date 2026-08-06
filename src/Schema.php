@@ -198,7 +198,7 @@ class Schema
      */
     public static function fromJson(string|array $json, ?SchemaVersion $schemaVersion = null): JsonSchema
     {
-        return (new JsonConverter($json, $schemaVersion ?? self::getDefaultVersion()))->convert();
+        return new JsonConverter($json, $schemaVersion ?? self::getDefaultVersion())->convert();
     }
 
     /**
