@@ -14,11 +14,16 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         php: [8.4, 8.5]
         stability: [prefer-lowest, prefer-stable]
+        include:
+          - os: ubuntu-latest
+            php: 8.5
+            stability: prefer-stable
+            mutation: true
 
     name: PHP${{ matrix.php }} - ${{ matrix.stability }} - ${{ matrix.os }}
 
@@ -30,6 +35,7 @@ jobs:
         uses: ./.github/actions/setup-php-composer
         with:
           php-version: ${{ matrix.php }}
+          coverage: ${{ matrix.mutation && 'pcov' || 'none' }}
           stability: ${{ matrix.stability }}
 
       - name: Setup problem matchers
@@ -38,22 +44,9 @@ jobs:
           echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Execute tests
+        if: ${{ ! matrix.mutation }}
         run: vendor/bin/pest --colors=always
 
-  mutation:
-    runs-on: ubuntu-latest
-
-    name: Mutation
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Setup PHP and Composer
-        uses: ./.github/actions/setup-php-composer
-        with:
-          php-version: 8.5
-          coverage: pcov
-
-      - name: Execute mutation tests
+      - name: Execute tests with mutation
+        if: ${{ matrix.mutation }}
         run: vendor/bin/pest --colors=always --mutate --parallel --min=80
