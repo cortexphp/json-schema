@@ -7,10 +7,10 @@ namespace Cortex\JsonSchema\Tests\Unit\Types;
 use Pest\Expectation;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\StringSchema;
-use Cortex\JsonSchema\Types\AbstractSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
+use Cortex\JsonSchema\Types\Concerns\HasKeywords;
 
-covers(AbstractSchema::class);
+covers(HasKeywords::class);
 
 it('can attach unknown keywords to a schema', function (): void {
     $stringSchema = Schema::string('pet')
