@@ -225,6 +225,12 @@ it('can create a string schema with examples', function (): void {
     expect($stringSchema->toArray())->toHaveKey('examples', ['foo', 'bar']);
 });
 
+it('does not publish an empty examples list', function (): void {
+    $stringSchema = Schema::string('name')->examples([]);
+
+    expect($stringSchema->toArray(includeSchemaRef: false))->not->toHaveKey('examples');
+});
+
 it('can create a string schema with content annotations', function (): void {
     $stringSchema = Schema::string('payload', SchemaVersion::Draft_2019_09)
         ->contentEncoding('base64')

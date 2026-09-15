@@ -65,6 +65,16 @@ $productSchema = Schema::object('product')
     );
 ```
 
+Repeated `properties()` calls **merge** (union) their arguments rather than replacing the previous list. The last schema for a given name wins. The same applies to `property()`.
+
+```php
+$schema = Schema::object('Relationship')
+    ->properties(Schema::string('placeholder'))
+    ->properties(Schema::string('real'));
+
+// properties: placeholder and real
+```
+
 <Accordion title="View JSON Schema Output">
 ```json
 {
@@ -105,13 +115,14 @@ $productSchema = Schema::object('product')
 
 ## Named Properties
 
-When the property key should not come from the schema title, use `property()` to set the name explicitly. You can also mark properties as required in bulk with `requireProperties()`:
+When the property key should not come from the schema title, use `property()` to set the name explicitly. Untitled nested schemas are allowed because the name is supplied separately. You can also mark properties as required in bulk with `requireProperties()`:
 
 ```php
 $userSchema = Schema::object('user')
     ->property('name', Schema::string()->minLength(1), required: true)
     ->property('email', Schema::string()->format(SchemaFormat::Email), required: true)
-    ->property('bio', Schema::string()->maxLength(500));
+    ->property('bio', Schema::string()->maxLength(500))
+    ->property('nested', Schema::object());
 
 // Or mark required properties separately
 $configSchema = Schema::object('config')
@@ -120,11 +131,11 @@ $configSchema = Schema::object('config')
     ->requireProperties('host', 'port');
 ```
 
-`property()` is especially useful when converting from raw JSON Schema, where property keys are independent of any `title` metadata.
+Use `properties()` when the constructor title *is* the property name. Use `property()` when you want to name a property independently of `title`, including anonymous inline schemas. `property()` is especially useful when converting from raw JSON Schema, where property keys are independent of any `title` metadata.
 
 ## Property Titles
 
-Property names are defined by the schema constructor argument, while `title()` is metadata and only included when it differs from the property name:
+Property names are defined by the schema constructor argument (or the name passed to `property()`), while `title()` is metadata and only included when it differs from the property name:
 
 ```php
 $schema = Schema::object()
@@ -147,7 +158,7 @@ $schema = Schema::object()
 
 ## Required Properties
 
-Specify which properties are mandatory:
+Specify which properties are mandatory. Mark a child schema with `required()`, name a list on the parent with `requireProperties()`, or require every defined property with `requireAll()`:
 
 ```php
 $registrationSchema = Schema::object('registration')
@@ -168,6 +179,17 @@ $registrationSchema = Schema::object('registration')
         Schema::string('full_name'),
         Schema::string('phone')
     );
+
+// Runtime-computed required lists — the counterpart to requireAll()
+$requiredFields = ['name', 'email'];
+
+$schema = Schema::object('user')
+    ->properties(
+        Schema::string('name'),
+        Schema::string('email'),
+        Schema::integer('age'),
+    )
+    ->requireProperties(...$requiredFields);
 
 // This will fail validation - missing required fields
 $invalidData = [

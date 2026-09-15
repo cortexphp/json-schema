@@ -14,7 +14,7 @@ use Cortex\JsonSchema\Exceptions\SchemaException;
 trait HasProperties
 {
     /**
-     * @var array<string, \Cortex\JsonSchema\Contracts\JsonSchema>
+     * @var array<array-key, \Cortex\JsonSchema\Contracts\JsonSchema>
      */
     protected array $properties = [];
 
@@ -55,17 +55,20 @@ trait HasProperties
     protected array $dependentRequired = [];
 
     /**
-     * Set properties.
+     * Add properties keyed by each schema's title.
+     *
+     * Repeated calls merge with existing properties rather than replacing them.
+     * The last schema for a given name wins.
      *
      * @throws \Cortex\JsonSchema\Exceptions\SchemaException
      */
     public function properties(JsonSchema ...$properties): static
     {
-        foreach ($properties as $property) {
+        foreach ($properties as $index => $property) {
             $title = $this->resolvePropertyTitle($property);
 
             if ($title === null) {
-                throw new SchemaException('Property must have a title');
+                throw new SchemaException($this->untitledPropertyMessage((int) $index, $property));
             }
 
             $this->property($title, $property, $property->isRequired());
@@ -76,12 +79,17 @@ trait HasProperties
 
     /**
      * Set a named property, optionally marking it as required.
+     *
+     * Unlike {@see properties()}, the schema does not need a title — `$name`
+     * is the property key, so `title` remains metadata. Repeated calls merge
+     * with existing properties rather than replacing them. The last schema
+     * for a given name wins.
      */
     public function property(string $name, JsonSchema $jsonSchema, bool $required = false): static
     {
         $this->properties[$name] = $jsonSchema;
 
-        if ($required) {
+        if ($required || $jsonSchema->isRequired()) {
             $this->requiredProperties[] = $name;
         }
 
@@ -90,6 +98,10 @@ trait HasProperties
 
     /**
      * Mark the given property names as required.
+     *
+     * Names do not need to match currently defined properties, so a list
+     * computed at runtime can be applied before or after {@see properties()}
+     * / {@see property()}.
      */
     public function requireProperties(string ...$names): static
     {
@@ -259,11 +271,11 @@ trait HasProperties
      */
     public function getPropertyKeys(): array
     {
-        return array_keys($this->properties);
+        return array_map(strval(...), array_keys($this->properties));
     }
 
     /**
-     * @return array<string, \Cortex\JsonSchema\Contracts\JsonSchema>
+     * @return array<array-key, \Cortex\JsonSchema\Contracts\JsonSchema>
      */
     public function getProperties(): array
     {
@@ -299,12 +311,8 @@ trait HasProperties
      */
     public function requireAll(): static
     {
-        foreach ($this->properties as $property) {
-            $title = $this->resolvePropertyTitle($property);
-
-            if ($title !== null) {
-                $this->requiredProperties[] = $title;
-            }
+        foreach (array_keys($this->properties) as $name) {
+            $this->requiredProperties[] = (string) $name;
         }
 
         return $this;
@@ -326,12 +334,14 @@ trait HasProperties
                 $propertySchema = $prop->toArray(includeSchemaRef: false, includeTitle: true);
 
                 // If the property schema has a title and it matches the name,
-                // then we don't need to include it in the schema
-                if (array_key_exists('title', $propertySchema) && $propertySchema['title'] === $name) {
+                // then we don't need to include it in the schema.
+                // Compare as strings so numeric-string keys ('0', '1') match
+                // after PHP's integer key coercion.
+                if (array_key_exists('title', $propertySchema) && $propertySchema['title'] === (string) $name) {
                     unset($propertySchema['title']);
                 }
 
-                $schema['properties'][$name] = $propertySchema;
+                $schema['properties'][(string) $name] = $propertySchema;
             }
         }
 
@@ -395,6 +405,24 @@ trait HasProperties
     protected function resolvePropertyTitle(JsonSchema $jsonSchema): ?string
     {
         return $jsonSchema->getInitialTitle() ?? $jsonSchema->getTitle();
+    }
+
+    /**
+     * Build a diagnostic message for an untitled property.
+     */
+    protected function untitledPropertyMessage(int $index, JsonSchema $jsonSchema): string
+    {
+        $parentTitle = $this->getTitle();
+        $parentLabel = ($parentTitle !== null && $parentTitle !== '')
+            ? sprintf('"%s"', $parentTitle)
+            : 'untitled schema';
+
+        return sprintf(
+            'Property %d of %s (%s) must have a title',
+            $index + 1,
+            $parentLabel,
+            $jsonSchema::class,
+        );
     }
 
     /**

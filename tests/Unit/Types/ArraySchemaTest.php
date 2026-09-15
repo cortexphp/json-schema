@@ -498,3 +498,36 @@ it('handles toArray parameters correctly for prefixItems', function (): void {
         ->and($prefixItems[1])->not->toHaveKey('title')
         ->toHaveKey('type', 'integer');
 });
+
+it('serialises nested items without a dialect URI or title', function (): void {
+    $arraySchema = Schema::array('list')
+        ->items(Schema::string('entry'));
+
+    $schemaArray = $arraySchema->toArray(includeSchemaRef: false);
+
+    expect($schemaArray['items'])->toHaveKey('type', 'string');
+    expect($schemaArray['items'])->not->toHaveKey('$schema');
+    expect($schemaArray['items'])->not->toHaveKey('title');
+});
+
+it('serialises nested items the same way as tupleItems and additionalItems', function (): void {
+    $objectSchema = Schema::object('Wrapper')->properties(
+        Schema::array('list')->items(Schema::string('entry')),
+        Schema::object('nested')->properties(Schema::string('inner')),
+        Schema::array('tuple')->tupleItems([Schema::string('first')]),
+    );
+
+    $schemaArray = $objectSchema->toArray(includeSchemaRef: false);
+
+    expect($schemaArray['properties']['list']['items'])->toBe([
+        'type' => 'string',
+    ]);
+    expect($schemaArray['properties']['nested']['properties']['inner'])->toBe([
+        'type' => 'string',
+    ]);
+    expect($schemaArray['properties']['tuple']['items'])->toBe([
+        [
+            'type' => 'string',
+        ],
+    ]);
+});

@@ -14,6 +14,7 @@ use Cortex\JsonSchema\Types\Concerns\HasConst;
 use Cortex\JsonSchema\Types\Concerns\HasTitle;
 use Cortex\JsonSchema\Types\Concerns\HasAnchor;
 use Cortex\JsonSchema\Types\Concerns\HasFormat;
+use Cortex\JsonSchema\Types\Concerns\HasKeywords;
 use Cortex\JsonSchema\Types\Concerns\HasMetadata;
 use Cortex\JsonSchema\Types\Concerns\HasRequired;
 use Cortex\JsonSchema\Types\Concerns\HasReadWrite;
@@ -33,6 +34,7 @@ abstract class AbstractSchema implements JsonSchema
     use HasConst;
     use HasTitle;
     use HasFormat;
+    use HasKeywords;
     use HasMetadata;
     use HasRequired;
     use HasReadWrite;
@@ -130,8 +132,9 @@ abstract class AbstractSchema implements JsonSchema
         $schema = $this->addMetadataToSchema($schema);
         $schema = $this->addRefToSchema($schema);
         $schema = $this->addDefinitionsToSchema($schema);
+        $schema = $this->addReadWriteToSchema($schema);
 
-        return $this->addReadWriteToSchema($schema);
+        return $this->addKeywordsToSchema($schema);
     }
 
     /**

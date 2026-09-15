@@ -93,7 +93,7 @@ trait HasMetadata
             $schema['$comment'] = $this->comment;
         }
 
-        if ($this->examples !== null) {
+        if ($this->examples !== null && $this->examples !== []) {
             $schema['examples'] = $this->examples;
         }
 

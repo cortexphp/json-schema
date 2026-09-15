@@ -600,7 +600,6 @@ it('can create array items schema from @var string[] docblock', function (): voi
                 'description' => "The user's tags",
                 'items' => [
                     'type' => 'string',
-                    '$schema' => 'https://json-schema.org/draft/2020-12/schema',
                 ],
             ],
         ],
@@ -630,7 +629,6 @@ it('can create array items schema from promoted @param int[] docblock', function
         'description' => 'The user identifiers',
         'items' => [
             'type' => 'integer',
-            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         ],
     ]);
 });
@@ -655,7 +653,6 @@ it('can create array items schema for nullable array properties', function (): v
         'default' => null,
         'items' => [
             'type' => 'string',
-            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         ],
     ]);
 });

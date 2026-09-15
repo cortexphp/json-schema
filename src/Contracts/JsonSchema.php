@@ -66,6 +66,11 @@ interface JsonSchema
     public function required(): static;
 
     /**
+     * Set an arbitrary JSON Schema or OpenAPI keyword.
+     */
+    public function keyword(string $name, mixed $value): static;
+
+    /**
      * Convert to array.
      *
      * @return array<string, mixed>
