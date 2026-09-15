@@ -666,6 +666,16 @@ it('names an untitled parent when a property has no title', function (): void {
         );
 });
 
+it('uses the 1-based argument position when properties() is called with named arguments', function (): void {
+    expect(fn(): ObjectSchema => Schema::object('Wrapper')->properties(
+        first: Schema::string('ok'),
+        second: Schema::object(),
+    ))->toThrow(
+        SchemaException::class,
+        'Property 2 of "Wrapper" (' . ObjectSchema::class . ') must have a title',
+    );
+});
+
 it('can define properties by name with property', function (): void {
     $objectSchema = Schema::object('user')
         ->property('name', Schema::string()->minLength(1)->required())

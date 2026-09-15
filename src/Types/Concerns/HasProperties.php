@@ -64,14 +64,16 @@ trait HasProperties
      */
     public function properties(JsonSchema ...$properties): static
     {
-        foreach ($properties as $index => $property) {
-            $title = $this->resolvePropertyTitle($property);
+        // Named variadic keys (`first:`, `second:`) are strings; `(int)` would
+        // collapse them to 0 and report the wrong 1-based position.
+        foreach (array_values($properties) as $index => $jsonSchema) {
+            $title = $this->resolvePropertyTitle($jsonSchema);
 
             if ($title === null) {
-                throw new SchemaException($this->untitledPropertyMessage((int) $index, $property));
+                throw new SchemaException($this->untitledPropertyMessage($index, $jsonSchema));
             }
 
-            $this->property($title, $property, $property->isRequired());
+            $this->property($title, $jsonSchema, $jsonSchema->isRequired());
         }
 
         return $this;
