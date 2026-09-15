@@ -115,7 +115,7 @@ This package requires PHP 8.4 or higher and uses modern PHP features for optimal
 ## Supported Schema Types
 
 <Info>
-All schema types support common properties like title, description, examples, default values, and metadata annotations.
+All schema types support common properties like title, description, examples, default values, and metadata annotations. Empty `examples` lists are omitted from the output. Unknown or vendor-specific keywords (including OpenAPI `discriminator` and `x-*` extensions) can be attached with `keyword()`.
 </Info>
 
   - **Object Schema** - Property validation, pattern properties, additional properties, dependencies
@@ -144,6 +144,7 @@ All schema types support common properties like title, description, examples, de
 - **Pattern Properties** - Regex-based property validation
 - **Tuple Validation** - `prefixItems` (Draft 2020-12) and legacy `items`/`additionalItems` tuples (Draft-07)
 - **Contains Validation** - Array item existence validation
+- **Custom Keywords** - `keyword()` for unmodelled JSON Schema / OpenAPI keywords and `x-*` extensions on any schema, including nested ones
 
 ### Code Generation
 Generate schemas from existing PHP code:

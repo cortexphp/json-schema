@@ -606,3 +606,175 @@ it('can mark all properties as required with requireAll method', function (): vo
             'email' => 'john@example.com',
         ]))->not->toThrow(SchemaException::class);
 });
+
+it('strips numeric-string property titles that restate the property name', function (): void {
+    $objectSchema = Schema::object('Hours')->properties(
+        Schema::string('0'),
+        Schema::string('1'),
+        Schema::string('mon'),
+    );
+
+    $schemaArray = $objectSchema->toArray(includeSchemaRef: false);
+
+    /** @var array<array-key, mixed> $properties */
+    $properties = $schemaArray['properties'];
+    expect($properties)
+        ->toMatchArray([
+            '0' => [
+                'type' => 'string',
+            ],
+            '1' => [
+                'type' => 'string',
+            ],
+            'mon' => [
+                'type' => 'string',
+            ],
+        ])
+        ->and($objectSchema->getPropertyKeys())
+        ->toBe(['0', '1', 'mon']);
+});
+
+it('encodes numeric-only property names as a JSON object', function (): void {
+    $objectSchema = Schema::object('Hours')->properties(
+        Schema::string('0'),
+        Schema::string('1'),
+    );
+
+    $json = $objectSchema->toJson();
+
+    expect($json)->toContain('"properties":{')
+        ->toContain('"0":{"type":"string"}')
+        ->toContain('"1":{"type":"string"}')
+        ->not->toContain('"properties":[');
+});
+
+it('names the parent and offending schema when a property has no title', function (): void {
+    expect(fn(): ObjectSchema => Schema::object('Wrapper')->properties(
+        Schema::string('ok'),
+        Schema::object(),
+    ))->toThrow(
+        SchemaException::class,
+        'Property 2 of "Wrapper" (' . ObjectSchema::class . ') must have a title',
+    );
+});
+
+it('names an untitled parent when a property has no title', function (): void {
+    expect(fn(): ObjectSchema => Schema::object()->properties(Schema::object()))
+        ->toThrow(
+            SchemaException::class,
+            'Property 1 of untitled schema (' . ObjectSchema::class . ') must have a title',
+        );
+});
+
+it('uses the 1-based argument position when properties() is called with named arguments', function (): void {
+    expect(fn(): ObjectSchema => Schema::object('Wrapper')->properties(
+        first: Schema::string('ok'),
+        second: Schema::object(),
+    ))->toThrow(
+        SchemaException::class,
+        'Property 2 of "Wrapper" (' . ObjectSchema::class . ') must have a title',
+    );
+});
+
+it('can define properties by name with property', function (): void {
+    $objectSchema = Schema::object('user')
+        ->property('name', Schema::string()->minLength(1)->required())
+        ->property('age', Schema::integer())
+        ->property('email', Schema::string()->title('Email Address'));
+
+    $schemaArray = $objectSchema->toArray(includeSchemaRef: false);
+
+    /** @var array<string, mixed> $properties */
+    $properties = $schemaArray['properties'];
+
+    expect($properties)->toHaveKeys(['name', 'age', 'email'])
+        ->toMatchArray([
+            'name' => [
+                'type' => 'string',
+                'minLength' => 1,
+            ],
+            'age' => [
+                'type' => 'integer',
+            ],
+            'email' => [
+                'type' => 'string',
+                'title' => 'Email Address',
+            ],
+        ])
+        ->and($schemaArray['required'])
+        ->toBe(['name'])
+        ->and($objectSchema->getPropertyKeys())
+        ->toBe(['name', 'age', 'email']);
+});
+
+it('allows untitled nested schemas when names are supplied via property', function (): void {
+    $objectSchema = Schema::object('Wrapper')->property('nested', Schema::object());
+
+    $schemaArray = $objectSchema->toArray(includeSchemaRef: false);
+
+    /** @var array<string, mixed> $properties */
+    $properties = $schemaArray['properties'];
+
+    expect($properties['nested'])->toBe([
+        'type' => 'object',
+    ]);
+});
+
+it('can mark specific properties as required by name', function (): void {
+    $required = ['name', 'email'];
+
+    $objectSchema = Schema::object('user')
+        ->properties(
+            Schema::string('name'),
+            Schema::integer('age'),
+            Schema::string('email'),
+        )
+        ->requireProperties(...$required);
+
+    $schemaArray = $objectSchema->toArray();
+
+    expect($schemaArray)->toHaveKey('required', ['name', 'email'])
+        ->and($objectSchema->getRequiredProperties())->toBe(['name', 'email'])
+        ->and(fn() => $objectSchema->validate([
+            'name' => 'John Doe',
+            'age' => 30,
+        ]))
+        ->toThrow(SchemaException::class, 'The required properties (email) are missing')
+        ->and(fn() => $objectSchema->validate([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+        ]))->not->toThrow(SchemaException::class);
+});
+
+it('can require properties that are not yet defined', function (): void {
+    $objectSchema = Schema::object('user')
+        ->requireProperties('name', 'email')
+        ->properties(
+            Schema::string('name'),
+            Schema::string('email'),
+        );
+
+    expect($objectSchema->toArray())->toHaveKey('required', ['name', 'email']);
+});
+
+it('merges repeated properties and property calls rather than replacing', function (): void {
+    $objectSchema = Schema::object('Relationship')
+        ->properties(Schema::string('placeholder'))
+        ->properties(Schema::string('real'))
+        ->property('extra', Schema::integer());
+
+    $schemaArray = $objectSchema->toArray(includeSchemaRef: false);
+
+    expect($schemaArray['properties'])->toHaveKeys(['placeholder', 'real', 'extra'])
+        ->and($objectSchema->getPropertyKeys())
+        ->toBe(['placeholder', 'real', 'extra']);
+});
+
+it('requireAll uses property names from property including untitled schemas', function (): void {
+    $objectSchema = Schema::object('user')
+        ->property('name', Schema::string())
+        ->property('age', Schema::integer())
+        ->requireAll();
+
+    expect($objectSchema->toArray())->toHaveKey('required', ['name', 'age']);
+});

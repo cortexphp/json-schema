@@ -123,7 +123,7 @@ trait HasItems
                 $this->tupleItems,
             );
         } elseif ($this->items !== null) {
-            $schema['items'] = $this->items->toArray();
+            $schema['items'] = $this->items->toArray(includeSchemaRef: false, includeTitle: false);
         }
 
         if ($this->additionalItems !== null) {

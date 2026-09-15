@@ -490,7 +490,6 @@ it('can create array items schema from @param string[] docblock', function (): v
         'description' => "The user's tags",
         'items' => [
             'type' => 'string',
-            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
         ],
     ]);
 });
