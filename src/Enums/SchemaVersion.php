@@ -56,7 +56,7 @@ enum SchemaVersion: string
         }
 
         // Check if this version is not beyond the maximum supported version
-        return ! ($maxVersion instanceof self && $this->getYear() > $maxVersion->getYear());
+        return ! $maxVersion instanceof self || $this->getYear() <= $maxVersion->getYear();
     }
 
     /**

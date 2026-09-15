@@ -5,39 +5,42 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Converters\Concerns;
 
 use ReflectionEnum;
+use ReflectionType;
 use ReflectionNamedType;
 use ReflectionUnionType;
 use ReflectionIntersectionType;
 use Cortex\JsonSchema\Enums\SchemaType;
 use Cortex\JsonSchema\Types\ArraySchema;
 use Cortex\JsonSchema\Types\UnionSchema;
+use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
 trait InteractsWithTypes
 {
+    abstract protected function schemaVersion(): SchemaVersion;
+
     /**
      * Resolve the schema instance from the given reflection type.
      */
-    protected function getSchemaFromReflectionType(
-        ReflectionNamedType|ReflectionUnionType|ReflectionIntersectionType|null $type,
-    ): JsonSchema {
+    protected function getSchemaFromReflectionType(?ReflectionType $type): JsonSchema
+    {
         $schemaTypes = match (true) {
             $type instanceof ReflectionUnionType, $type instanceof ReflectionIntersectionType => array_map(
-                // @phpstan-ignore argument.type
-                fn(ReflectionNamedType $reflectionNamedType): SchemaType => $this->resolveSchemaType(
-                    $reflectionNamedType,
+                fn(ReflectionType $reflectionType): SchemaType => $this->resolveSchemaType(
+                    $this->assertNamedType($reflectionType),
                 ),
                 $type->getTypes(),
             ),
             // If the parameter is not typed or explicitly typed as mixed, we use all schema types
-            in_array($type?->getName(), ['mixed', null], true) => SchemaType::cases(),
-            default => [$this->resolveSchemaType($type)],
+            ! $type instanceof ReflectionType || ($type instanceof ReflectionNamedType && $type->getName() === 'mixed') => SchemaType::cases(),
+            $type instanceof ReflectionNamedType => [$this->resolveSchemaType($type)],
+            default => throw new SchemaException('Unsupported reflection type: ' . $type::class),
         };
 
         return count($schemaTypes) === 1
-            ? $schemaTypes[0]->instance(null, $this->version)
-            : new UnionSchema(array_values($schemaTypes), null, $this->version);
+            ? $schemaTypes[0]->instance(null, $this->schemaVersion())
+            : new UnionSchema(array_values($schemaTypes), null, $this->schemaVersion());
     }
 
     /**
@@ -99,7 +102,19 @@ trait InteractsWithTypes
         }
 
         return count($schemaTypes) === 1
-            ? $schemaTypes[0]->instance(null, $this->version)
-            : new UnionSchema($schemaTypes, null, $this->version);
+            ? $schemaTypes[0]->instance(null, $this->schemaVersion())
+            : new UnionSchema($schemaTypes, null, $this->schemaVersion());
+    }
+
+    /**
+     * Assert that a reflection type from a union/intersection is a named type.
+     */
+    private function assertNamedType(ReflectionType $reflectionType): ReflectionNamedType
+    {
+        if (! $reflectionType instanceof ReflectionNamedType) {
+            throw new SchemaException('Unsupported reflection type in union/intersection: ' . $reflectionType::class);
+        }
+
+        return $reflectionType;
     }
 }

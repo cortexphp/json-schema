@@ -19,18 +19,20 @@
         }
     ],
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "ext-json": "*",
-        "opis/json-schema": "^2.4",
+        "opis/json-schema": "^2.5",
         "phpstan/phpdoc-parser": "^2.3"
     },
     "require-dev": {
-        "pestphp/pest": "^4.1.4",
-        "pestphp/pest-plugin-type-coverage": "^4.0.3",
+        "pestphp/pest": "^5.0",
+        "pestphp/pest-plugin-phpstan": "^5.0",
+        "pestphp/pest-plugin-rector": "^5.0",
+        "pestphp/pest-plugin-type-coverage": "^5.0",
         "phpstan/phpstan": "^2.1.32",
         "phpstan/phpstan-strict-rules": "^2.0",
         "rector/rector": "^2.2",
-        "symplify/easy-coding-standard": "^13.0"
+        "symplify/easy-coding-standard": "~13.1.0"
     },
     "autoload": {
         "psr-4": {
@@ -43,7 +45,7 @@
         }
     },
     "scripts": {
-        "test": "pest",
+        "test": "pest --parallel",
         "ecs": "ecs check --fix",
         "ecs:check": "ecs check",
         "rector": "rector process",

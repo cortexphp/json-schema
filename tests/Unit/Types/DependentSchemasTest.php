@@ -8,6 +8,7 @@ use ReflectionClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\ObjectSchema;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -26,17 +27,22 @@ it('can set a single dependent schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('dependentSchemas');
-    expect($schemaArray['dependentSchemas'])->toHaveKey('credit_card');
-    expect($schemaArray['dependentSchemas']['credit_card'])->toBe([
-        'type' => 'object',
-        'properties' => [
-            'billing_address' => [
-                'type' => 'string',
+    /** @var array<string, mixed> $dependentSchemas */
+    $dependentSchemas = $schemaArray['dependentSchemas'];
+
+    expect($schemaArray)->toHaveKey('dependentSchemas')
+        ->and($dependentSchemas)
+        ->toHaveKey('credit_card')
+        ->and($dependentSchemas['credit_card'])
+        ->toBe([
+            'type' => 'object',
+            'properties' => [
+                'billing_address' => [
+                    'type' => 'string',
+                ],
             ],
-        ],
-        'required' => ['billing_address'],
-    ]);
+            'required' => ['billing_address'],
+        ]);
 
     // Test basic validation
     expect($objectSchema->isValid([
@@ -65,30 +71,30 @@ it('can set multiple dependent schemas at once', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('dependentSchemas');
-    expect($schemaArray['dependentSchemas'])->toHaveKey('credit_card');
-    expect($schemaArray['dependentSchemas'])->toHaveKey('phone');
-
-    expect($schemaArray['dependentSchemas']['credit_card'])->toBe([
-        'type' => 'object',
-        'properties' => [
-            'billing_address' => [
-                'type' => 'string',
+    expect($schemaArray)->toHaveKey('dependentSchemas')
+        ->and($schemaArray['dependentSchemas'])
+        ->toHaveKeys(['credit_card', 'phone'])
+        ->toMatchArray([
+            'credit_card' => [
+                'type' => 'object',
+                'properties' => [
+                    'billing_address' => [
+                        'type' => 'string',
+                    ],
+                ],
+                'required' => ['billing_address'],
             ],
-        ],
-        'required' => ['billing_address'],
-    ]);
-
-    expect($schemaArray['dependentSchemas']['phone'])->toBe([
-        'type' => 'object',
-        'properties' => [
-            'phone_verified' => [
-                'type' => 'string',
-                'enum' => ['yes', 'no'],
+            'phone' => [
+                'type' => 'object',
+                'properties' => [
+                    'phone_verified' => [
+                        'type' => 'string',
+                        'enum' => ['yes', 'no'],
+                    ],
+                ],
+                'required' => ['phone_verified'],
             ],
-        ],
-        'required' => ['phone_verified'],
-    ]);
+        ]);
 });
 
 it('can add dependent schemas one by one', function (): void {
@@ -111,8 +117,9 @@ it('can add dependent schemas one by one', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('dependentSchemas');
-    expect($schemaArray['dependentSchemas'])->toHaveKeys(['credit_card', 'shipping_address']);
+    expect($schemaArray)->toHaveKey('dependentSchemas')
+        ->and($schemaArray['dependentSchemas'])
+        ->toHaveKeys(['credit_card', 'shipping_address']);
 });
 
 it('throws exception when using dependentSchemas with Draft 07', function (): void {
@@ -132,8 +139,8 @@ it('works with Draft 2019-09', function (): void {
         )
         ->dependentSchema('credit_card', Schema::object());
 
-    expect($objectSchema->toArray())->toHaveKey('dependentSchemas');
-    expect($objectSchema->toArray())->toHaveKey('$schema', 'https://json-schema.org/draft/2019-09/schema');
+    expect($objectSchema->toArray())->toHaveKey('dependentSchemas')
+        ->toHaveKey('$schema', 'https://json-schema.org/draft/2019-09/schema');
 });
 
 it('works with Draft 2020-12', function (): void {
@@ -143,8 +150,8 @@ it('works with Draft 2020-12', function (): void {
         )
         ->dependentSchema('credit_card', Schema::object());
 
-    expect($objectSchema->toArray())->toHaveKey('dependentSchemas');
-    expect($objectSchema->toArray())->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
+    expect($objectSchema->toArray())->toHaveKey('dependentSchemas')
+        ->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
 });
 
 it('detects dependentSchemas feature correctly', function (): void {
@@ -158,9 +165,10 @@ it('detects dependentSchemas feature correctly', function (): void {
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($objectSchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->toContain('dependentSchemas');
 });
 
@@ -174,9 +182,10 @@ it('does not include dependentSchemas feature when not used', function (): void 
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($objectSchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->not->toContain('dependentSchemas');
 });
 
@@ -199,12 +208,12 @@ it('can combine with other object properties', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('properties');
-    expect($schemaArray)->toHaveKey('required', ['name', 'email']);
-    expect($schemaArray)->toHaveKey('additionalProperties', false);
-    expect($schemaArray)->toHaveKey('dependentSchemas');
-    expect($schemaArray)->toHaveKey('minProperties', 2);
-    expect($schemaArray)->toHaveKey('maxProperties', 10);
+    expect($schemaArray)->toHaveKey('properties')
+        ->toHaveKey('required', ['name', 'email'])
+        ->toHaveKey('additionalProperties', false)
+        ->toHaveKey('dependentSchemas')
+        ->toHaveKey('minProperties', 2)
+        ->toHaveKey('maxProperties', 10);
 });
 
 it('validates version during schema output', function (): void {
@@ -257,9 +266,10 @@ it('generates correct schema structure for complex scenarios', function (): void
 
     // Verify schema structure
     expect($schemaArray)->toHaveKey('properties');
-    expect($schemaArray)->toHaveKey('required', ['name', 'email']);
-    expect($schemaArray)->toHaveKey('dependentSchemas');
-    expect($schemaArray['dependentSchemas'])->toHaveKeys(['payment_method', 'is_premium']);
+    expect($schemaArray)->toHaveKey('required', ['name', 'email'])
+        ->toHaveKey('dependentSchemas')
+        ->and($schemaArray['dependentSchemas'])
+        ->toHaveKeys(['payment_method', 'is_premium']);
 
     // Test basic validation (defined properties)
     expect($objectSchema->isValid([
@@ -296,22 +306,27 @@ it('generates correct dependent schema JSON output', function (): void {
 
     // Verify main schema structure
     expect($schemaArray)->toHaveKey('type', 'object');
-    expect($schemaArray)->toHaveKey('title', 'user');
-    expect($schemaArray)->toHaveKey('properties');
-    expect($schemaArray)->toHaveKey('required', ['name']);
+    expect($schemaArray)->toHaveKey('title', 'user')
+        ->toHaveKey('properties')
+        ->toHaveKey('required', ['name']);
 
     // Verify dependent schema structure
     expect($schemaArray)->toHaveKey('dependentSchemas');
-    expect($schemaArray['dependentSchemas'])->toHaveKey('credit_card');
-    expect($schemaArray['dependentSchemas']['credit_card'])->toBe([
-        'type' => 'object',
-        'properties' => [
-            'billing_address' => [
-                'type' => 'string',
+
+    /** @var array<string, mixed> $dependentSchemas */
+    $dependentSchemas = $schemaArray['dependentSchemas'];
+
+    expect($dependentSchemas)->toHaveKey('credit_card')
+        ->and($dependentSchemas['credit_card'])
+        ->toBe([
+            'type' => 'object',
+            'properties' => [
+                'billing_address' => [
+                    'type' => 'string',
+                ],
             ],
-        ],
-        'required' => ['billing_address'],
-    ]);
+            'required' => ['billing_address'],
+        ]);
 
     // Test basic validation for data that meets base requirements
     expect($objectSchema->isValid([
@@ -620,8 +635,9 @@ it('throws validation exceptions with detailed messages for dependent schema vio
                 'password' => 'secretpassword123',
             ]);
         } catch (SchemaException $schemaException) {
-            expect($schemaException->getErrors())->toHaveCount(1)->toHaveKey('/username');
-            expect($schemaException->getErrors()['/username'])->toContain('Minimum string length is 3, found 2');
+            expect($schemaException->getErrors())->toHaveCount(1)->toHaveKey('/username')
+                ->and($schemaException->getErrors()['/username'])
+                ->toContain('Minimum string length is 3, found 2');
 
             throw $schemaException;
         }
@@ -635,8 +651,9 @@ it('throws validation exceptions with detailed messages for dependent schema vio
                 'password' => 'short', // Too short
             ]);
         } catch (SchemaException $schemaException) {
-            expect($schemaException->getErrors())->toHaveCount(1)->toHaveKey('/password');
-            expect($schemaException->getErrors()['/password'])->toContain('Minimum string length is 8, found 5');
+            expect($schemaException->getErrors())->toHaveCount(1)->toHaveKey('/password')
+                ->and($schemaException->getErrors()['/password'])
+                ->toContain('Minimum string length is 8, found 5');
 
             throw $schemaException;
         }
@@ -652,10 +669,9 @@ it('throws validation exceptions with detailed messages for dependent schema vio
                 'billing_email' => 'invalid-email-format', // Invalid email
             ]);
         } catch (SchemaException $schemaException) {
-            expect($schemaException->getErrors())->toHaveCount(1)->toHaveKey('/billing_email');
-            expect($schemaException->getErrors()['/billing_email'])->toContain(
-                "The data must match the 'email' format",
-            );
+            expect($schemaException->getErrors())->toHaveCount(1)->toHaveKey('/billing_email')
+                ->and($schemaException->getErrors()['/billing_email'])
+                ->toContain("The data must match the 'email' format");
 
             throw $schemaException;
         }

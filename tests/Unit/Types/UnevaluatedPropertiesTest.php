@@ -7,6 +7,7 @@ namespace Cortex\JsonSchema\Tests\Unit\Types;
 use ReflectionClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\ObjectSchema;
+use Cortex\JsonSchema\Enums\SchemaFeature;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -20,9 +21,9 @@ it('can set unevaluatedProperties to false', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('unevaluatedProperties', false);
-    expect($schemaArray)->toHaveKey('properties.name');
-    expect($schemaArray)->toHaveKey('properties.email');
+    expect($schemaArray)->toHaveKey('unevaluatedProperties', false)
+        ->toHaveKey('properties.name')
+        ->toHaveKey('properties.email');
 
     // Test basic validation (unevaluatedProperties validation requires a full JSON Schema validator)
     expect($objectSchema->isValid([
@@ -65,11 +66,12 @@ it('can set unevaluatedProperties to a schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('unevaluatedProperties');
-    expect($schemaArray['unevaluatedProperties'])->toBe([
-        'type' => 'string',
-        'minLength' => 3,
-    ]);
+    expect($schemaArray)->toHaveKey('unevaluatedProperties')
+        ->and($schemaArray['unevaluatedProperties'])
+        ->toBe([
+            'type' => 'string',
+            'minLength' => 3,
+        ]);
 
     // Test basic validation
     expect($objectSchema->isValid([
@@ -97,8 +99,8 @@ it('works with Draft 2019-09', function (): void {
         )
         ->unevaluatedProperties(false);
 
-    expect($objectSchema->toArray())->toHaveKey('unevaluatedProperties', false);
-    expect($objectSchema->toArray())->toHaveKey('$schema', 'https://json-schema.org/draft/2019-09/schema');
+    expect($objectSchema->toArray())->toHaveKey('unevaluatedProperties', false)
+        ->toHaveKey('$schema', 'https://json-schema.org/draft/2019-09/schema');
 });
 
 it('works with Draft 2020-12', function (): void {
@@ -108,8 +110,8 @@ it('works with Draft 2020-12', function (): void {
         )
         ->unevaluatedProperties(false);
 
-    expect($objectSchema->toArray())->toHaveKey('unevaluatedProperties', false);
-    expect($objectSchema->toArray())->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
+    expect($objectSchema->toArray())->toHaveKey('unevaluatedProperties', false)
+        ->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
 });
 
 it('detects unevaluatedProperties feature correctly', function (): void {
@@ -123,9 +125,10 @@ it('detects unevaluatedProperties feature correctly', function (): void {
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var \Cortex\JsonSchema\Enums\SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($objectSchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->toContain('unevaluatedProperties');
 });
 
@@ -139,9 +142,10 @@ it('does not include unevaluatedProperties feature when not used', function (): 
     $reflection = new ReflectionClass($objectSchema);
     $reflectionMethod = $reflection->getMethod('getUsedFeatures');
 
+    /** @var \Cortex\JsonSchema\Enums\SchemaFeature[] $features */
     $features = $reflectionMethod->invoke($objectSchema);
 
-    $featureValues = array_map(fn($feature) => $feature->value, $features);
+    $featureValues = array_map(fn(SchemaFeature $schemaFeature) => $schemaFeature->value, $features);
     expect($featureValues)->not->toContain('unevaluatedProperties');
 });
 
@@ -158,12 +162,12 @@ it('can combine with other object properties', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('properties');
-    expect($schemaArray)->toHaveKey('required', ['name', 'email']);
-    expect($schemaArray)->toHaveKey('additionalProperties', true);
-    expect($schemaArray)->toHaveKey('unevaluatedProperties', false);
-    expect($schemaArray)->toHaveKey('minProperties', 2);
-    expect($schemaArray)->toHaveKey('maxProperties', 10);
+    expect($schemaArray)->toHaveKey('properties')
+        ->toHaveKey('required', ['name', 'email'])
+        ->toHaveKey('additionalProperties', true)
+        ->toHaveKey('unevaluatedProperties', false)
+        ->toHaveKey('minProperties', 2)
+        ->toHaveKey('maxProperties', 10);
 });
 
 it('validates version during schema output', function (): void {
@@ -199,13 +203,14 @@ it('generates correct schema structure for complex scenarios', function (): void
 
     // Verify schema structure
     expect($schemaArray)->toHaveKey('properties');
-    expect($schemaArray)->toHaveKey('required', ['name']);
-    expect($schemaArray)->toHaveKey('additionalProperties', true);
-    expect($schemaArray)->toHaveKey('unevaluatedProperties');
-    expect($schemaArray['unevaluatedProperties'])->toBe([
-        'type' => 'string',
-        'minLength' => 2,
-    ]);
+    expect($schemaArray)->toHaveKey('required', ['name'])
+        ->toHaveKey('additionalProperties', true)
+        ->toHaveKey('unevaluatedProperties')
+        ->and($schemaArray['unevaluatedProperties'])
+        ->toBe([
+            'type' => 'string',
+            'minLength' => 2,
+        ]);
 
     // Test basic validation (defined properties)
     expect($objectSchema->isValid([

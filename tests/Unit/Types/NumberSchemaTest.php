@@ -18,17 +18,17 @@ it('can create a basic number schema', function (): void {
 
     $schemaArray = $numberSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
-    expect($schemaArray)->toHaveKey('type', 'number');
-    expect($schemaArray)->toHaveKey('title', 'price');
-    expect($schemaArray)->toHaveKey('description', 'Product price');
-    expect($schemaArray)->toHaveKey('minimum', 0);
-    expect($schemaArray)->toHaveKey('maximum', 1000);
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema')
+        ->toHaveKey('type', 'number')
+        ->toHaveKey('title', 'price')
+        ->toHaveKey('description', 'Product price')
+        ->toHaveKey('minimum', 0)
+        ->toHaveKey('maximum', 1000);
 
     // Validation tests
     expect(fn() => $numberSchema->validate(99.99))->not->toThrow(SchemaException::class);
-    expect(fn() => $numberSchema->validate(0))->not->toThrow(SchemaException::class);
-    expect(fn() => $numberSchema->validate(1000))->not->toThrow(SchemaException::class);
+    expect(fn() => $numberSchema->validate(0))->not->toThrow(SchemaException::class)
+        ->and(fn() => $numberSchema->validate(1000))->not->toThrow(SchemaException::class);
 
     // Test out of range values
     expect(fn() => $numberSchema->validate(-1))->toThrow(
@@ -61,14 +61,14 @@ it('can create a number schema with exclusive range', function (): void {
 
     $schemaArray = $numberSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'number');
-    expect($schemaArray)->toHaveKey('exclusiveMinimum', 0);
-    expect($schemaArray)->toHaveKey('exclusiveMaximum', 100);
+    expect($schemaArray)->toHaveKey('type', 'number')
+        ->toHaveKey('exclusiveMinimum', 0)
+        ->toHaveKey('exclusiveMaximum', 100);
 
     // Validation tests
     expect(fn() => $numberSchema->validate(50))->not->toThrow(SchemaException::class);
-    expect(fn() => $numberSchema->validate(0.1))->not->toThrow(SchemaException::class);
-    expect(fn() => $numberSchema->validate(99.9))->not->toThrow(SchemaException::class);
+    expect(fn() => $numberSchema->validate(0.1))->not->toThrow(SchemaException::class)
+        ->and(fn() => $numberSchema->validate(99.9))->not->toThrow(SchemaException::class);
 
     // Test boundary values
     expect(fn() => $numberSchema->validate(0))->toThrow(
@@ -89,13 +89,13 @@ it('can create a number schema with multiple of constraint', function (): void {
 
     $schemaArray = $numberSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'number');
-    expect($schemaArray)->toHaveKey('multipleOf', 0.01);
+    expect($schemaArray)->toHaveKey('type', 'number')
+        ->toHaveKey('multipleOf', 0.01);
 
     // Validation tests
     expect(fn() => $numberSchema->validate(10.50))->not->toThrow(SchemaException::class);
-    expect(fn() => $numberSchema->validate(0.01))->not->toThrow(SchemaException::class);
-    expect(fn() => $numberSchema->validate(100.00))->not->toThrow(SchemaException::class);
+    expect(fn() => $numberSchema->validate(0.01))->not->toThrow(SchemaException::class)
+        ->and(fn() => $numberSchema->validate(100.00))->not->toThrow(SchemaException::class);
 
     // Test invalid multiples
     expect(fn() => $numberSchema->validate(10.505))->toThrow(
@@ -118,9 +118,9 @@ it('can create a nullable number schema', function (): void {
 
     $schemaArray = $numberSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', ['number', 'null']);
-    expect($schemaArray)->toHaveKey('minimum', 0);
-    expect($schemaArray)->toHaveKey('maximum', 100);
+    expect($schemaArray)->toHaveKey('type', ['number', 'null'])
+        ->toHaveKey('minimum', 0)
+        ->toHaveKey('maximum', 100);
 
     // Validation tests
     expect(fn() => $numberSchema->validate(50))->not->toThrow(SchemaException::class);
@@ -151,10 +151,10 @@ it('can create a number schema with enum values', function (): void {
 
     $schemaArray = $numberSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'number');
-    expect($schemaArray)->toHaveKey('title', 'rating');
-    expect($schemaArray)->toHaveKey('description', 'Product rating');
-    expect($schemaArray)->toHaveKey('enum', [1.0, 2.5, 3.0, 4.5, 5.0]);
+    expect($schemaArray)->toHaveKey('type', 'number')
+        ->toHaveKey('title', 'rating')
+        ->toHaveKey('description', 'Product rating')
+        ->toHaveKey('enum', [1.0, 2.5, 3.0, 4.5, 5.0]);
 
     // Validation tests
     expect(fn() => $numberSchema->validate(3.5))->toThrow(
@@ -162,9 +162,9 @@ it('can create a number schema with enum values', function (): void {
         'The data should match one item from enum',
     );
 
-    expect(fn() => $numberSchema->validate(1.0))->not->toThrow(SchemaException::class);
-    expect(fn() => $numberSchema->validate(2.5))->not->toThrow(SchemaException::class);
-    expect(fn() => $numberSchema->validate(5.0))->not->toThrow(SchemaException::class);
+    expect(fn() => $numberSchema->validate(1.0))->not->toThrow(SchemaException::class)
+        ->and(fn() => $numberSchema->validate(2.5))->not->toThrow(SchemaException::class)
+        ->and(fn() => $numberSchema->validate(5.0))->not->toThrow(SchemaException::class);
 });
 
 it('can create a nullable number schema with enum values', function (): void {
@@ -175,10 +175,10 @@ it('can create a nullable number schema with enum values', function (): void {
 
     $schemaArray = $numberSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', ['number', 'null']);
-    expect($schemaArray)->toHaveKey('title', 'discount');
-    expect($schemaArray)->toHaveKey('description', 'Product discount percentage');
-    expect($schemaArray)->toHaveKey('enum', [0.1, 0.25, 0.5, null]);
+    expect($schemaArray)->toHaveKey('type', ['number', 'null'])
+        ->toHaveKey('title', 'discount')
+        ->toHaveKey('description', 'Product discount percentage')
+        ->toHaveKey('enum', [0.1, 0.25, 0.5, null]);
 
     // Validation tests
     expect(fn() => $numberSchema->validate(0.75))->toThrow(
@@ -186,10 +186,10 @@ it('can create a nullable number schema with enum values', function (): void {
         'The data should match one item from enum',
     );
 
-    expect(fn() => $numberSchema->validate(0.1))->not->toThrow(SchemaException::class);
-    expect(fn() => $numberSchema->validate(0.25))->not->toThrow(SchemaException::class);
-    expect(fn() => $numberSchema->validate(0.5))->not->toThrow(SchemaException::class);
-    expect(fn() => $numberSchema->validate(null))->not->toThrow(SchemaException::class);
+    expect(fn() => $numberSchema->validate(0.1))->not->toThrow(SchemaException::class)
+        ->and(fn() => $numberSchema->validate(0.25))->not->toThrow(SchemaException::class)
+        ->and(fn() => $numberSchema->validate(0.5))->not->toThrow(SchemaException::class)
+        ->and(fn() => $numberSchema->validate(null))->not->toThrow(SchemaException::class);
 });
 
 it('can create a number schema with const value', function (): void {
@@ -199,10 +199,10 @@ it('can create a number schema with const value', function (): void {
 
     $schemaArray = $numberSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'number');
-    expect($schemaArray)->toHaveKey('title', 'tax_rate');
-    expect($schemaArray)->toHaveKey('description', 'Fixed tax rate percentage');
-    expect($schemaArray)->toHaveKey('const', 0.21);
+    expect($schemaArray)->toHaveKey('type', 'number')
+        ->toHaveKey('title', 'tax_rate')
+        ->toHaveKey('description', 'Fixed tax rate percentage')
+        ->toHaveKey('const', 0.21);
 
     // Validation tests
     expect(fn() => $numberSchema->validate(0.20))->toThrow(
@@ -221,10 +221,10 @@ it('can create a nullable number schema with const value', function (): void {
 
     $schemaArray = $numberSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', ['number', 'null']);
-    expect($schemaArray)->toHaveKey('title', 'standard_fee');
-    expect($schemaArray)->toHaveKey('description', 'Standard processing fee');
-    expect($schemaArray)->toHaveKey('const', null);
+    expect($schemaArray)->toHaveKey('type', ['number', 'null'])
+        ->toHaveKey('title', 'standard_fee')
+        ->toHaveKey('description', 'Standard processing fee')
+        ->toHaveKey('const', null);
 
     // Validation tests
     expect(fn() => $numberSchema->validate(0.0))->toThrow(

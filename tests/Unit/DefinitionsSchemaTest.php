@@ -22,9 +22,13 @@ it('can add a single definition to a schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$defs.address');
-    expect($schemaArray['$defs']['address'])->toHaveKey('type', 'object');
-    expect($schemaArray['$defs']['address'])->toHaveKey('required', ['street', 'city', 'country']);
+    /** @var array<string, array<string, mixed>> $defs */
+    $defs = $schemaArray['$defs'];
+
+    expect($schemaArray)->toHaveKey('$defs.address')
+        ->and($defs['address'])
+        ->toHaveKey('type', 'object')
+        ->toHaveKey('required', ['street', 'city', 'country']);
 });
 
 it('can add multiple definitions to a schema', function (): void {
@@ -46,10 +50,14 @@ it('can add multiple definitions to a schema', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$defs.address');
-    expect($schemaArray)->toHaveKey('$defs.contact');
-    expect($schemaArray['$defs']['address'])->toHaveKey('required', ['street', 'city']);
-    expect($schemaArray['$defs']['contact'])->toHaveKey('required', ['email']);
+    /** @var array<string, array<string, mixed>> $defs */
+    $defs = $schemaArray['$defs'];
+
+    expect($schemaArray)->toHaveKeys(['$defs.address', '$defs.contact'])
+        ->and($defs['address'])
+        ->toHaveKey('required', ['street', 'city'])
+        ->and($defs['contact'])
+        ->toHaveKey('required', ['email']);
 });
 
 it('can reference a definition in a schema property', function (): void {
@@ -72,9 +80,9 @@ it('can reference a definition in a schema property', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$defs.address');
-    expect($schemaArray)->toHaveKey('properties.billing_address.$ref', '#/$defs/address');
-    expect($schemaArray)->toHaveKey('properties.shipping_address.$ref', '#/$defs/address');
+    expect($schemaArray)->toHaveKey('$defs.address')
+        ->toHaveKey('properties.billing_address.$ref', '#/$defs/address')
+        ->toHaveKey('properties.shipping_address.$ref', '#/$defs/address');
 });
 
 it('validates data against a schema with referenced definitions', function (): void {

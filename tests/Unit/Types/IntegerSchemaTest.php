@@ -18,17 +18,17 @@ it('can create a basic integer schema', function (): void {
 
     $schemaArray = $integerSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
-    expect($schemaArray)->toHaveKey('type', 'integer');
-    expect($schemaArray)->toHaveKey('title', 'age');
-    expect($schemaArray)->toHaveKey('description', 'User age');
-    expect($schemaArray)->toHaveKey('minimum', 0);
-    expect($schemaArray)->toHaveKey('maximum', 120);
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema')
+        ->toHaveKey('type', 'integer')
+        ->toHaveKey('title', 'age')
+        ->toHaveKey('description', 'User age')
+        ->toHaveKey('minimum', 0)
+        ->toHaveKey('maximum', 120);
 
     // Validation tests
     expect(fn() => $integerSchema->validate(25))->not->toThrow(SchemaException::class);
-    expect(fn() => $integerSchema->validate(0))->not->toThrow(SchemaException::class);
-    expect(fn() => $integerSchema->validate(120))->not->toThrow(SchemaException::class);
+    expect(fn() => $integerSchema->validate(0))->not->toThrow(SchemaException::class)
+        ->and(fn() => $integerSchema->validate(120))->not->toThrow(SchemaException::class);
 
     // Test out of range values
     expect(fn() => $integerSchema->validate(-1))->toThrow(
@@ -50,12 +50,9 @@ it('can create a basic integer schema', function (): void {
     expect(fn() => $integerSchema->validate('25'))->toThrow(
         SchemaException::class,
         'The data (string) must match the type: integer',
-    );
-
-    expect(fn() => $integerSchema->validate(null))->toThrow(
-        SchemaException::class,
-        'The data (null) must match the type: integer',
-    );
+    )
+        ->and(fn() => $integerSchema->validate(null))
+        ->toThrow(SchemaException::class, 'The data (null) must match the type: integer');
 });
 
 it('can create an integer schema with exclusive range', function (): void {
@@ -66,14 +63,14 @@ it('can create an integer schema with exclusive range', function (): void {
 
     $schemaArray = $integerSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'integer');
-    expect($schemaArray)->toHaveKey('exclusiveMinimum', 0);
-    expect($schemaArray)->toHaveKey('exclusiveMaximum', 100);
+    expect($schemaArray)->toHaveKey('type', 'integer')
+        ->toHaveKey('exclusiveMinimum', 0)
+        ->toHaveKey('exclusiveMaximum', 100);
 
     // Validation tests
     expect(fn() => $integerSchema->validate(50))->not->toThrow(SchemaException::class);
-    expect(fn() => $integerSchema->validate(1))->not->toThrow(SchemaException::class);
-    expect(fn() => $integerSchema->validate(99))->not->toThrow(SchemaException::class);
+    expect(fn() => $integerSchema->validate(1))->not->toThrow(SchemaException::class)
+        ->and(fn() => $integerSchema->validate(99))->not->toThrow(SchemaException::class);
 
     // Test boundary values
     expect(fn() => $integerSchema->validate(0))->toThrow(
@@ -94,13 +91,13 @@ it('can create an integer schema with multiple of constraint', function (): void
 
     $schemaArray = $integerSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'integer');
-    expect($schemaArray)->toHaveKey('multipleOf', 5);
+    expect($schemaArray)->toHaveKey('type', 'integer')
+        ->toHaveKey('multipleOf', 5);
 
     // Validation tests
     expect(fn() => $integerSchema->validate(5))->not->toThrow(SchemaException::class);
-    expect(fn() => $integerSchema->validate(10))->not->toThrow(SchemaException::class);
-    expect(fn() => $integerSchema->validate(100))->not->toThrow(SchemaException::class);
+    expect(fn() => $integerSchema->validate(10))->not->toThrow(SchemaException::class)
+        ->and(fn() => $integerSchema->validate(100))->not->toThrow(SchemaException::class);
 
     // Test invalid multiples
     expect(fn() => $integerSchema->validate(7))->toThrow(
@@ -129,9 +126,9 @@ it('can create a nullable integer schema', function (): void {
 
     $schemaArray = $integerSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', ['integer', 'null']);
-    expect($schemaArray)->toHaveKey('minimum', 1);
-    expect($schemaArray)->toHaveKey('maximum', 5);
+    expect($schemaArray)->toHaveKey('type', ['integer', 'null'])
+        ->toHaveKey('minimum', 1)
+        ->toHaveKey('maximum', 5);
 
     // Validation tests
     expect(fn() => $integerSchema->validate(3))->not->toThrow(SchemaException::class);
@@ -197,8 +194,8 @@ it('accepts valid multipleOf values including 1', function (): void {
 
     // Any integer should be valid with multipleOf = 1
     expect(fn() => $integerSchema->validate(5))->not->toThrow(SchemaException::class);
-    expect(fn() => $integerSchema->validate(100))->not->toThrow(SchemaException::class);
-    expect(fn() => $integerSchema->validate(-5))->not->toThrow(SchemaException::class);
+    expect(fn() => $integerSchema->validate(100))->not->toThrow(SchemaException::class)
+        ->and(fn() => $integerSchema->validate(-5))->not->toThrow(SchemaException::class);
 });
 
 it('validates multipleOf boundary conditions', function (): void {

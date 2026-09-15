@@ -17,10 +17,10 @@ it('can create a basic null schema', function (): void {
 
     $schemaArray = $nullSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
-    expect($schemaArray)->toHaveKey('type', 'null');
-    expect($schemaArray)->toHaveKey('title', 'deleted_at');
-    expect($schemaArray)->toHaveKey('description', 'Soft delete timestamp');
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema')
+        ->toHaveKey('type', 'null')
+        ->toHaveKey('title', 'deleted_at')
+        ->toHaveKey('description', 'Soft delete timestamp');
 
     // Validation tests
     expect(fn() => $nullSchema->validate(null))->not->toThrow(SchemaException::class);
@@ -34,22 +34,13 @@ it('can create a basic null schema', function (): void {
     expect(fn() => $nullSchema->validate(''))->toThrow(
         SchemaException::class,
         'The data (string) must match the type: null',
-    );
-
-    expect(fn() => $nullSchema->validate(false))->toThrow(
-        SchemaException::class,
-        'The data (boolean) must match the type: null',
-    );
-
-    expect(fn() => $nullSchema->validate([]))->toThrow(
-        SchemaException::class,
-        'The data (array) must match the type: null',
-    );
-
-    expect(fn() => $nullSchema->validate(new stdClass()))->toThrow(
-        SchemaException::class,
-        'The data (object) must match the type: null',
-    );
+    )
+        ->and(fn() => $nullSchema->validate(false))
+        ->toThrow(SchemaException::class, 'The data (boolean) must match the type: null')
+        ->and(fn() => $nullSchema->validate([]))
+        ->toThrow(SchemaException::class, 'The data (array) must match the type: null')
+        ->and(fn() => $nullSchema->validate(new stdClass()))
+        ->toThrow(SchemaException::class, 'The data (object) must match the type: null');
 });
 
 it('can create a read-only null schema', function (): void {
@@ -59,10 +50,10 @@ it('can create a read-only null schema', function (): void {
 
     $schemaArray = $nullSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'null');
-    expect($schemaArray)->toHaveKey('title', 'archived_at');
-    expect($schemaArray)->toHaveKey('description', 'Archive timestamp');
-    expect($schemaArray)->toHaveKey('readOnly', true);
+    expect($schemaArray)->toHaveKey('type', 'null')
+        ->toHaveKey('title', 'archived_at')
+        ->toHaveKey('description', 'Archive timestamp')
+        ->toHaveKey('readOnly', true);
 
     // Validation tests
     expect(fn() => $nullSchema->validate(null))->not->toThrow(SchemaException::class);

@@ -7,15 +7,10 @@ namespace Cortex\JsonSchema\Tests\Unit;
 use stdClass;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaType;
-use Cortex\JsonSchema\Types\NullSchema;
-use Cortex\JsonSchema\Types\ArraySchema;
-use Cortex\JsonSchema\Types\UnionSchema;
-use Cortex\JsonSchema\Types\NumberSchema;
 use Cortex\JsonSchema\Types\ObjectSchema;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Enums\SchemaVersion;
 use Cortex\JsonSchema\Types\BooleanSchema;
-use Cortex\JsonSchema\Types\IntegerSchema;
 use Cortex\JsonSchema\Contracts\JsonSchema;
 use Cortex\JsonSchema\Exceptions\SchemaException;
 
@@ -23,31 +18,31 @@ covers(Schema::class);
 
 it('can create different schema types', function (): void {
     // Test array schema creation
-    expect(Schema::array('items'))->toBeInstanceOf(ArraySchema::class);
+    expect(Schema::array('items')->getTitle())->toBe('items');
 
     // Test boolean schema creation
-    expect(Schema::boolean('active'))->toBeInstanceOf(BooleanSchema::class);
+    expect(Schema::boolean('active')->getTitle())->toBe('active');
 
     // Test integer schema creation
-    expect(Schema::integer('count'))->toBeInstanceOf(IntegerSchema::class);
+    expect(Schema::integer('count')->getTitle())->toBe('count');
 
     // Test null schema creation
-    expect(Schema::null('deleted_at'))->toBeInstanceOf(NullSchema::class);
+    expect(Schema::null('deleted_at')->getTitle())->toBe('deleted_at');
 
     // Test number schema creation
-    expect(Schema::number('price'))->toBeInstanceOf(NumberSchema::class);
+    expect(Schema::number('price')->getTitle())->toBe('price');
 
     // Test object schema creation
-    expect(Schema::object('user'))->toBeInstanceOf(ObjectSchema::class);
+    expect(Schema::object('user')->getTitle())->toBe('user');
 
     // Test string schema creation
-    expect(Schema::string('name'))->toBeInstanceOf(StringSchema::class);
+    expect(Schema::string('name')->getTitle())->toBe('name');
 
     // Test union schema creation
-    expect(Schema::union([SchemaType::String, SchemaType::Integer]))->toBeInstanceOf(UnionSchema::class);
+    expect(Schema::union([SchemaType::String, SchemaType::Integer])->toArray()['type'])->toBe(['string', 'integer']);
 
     // Test mixed schema creation
-    expect(Schema::mixed())->toBeInstanceOf(UnionSchema::class);
+    expect(Schema::mixed()->toArray()['type'])->toHaveCount(7);
 });
 
 it('can create schemas with default metadata', function (): void {
@@ -58,43 +53,43 @@ it('can create schemas with default metadata', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
-    expect($schemaArray)->toHaveKey('title', 'title');
-    expect($schemaArray)->toHaveKey('description', 'Description');
-    expect($schemaArray)->toHaveKey('readOnly', true);
-    expect($schemaArray)->toHaveKey('writeOnly', true);
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema')
+        ->toHaveKey('title', 'title')
+        ->toHaveKey('description', 'Description')
+        ->toHaveKey('readOnly', true)
+        ->toHaveKey('writeOnly', true);
 });
 
 it('can create a schema from a closure', function (): void {
     $closure = function (string $name, array $fooArray, ?int $age = null): void {};
     $objectSchema = Schema::fromClosure($closure);
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
-    expect($objectSchema->toArray())->toBe([
-        'type' => 'object',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'properties' => [
-            'name' => [
-                'type' => 'string',
-            ],
-            'fooArray' => [
-                'type' => 'array',
-            ],
-            'age' => [
-                'type' => [
-                    'integer',
-                    'null',
+    expect($objectSchema->toArray())
+        ->toBe([
+            'type' => 'object',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
                 ],
-                'default' => null,
+                'fooArray' => [
+                    'type' => 'array',
+                ],
+                'age' => [
+                    'type' => [
+                        'integer',
+                        'null',
+                    ],
+                    'default' => null,
+                ],
             ],
-        ],
-        'required' => [
-            'name',
-            'fooArray',
-        ],
-    ]);
-
-    expect($objectSchema->toJson())->toBe(json_encode($objectSchema->toArray()));
+            'required' => [
+                'name',
+                'fooArray',
+            ],
+        ])
+        ->and($objectSchema->toJson())
+        ->toBe(json_encode($objectSchema->toArray()));
 
     // Assert that the from method behaves in the same way as the fromClosure method
     expect(Schema::from($closure))->toEqual($objectSchema);
@@ -112,24 +107,24 @@ it('can create a schema from a class', function (): void {
 
     $objectSchema = Schema::fromClass($class, publicOnly: true);
 
-    expect($objectSchema)->toBeInstanceOf(ObjectSchema::class);
-    expect($objectSchema->toArray())->toBe([
-        'type' => 'object',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'description' => 'This is the description of the class',
-        'properties' => [
-            'name' => [
-                'type' => 'string',
+    expect($objectSchema->toArray())
+        ->toBe([
+            'type' => 'object',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'description' => 'This is the description of the class',
+            'properties' => [
+                'name' => [
+                    'type' => 'string',
+                ],
+                'age' => [
+                    'type' => 'integer',
+                    'default' => 20,
+                ],
             ],
-            'age' => [
-                'type' => 'integer',
-                'default' => 20,
+            'required' => [
+                'name',
             ],
-        ],
-        'required' => [
-            'name',
-        ],
-    ]);
+        ]);
 
     // Assert that the from method behaves in the same way as the fromClass method
     expect(Schema::from($class))->toEqual($objectSchema);
@@ -149,14 +144,15 @@ it('can create a schema from an enum', function (): void {
 
     $schema = Schema::fromEnum(UserRole::class);
 
-    expect($schema)->toBeInstanceOf(StringSchema::class);
-    expect($schema->toArray())->toBe([
-        'type' => 'string',
-        '$schema' => 'https://json-schema.org/draft/2020-12/schema',
-        'title' => 'UserRole',
-        'description' => 'This is a custom enum for testing',
-        'enum' => ['admin', 'editor', 'viewer', 'guest'],
-    ]);
+    expect($schema)->toBeInstanceOf(StringSchema::class)
+        ->and($schema->toArray())
+        ->toBe([
+            'type' => 'string',
+            '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+            'title' => 'UserRole',
+            'description' => 'This is a custom enum for testing',
+            'enum' => ['admin', 'editor', 'viewer', 'guest'],
+        ]);
 
     // Assert that the from method behaves in the same way as the fromEnum method
     expect(Schema::from(UserRole::class))->toEqual($schema);
@@ -205,14 +201,12 @@ it('handles fromClass publicOnly parameter correctly', function (): void {
     // Test with publicOnly = true (default)
     $objectSchema = Schema::fromClass($testClass, true);
     $publicOnlyArray = $objectSchema->toArray();
-    expect($publicOnlyArray['properties'])->toHaveKey('publicProp');
-    expect($publicOnlyArray['properties'])->not->toHaveKey('protectedProp');
+    expect($publicOnlyArray['properties'])->toHaveKey('publicProp')->not->toHaveKey('protectedProp');
 
     // Test with publicOnly = false
     $allPropsSchema = Schema::fromClass($testClass, false);
     $allPropsArray = $allPropsSchema->toArray();
-    expect($allPropsArray['properties'])->toHaveKey('publicProp');
-    expect($allPropsArray['properties'])->toHaveKey('protectedProp');
+    expect($allPropsArray['properties'])->toHaveKeys(['publicProp', 'protectedProp']);
 });
 
 it('tests from method with various input types', function (): void {
@@ -296,9 +290,8 @@ it('tests specific enum boolean logic edge case', function (): void {
     expect(Schema::from('DateTime'))->toBeInstanceOf(ObjectSchema::class);
 
     expect(fn(): JsonSchema => Schema::from('NonExistentClass'))
-        ->toThrow(SchemaException::class, 'Unsupported value type');
-
-    expect(fn(): JsonSchema => Schema::from('invalid json'))
+        ->toThrow(SchemaException::class, 'Unsupported value type')
+        ->and(fn(): JsonSchema => Schema::from('invalid json'))
         ->toThrow(SchemaException::class, 'Unsupported value type');
 });
 
@@ -323,15 +316,13 @@ it('tests fromClass default parameter behavior', function (): void {
 
     // Verify that only public properties are included by default
     $schemaArray = $objectSchema->toArray();
-    expect($schemaArray['properties'])->toHaveKey('publicProp');
-    expect($schemaArray['properties'])->not->toHaveKey('privateProp');
+    expect($schemaArray['properties'])->toHaveKey('publicProp')->not->toHaveKey('privateProp');
 
     // Test that explicitly setting false gives different results
     $falseSchema = Schema::fromClass($testClass, false);
     $falseSchemaArray = $falseSchema->toArray();
-    expect($falseSchemaArray['properties'])->toHaveKey('publicProp');
-    expect($falseSchemaArray['properties'])->toHaveKey('privateProp');
-    expect($falseSchema->toArray())->not->toBe($objectSchema->toArray());
+    expect($falseSchemaArray['properties'])->toHaveKeys(['publicProp', 'privateProp'])
+        ->and($falseSchema->toArray())->not->toBe($objectSchema->toArray());
 });
 
 it('tests enum type checking edge case', function (): void {

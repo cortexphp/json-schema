@@ -17,16 +17,17 @@ it('can create a union schema with multiple types', function (): void {
 
     $schemaArray = $unionSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', ['string', 'integer']);
-    expect($schemaArray)->toHaveKey('title', 'id');
-    expect($schemaArray)->toHaveKey('description', 'ID can be either a string or an integer');
+    expect($schemaArray)->toHaveKey('type', ['string', 'integer'])
+        ->toHaveKey('title', 'id')
+        ->toHaveKey('description', 'ID can be either a string or an integer');
 
     // Test validation
     expect(fn() => $unionSchema->validate('abc123'))->not->toThrow(SchemaException::class);
-    expect(fn() => $unionSchema->validate(123))->not->toThrow(SchemaException::class);
-
-    expect(fn() => $unionSchema->validate(true))->toThrow(SchemaException::class);
-    expect(fn() => $unionSchema->validate(null))->toThrow(SchemaException::class);
+    expect(fn() => $unionSchema->validate(123))->not->toThrow(SchemaException::class)
+        ->and(fn() => $unionSchema->validate(true))
+        ->toThrow(SchemaException::class)
+        ->and(fn() => $unionSchema->validate(null))
+        ->toThrow(SchemaException::class);
 });
 
 it('can create a nullable union schema', function (): void {
@@ -39,10 +40,10 @@ it('can create a nullable union schema', function (): void {
 
     // Test validation
     expect(fn() => $unionSchema->validate('abc'))->not->toThrow(SchemaException::class);
-    expect(fn() => $unionSchema->validate(123.45))->not->toThrow(SchemaException::class);
-    expect(fn() => $unionSchema->validate(null))->not->toThrow(SchemaException::class);
-
-    expect(fn() => $unionSchema->validate(true))->toThrow(SchemaException::class);
+    expect(fn() => $unionSchema->validate(123.45))->not->toThrow(SchemaException::class)
+        ->and(fn() => $unionSchema->validate(null))->not->toThrow(SchemaException::class)
+        ->and(fn() => $unionSchema->validate(true))
+        ->toThrow(SchemaException::class);
 });
 
 it('can create a union schema with enum values', function (): void {
@@ -51,17 +52,18 @@ it('can create a union schema with enum values', function (): void {
 
     $schemaArray = $unionSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', ['string', 'integer']);
-    expect($schemaArray)->toHaveKey('enum', ['pending', 'active', 1, 2]);
+    expect($schemaArray)->toHaveKey('type', ['string', 'integer'])
+        ->toHaveKey('enum', ['pending', 'active', 1, 2]);
 
     // Test validation
     expect(fn() => $unionSchema->validate('pending'))->not->toThrow(SchemaException::class);
-    expect(fn() => $unionSchema->validate('active'))->not->toThrow(SchemaException::class);
-    expect(fn() => $unionSchema->validate(1))->not->toThrow(SchemaException::class);
-    expect(fn() => $unionSchema->validate(2))->not->toThrow(SchemaException::class);
-
-    expect(fn() => $unionSchema->validate('invalid'))->toThrow(SchemaException::class);
-    expect(fn() => $unionSchema->validate(3))->toThrow(SchemaException::class);
+    expect(fn() => $unionSchema->validate('active'))->not->toThrow(SchemaException::class)
+        ->and(fn() => $unionSchema->validate(1))->not->toThrow(SchemaException::class)
+        ->and(fn() => $unionSchema->validate(2))->not->toThrow(SchemaException::class)
+        ->and(fn() => $unionSchema->validate('invalid'))
+        ->toThrow(SchemaException::class)
+        ->and(fn() => $unionSchema->validate(3))
+        ->toThrow(SchemaException::class);
 });
 
 it('can create a union schema with const value', function (): void {
@@ -70,13 +72,14 @@ it('can create a union schema with const value', function (): void {
 
     $schemaArray = $unionSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', ['string', 'integer']);
-    expect($schemaArray)->toHaveKey('const', 'test');
+    expect($schemaArray)->toHaveKey('type', ['string', 'integer'])
+        ->toHaveKey('const', 'test');
 
     // Test validation
     expect(fn() => $unionSchema->validate('test'))->not->toThrow(SchemaException::class);
-    expect(fn() => $unionSchema->validate('other'))->toThrow(SchemaException::class);
-    expect(fn() => $unionSchema->validate(123))->toThrow(SchemaException::class);
+    expect(fn() => $unionSchema->validate('other'))->toThrow(SchemaException::class)
+        ->and(fn() => $unionSchema->validate(123))
+        ->toThrow(SchemaException::class);
 });
 
 it('can create a union schema with metadata', function (): void {
@@ -87,10 +90,10 @@ it('can create a union schema with metadata', function (): void {
 
     $schemaArray = $unionSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', ['string', 'number']);
-    expect($schemaArray)->toHaveKey('description', 'A mixed type field');
-    expect($schemaArray)->toHaveKey('default', 'test');
-    expect($schemaArray)->toHaveKey('readOnly', true);
+    expect($schemaArray)->toHaveKey('type', ['string', 'number'])
+        ->toHaveKey('description', 'A mixed type field')
+        ->toHaveKey('default', 'test')
+        ->toHaveKey('readOnly', true);
 });
 
 it('throws exception when creating union schema with no types', function (): void {

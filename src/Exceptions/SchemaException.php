@@ -15,7 +15,7 @@ class SchemaException extends Exception
     public static function failedValidation(ValidationError $validationError): self
     {
         $exception = new self(
-            (new ErrorFormatter())->formatErrorMessage($validationError),
+            new ErrorFormatter()->formatErrorMessage($validationError),
         );
 
         $exception->setError($validationError);

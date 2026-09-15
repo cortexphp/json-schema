@@ -12,8 +12,8 @@ it('can create a schema with a $ref', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$ref', '#/definitions/custom');
-    expect($schemaArray)->toHaveKey('type', 'string');
+    expect($schemaArray)->toHaveKey('$ref', '#/definitions/custom')
+        ->toHaveKey('type', 'string');
 });
 
 it('can create a schema with both $ref and other properties', function (): void {
@@ -24,7 +24,7 @@ it('can create a schema with both $ref and other properties', function (): void 
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$ref', '#/definitions/custom');
-    expect($schemaArray)->toHaveKey('type', ['string', 'null']);
-    expect($schemaArray)->toHaveKey('description', 'A custom type');
+    expect($schemaArray)->toHaveKey('$ref', '#/definitions/custom')
+        ->toHaveKey('type', ['string', 'null'])
+        ->toHaveKey('description', 'A custom type');
 });

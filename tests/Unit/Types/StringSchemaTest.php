@@ -22,12 +22,12 @@ it('can create a string schema with length constraints', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema');
-    expect($schemaArray)->toHaveKey('type', 'string');
-    expect($schemaArray)->toHaveKey('title', 'username');
-    expect($schemaArray)->toHaveKey('description', 'Username for the account');
-    expect($schemaArray)->toHaveKey('minLength', 3);
-    expect($schemaArray)->toHaveKey('maxLength', 50);
+    expect($schemaArray)->toHaveKey('$schema', 'https://json-schema.org/draft/2020-12/schema')
+        ->toHaveKey('type', 'string')
+        ->toHaveKey('title', 'username')
+        ->toHaveKey('description', 'Username for the account')
+        ->toHaveKey('minLength', 3)
+        ->toHaveKey('maxLength', 50);
 
     // Validation tests
     expect(fn() => $stringSchema->validate('ab'))->toThrow(
@@ -38,9 +38,8 @@ it('can create a string schema with length constraints', function (): void {
     expect(fn() => $stringSchema->validate(str_repeat('a', 51)))->toThrow(
         SchemaException::class,
         'Maximum string length is 50, found 51',
-    );
-
-    expect(fn() => $stringSchema->validate('valid-username'))->not->toThrow(SchemaException::class);
+    )
+        ->and(fn() => $stringSchema->validate('valid-username'))->not->toThrow(SchemaException::class);
 });
 
 it('throws an exception if the minLength is greater than the maxLength', function (): void {
@@ -67,11 +66,11 @@ it('can create a string schema with pattern validation', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'string');
-    expect($schemaArray)->toHaveKey('title', 'password');
-    expect($schemaArray)->toHaveKey('description', 'User password');
-    expect($schemaArray)->toHaveKey('pattern', '^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$');
-    expect($schemaArray)->toHaveKey('minLength', 8);
+    expect($schemaArray)->toHaveKey('type', 'string')
+        ->toHaveKey('title', 'password')
+        ->toHaveKey('description', 'User password')
+        ->toHaveKey('pattern', '^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$')
+        ->toHaveKey('minLength', 8);
 
     // Validation tests
     expect(fn() => $stringSchema->validate('short1'))->toThrow(
@@ -82,14 +81,10 @@ it('can create a string schema with pattern validation', function (): void {
     expect(fn() => $stringSchema->validate('onlyletters'))->toThrow(
         SchemaException::class,
         'The string should match pattern: ^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$',
-    );
-
-    expect(fn() => $stringSchema->validate('12345678'))->toThrow(
-        SchemaException::class,
-        'The string should match pattern: ^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$',
-    );
-
-    expect(fn() => $stringSchema->validate('password123'))->not->toThrow(SchemaException::class);
+    )
+        ->and(fn() => $stringSchema->validate('12345678'))
+        ->toThrow(SchemaException::class, 'The string should match pattern: ^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$')
+        ->and(fn() => $stringSchema->validate('password123'))->not->toThrow(SchemaException::class);
 });
 
 it('can create a string schema with format', function (): void {
@@ -99,10 +94,10 @@ it('can create a string schema with format', function (): void {
 
     $schemaArray = $schema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'string');
-    expect($schemaArray)->toHaveKey('title', 'email');
-    expect($schemaArray)->toHaveKey('description', 'User email address');
-    expect($schemaArray)->toHaveKey('format', 'email');
+    expect($schemaArray)->toHaveKey('type', 'string')
+        ->toHaveKey('title', 'email')
+        ->toHaveKey('description', 'User email address')
+        ->toHaveKey('format', 'email');
 
     // Validation tests
     expect(fn() => $schema->validate('not-an-email'))->toThrow(
@@ -126,22 +121,21 @@ it('can create a nullable string schema', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', ['string', 'null']);
-    expect($schemaArray)->toHaveKey('title', 'middle_name');
-    expect($schemaArray)->toHaveKey('description', 'User middle name');
+    expect($schemaArray)->toHaveKey('type', ['string', 'null'])
+        ->toHaveKey('title', 'middle_name')
+        ->toHaveKey('description', 'User middle name');
 
     // Validation tests
     expect(fn() => $stringSchema->validate(null))->not->toThrow(SchemaException::class);
-    expect(fn() => $stringSchema->validate('John'))->not->toThrow(SchemaException::class);
-
-    expect($stringSchema->isValid(null))->toBeTrue();
-    expect($stringSchema->isValid('John'))->toBeTrue();
-
-    expect(fn() => $stringSchema->validate(123))->toThrow(
-        SchemaException::class,
-        'The data (integer) must match the type: string, null',
-    );
-    expect($stringSchema->isValid(123))->toBeFalse();
+    expect(fn() => $stringSchema->validate('John'))->not->toThrow(SchemaException::class)
+        ->and($stringSchema->isValid(null))
+        ->toBeTrue()
+        ->and($stringSchema->isValid('John'))
+        ->toBeTrue()
+        ->and(fn() => $stringSchema->validate(123))
+        ->toThrow(SchemaException::class, 'The data (integer) must match the type: string, null')
+        ->and($stringSchema->isValid(123))
+        ->toBeFalse();
 });
 
 it('can create a read-only string schema', function (): void {
@@ -152,11 +146,11 @@ it('can create a read-only string schema', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'string');
-    expect($schemaArray)->toHaveKey('title', 'created_at');
-    expect($schemaArray)->toHaveKey('description', 'Record creation timestamp');
-    expect($schemaArray)->toHaveKey('format', 'date-time');
-    expect($schemaArray)->toHaveKey('readOnly', true);
+    expect($schemaArray)->toHaveKey('type', 'string')
+        ->toHaveKey('title', 'created_at')
+        ->toHaveKey('description', 'Record creation timestamp')
+        ->toHaveKey('format', 'date-time')
+        ->toHaveKey('readOnly', true);
 
     // Validation tests
     expect(fn() => $stringSchema->validate('not-a-date'))->toThrow(
@@ -174,10 +168,10 @@ it('can create a string schema with enum values', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', 'string');
-    expect($schemaArray)->toHaveKey('title', 'status');
-    expect($schemaArray)->toHaveKey('description', 'Current status of the record');
-    expect($schemaArray)->toHaveKey('enum', ['draft', 'published', 'archived']);
+    expect($schemaArray)->toHaveKey('type', 'string')
+        ->toHaveKey('title', 'status')
+        ->toHaveKey('description', 'Current status of the record')
+        ->toHaveKey('enum', ['draft', 'published', 'archived']);
 
     // Validation tests
     expect(fn() => $stringSchema->validate('pending'))->toThrow(
@@ -185,9 +179,9 @@ it('can create a string schema with enum values', function (): void {
         'The data should match one item from enum',
     );
 
-    expect(fn() => $stringSchema->validate('draft'))->not->toThrow(SchemaException::class);
-    expect(fn() => $stringSchema->validate('published'))->not->toThrow(SchemaException::class);
-    expect(fn() => $stringSchema->validate('archived'))->not->toThrow(SchemaException::class);
+    expect(fn() => $stringSchema->validate('draft'))->not->toThrow(SchemaException::class)
+        ->and(fn() => $stringSchema->validate('published'))->not->toThrow(SchemaException::class)
+        ->and(fn() => $stringSchema->validate('archived'))->not->toThrow(SchemaException::class);
 });
 
 it('can create a nullable string schema with enum values', function (): void {
@@ -198,10 +192,10 @@ it('can create a nullable string schema with enum values', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('type', ['string', 'null']);
-    expect($schemaArray)->toHaveKey('title', 'priority');
-    expect($schemaArray)->toHaveKey('description', 'Task priority level');
-    expect($schemaArray)->toHaveKey('enum', ['low', 'medium', 'high', null]);
+    expect($schemaArray)->toHaveKey('type', ['string', 'null'])
+        ->toHaveKey('title', 'priority')
+        ->toHaveKey('description', 'Task priority level')
+        ->toHaveKey('enum', ['low', 'medium', 'high', null]);
 
     // Validation tests
     expect(fn() => $stringSchema->validate('critical'))->toThrow(
@@ -209,10 +203,10 @@ it('can create a nullable string schema with enum values', function (): void {
         'The data should match one item from enum',
     );
 
-    expect(fn() => $stringSchema->validate('low'))->not->toThrow(SchemaException::class);
-    expect(fn() => $stringSchema->validate('medium'))->not->toThrow(SchemaException::class);
-    expect(fn() => $stringSchema->validate('high'))->not->toThrow(SchemaException::class);
-    expect(fn() => $stringSchema->validate(null))->not->toThrow(SchemaException::class);
+    expect(fn() => $stringSchema->validate('low'))->not->toThrow(SchemaException::class)
+        ->and(fn() => $stringSchema->validate('medium'))->not->toThrow(SchemaException::class)
+        ->and(fn() => $stringSchema->validate('high'))->not->toThrow(SchemaException::class)
+        ->and(fn() => $stringSchema->validate(null))->not->toThrow(SchemaException::class);
 });
 
 it('can mark a string schema as deprecated', function (): void {
@@ -244,10 +238,10 @@ it('can create a string schema with content annotations', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('contentEncoding', 'base64');
-    expect($schemaArray)->toHaveKey('contentMediaType', 'application/json');
-    expect($schemaArray)->toHaveKey('contentSchema.type', 'object');
-    expect($schemaArray)->toHaveKey('contentSchema.properties.name.type', 'string');
+    expect($schemaArray)->toHaveKey('contentEncoding', 'base64')
+        ->toHaveKey('contentMediaType', 'application/json')
+        ->toHaveKey('contentSchema.type', 'object')
+        ->toHaveKey('contentSchema.properties.name.type', 'string');
 
     // Valid base64 encoded string that matches the content schema
     expect(fn() => $stringSchema->validate(base64_encode('{"name":"Ada"}')))
@@ -289,15 +283,15 @@ it('detects content features correctly', function (): void {
 
     $contentFeatures = $reflectionMethod->invoke($stringSchema);
 
-    expect($contentFeatures)->toContain(SchemaFeature::ContentEncoding);
-    expect($contentFeatures)->toContain(SchemaFeature::ContentMediaType);
-    expect($contentFeatures)->toContain(SchemaFeature::ContentSchema);
+    expect($contentFeatures)->toContain(SchemaFeature::ContentEncoding)
+        ->toContain(SchemaFeature::ContentMediaType)
+        ->toContain(SchemaFeature::ContentSchema);
 
     // Test that features are included in overall feature detection
     $getUsedMethod = $reflection->getMethod('getUsedFeatures');
 
     $allFeatures = $getUsedMethod->invoke($stringSchema);
-    expect($allFeatures)->toContain(SchemaFeature::ContentEncoding);
-    expect($allFeatures)->toContain(SchemaFeature::ContentMediaType);
-    expect($allFeatures)->toContain(SchemaFeature::ContentSchema);
+    expect($allFeatures)->toContain(SchemaFeature::ContentEncoding)
+        ->toContain(SchemaFeature::ContentMediaType)
+        ->toContain(SchemaFeature::ContentSchema);
 });

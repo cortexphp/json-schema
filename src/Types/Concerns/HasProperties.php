@@ -68,11 +68,33 @@ trait HasProperties
                 throw new SchemaException('Property must have a title');
             }
 
-            $this->properties[$title] = $property;
+            $this->property($title, $property, $property->isRequired());
+        }
 
-            if ($property->isRequired()) {
-                $this->requiredProperties[] = $title;
-            }
+        return $this;
+    }
+
+    /**
+     * Set a named property, optionally marking it as required.
+     */
+    public function property(string $name, JsonSchema $jsonSchema, bool $required = false): static
+    {
+        $this->properties[$name] = $jsonSchema;
+
+        if ($required) {
+            $this->requiredProperties[] = $name;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Mark the given property names as required.
+     */
+    public function requireProperties(string ...$names): static
+    {
+        foreach ($names as $name) {
+            $this->requiredProperties[] = $name;
         }
 
         return $this;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cortex\JsonSchema\Tests\Unit;
 
 use ArrayObject;
+use Pest\Expectation;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Enums\SchemaFormat;
 use Cortex\JsonSchema\Types\ObjectSchema;
@@ -37,10 +38,9 @@ it('can create a schema with if/then/else conditions', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('if');
-    expect($schemaArray)->toHaveKey('then');
-    expect($schemaArray)->toHaveKey('else');
-    expect($schemaArray['if'])->toHaveKey('properties.type.const', 'business');
+    expect($schemaArray)->toHaveKeys(['if', 'then', 'else'])
+        ->and($schemaArray['if'])
+        ->toHaveKey('properties.type.const', 'business');
 
     // Validation tests
     // Business type requires company_name and tax_id
@@ -115,8 +115,9 @@ it('can create a schema with allOf condition', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('allOf');
-    expect($schemaArray['allOf'])->toHaveCount(3);
+    expect($schemaArray)->toHaveKey('allOf')
+        ->and($schemaArray['allOf'])
+        ->toHaveCount(3);
 
     // Test US address validation
     expect(fn() => $objectSchema->validate([
@@ -156,13 +157,13 @@ it('can create a schema with allOf condition', function (): void {
         'street_address' => '123 Main St',
         'country' => 'Canada',
         'postal_code' => '12345',
-    ]))->toThrow(SchemaException::class);
-
-    expect(fn() => $objectSchema->validate([
-        'street_address' => '123 Main St',
-        'country' => 'Netherlands',
-        'postal_code' => 'AB12 CD',
-    ]))->toThrow(SchemaException::class);
+    ]))->toThrow(SchemaException::class)
+        ->and(fn() => $objectSchema->validate([
+            'street_address' => '123 Main St',
+            'country' => 'Netherlands',
+            'postal_code' => 'AB12 CD',
+        ]))
+        ->toThrow(SchemaException::class);
 });
 
 it('can create a schema with anyOf condition', function (): void {
@@ -182,10 +183,19 @@ it('can create a schema with anyOf condition', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('anyOf');
-    expect($schemaArray['anyOf'])->toHaveCount(2);
-    expect($schemaArray['anyOf'][0])->toHaveKey('required', ['credit_card']);
-    expect($schemaArray['anyOf'][1])->toHaveKey('required', ['bank_transfer']);
+    expect($schemaArray)->toHaveKey('anyOf')
+        ->and($schemaArray['anyOf'])
+        ->toHaveCount(2)
+        ->sequence(
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey(
+                'required',
+                ['credit_card'],
+            ),
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey(
+                'required',
+                ['bank_transfer'],
+            ),
+        );
 
     // Validation tests
     expect(fn() => $objectSchema->validate([
@@ -194,21 +204,17 @@ it('can create a schema with anyOf condition', function (): void {
 
     expect(fn() => $objectSchema->validate([
         'bank_transfer' => 'TRANSFER123',
-    ]))->not->toThrow(SchemaException::class);
-
-    expect(fn() => $objectSchema->validate([
-        'bank_transfer' => 'TRANSFER123',
-        'credit_card' => '4111111111111111',
-    ]))->not->toThrow(SchemaException::class);
-
-    expect(fn() => $objectSchema->validate([
-        'credit_card' => 'invalid',
-    ]))->toThrow(SchemaException::class, 'The data should match at least one schema');
-
-    expect(fn() => $objectSchema->validate(new ArrayObject()))->toThrow(
-        SchemaException::class,
-        'The data should match at least one schema',
-    );
+    ]))->not->toThrow(SchemaException::class)
+        ->and(fn() => $objectSchema->validate([
+            'bank_transfer' => 'TRANSFER123',
+            'credit_card' => '4111111111111111',
+        ]))->not->toThrow(SchemaException::class)
+        ->and(fn() => $objectSchema->validate([
+            'credit_card' => 'invalid',
+        ]))
+        ->toThrow(SchemaException::class, 'The data should match at least one schema')
+        ->and(fn() => $objectSchema->validate(new ArrayObject()))
+        ->toThrow(SchemaException::class, 'The data should match at least one schema');
 });
 
 it('can create a schema with oneOf condition', function (): void {
@@ -226,10 +232,13 @@ it('can create a schema with oneOf condition', function (): void {
 
     $schemaArray = $objectSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('oneOf');
-    expect($schemaArray['oneOf'])->toHaveCount(2);
-    expect($schemaArray['oneOf'][0])->toHaveKey('required', ['email']);
-    expect($schemaArray['oneOf'][1])->toHaveKey('required', ['phone']);
+    expect($schemaArray)->toHaveKey('oneOf')
+        ->and($schemaArray['oneOf'])
+        ->toHaveCount(2)
+        ->sequence(
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey('required', ['email']),
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey('required', ['phone']),
+        );
 
     // Validation tests
     // Only email is valid
@@ -259,15 +268,17 @@ it('can create a schema with not condition', function (): void {
 
     $schemaArray = $stringSchema->toArray();
 
-    expect($schemaArray)->toHaveKey('not');
-    expect($schemaArray['not'])->toHaveKey('enum', ['deleted', 'banned']);
+    expect($schemaArray)->toHaveKey('not')
+        ->and($schemaArray['not'])
+        ->toHaveKey('enum', ['deleted', 'banned']);
 
     // Validation tests
     expect(fn() => $stringSchema->validate('active'))->not->toThrow(SchemaException::class);
-    expect(fn() => $stringSchema->validate('inactive'))->not->toThrow(SchemaException::class);
-
-    expect(fn() => $stringSchema->validate('deleted'))->toThrow(SchemaException::class);
-    expect(fn() => $stringSchema->validate('banned'))->toThrow(SchemaException::class);
+    expect(fn() => $stringSchema->validate('inactive'))->not->toThrow(SchemaException::class)
+        ->and(fn() => $stringSchema->validate('deleted'))
+        ->toThrow(SchemaException::class)
+        ->and(fn() => $stringSchema->validate('banned'))
+        ->toThrow(SchemaException::class);
 });
 
 it('throws exception when setting then without if', function (): void {
