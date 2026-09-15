@@ -328,7 +328,7 @@ trait HasProperties
     protected function addPropertiesToSchema(array $schema): array
     {
         if ($this->properties !== []) {
-            $schema['properties'] = [];
+            $properties = [];
 
             foreach ($this->properties as $name => $prop) {
                 $propertySchema = $prop->toArray(includeSchemaRef: false, includeTitle: true);
@@ -341,8 +341,12 @@ trait HasProperties
                     unset($propertySchema['title']);
                 }
 
-                $schema['properties'][(string) $name] = $propertySchema;
+                $properties[$name] = $propertySchema;
             }
+
+            // PHP stores numeric-string keys as ints, so a map of only "0"/"1"
+            // is a list. JSON Schema `properties` must be an object.
+            $schema['properties'] = array_is_list($properties) ? (object) $properties : $properties;
         }
 
         if ($this->patternProperties !== []) {

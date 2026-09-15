@@ -634,6 +634,20 @@ it('strips numeric-string property titles that restate the property name', funct
         ->toBe(['0', '1', 'mon']);
 });
 
+it('encodes numeric-only property names as a JSON object', function (): void {
+    $objectSchema = Schema::object('Hours')->properties(
+        Schema::string('0'),
+        Schema::string('1'),
+    );
+
+    $json = $objectSchema->toJson();
+
+    expect($json)->toContain('"properties":{')
+        ->toContain('"0":{"type":"string"}')
+        ->toContain('"1":{"type":"string"}')
+        ->not->toContain('"properties":[');
+});
+
 it('names the parent and offending schema when a property has no title', function (): void {
     expect(fn(): ObjectSchema => Schema::object('Wrapper')->properties(
         Schema::string('ok'),
