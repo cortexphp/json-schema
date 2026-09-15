@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cortex\JsonSchema\Tests\Unit\Types;
 
+use Pest\Expectation;
 use Cortex\JsonSchema\Schema;
 use Cortex\JsonSchema\Types\StringSchema;
 use Cortex\JsonSchema\Types\AbstractSchema;
@@ -28,8 +29,8 @@ it('can attach unknown keywords to a schema', function (): void {
         'mapping' => [
             'cat' => '#/components/schemas/Cat',
         ],
-    ]);
-    expect($schemaArray)->toHaveKey('x-additionalPropertiesName', 'attributes');
+    ])
+        ->toHaveKey('x-additionalPropertiesName', 'attributes');
 });
 
 it('can attach unknown keywords on nested schemas', function (): void {
@@ -45,12 +46,26 @@ it('can attach unknown keywords on nested schemas', function (): void {
 
     $schemaArray = $objectSchema->toArray(includeSchemaRef: false);
 
-    expect($schemaArray['properties']['type'])->toHaveKey('x-enum-varnames', ['Standard', 'Urgent']);
-    expect($schemaArray['oneOf'][0])->toHaveKey('x-additionalPropertiesName', 'catAttrs');
-    expect($schemaArray['oneOf'][1])->toHaveKey('discriminator', [
-        'propertyName' => 'breed',
-    ]);
-    expect($schemaArray['oneOf'][0])->not->toHaveKey('$schema');
+    /** @var array<string, array<string, mixed>> $properties */
+    $properties = $schemaArray['properties'];
+    /** @var list<array<string, mixed>> $oneOf */
+    $oneOf = $schemaArray['oneOf'];
+
+    expect($properties['type'])->toHaveKey('x-enum-varnames', ['Standard', 'Urgent'])
+        ->and($oneOf)
+        ->sequence(
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey(
+                'x-additionalPropertiesName',
+                'catAttrs',
+            ),
+            fn(Expectation $expectation): Expectation => $expectation->toHaveKey(
+                'discriminator',
+                [
+                    'propertyName' => 'breed',
+                ],
+            ),
+        )
+        ->and($oneOf[0])->not->toHaveKey('$schema');
 });
 
 it('serialises nested schema keyword values without a dialect URI', function (): void {
@@ -63,8 +78,7 @@ it('serialises nested schema keyword values without a dialect URI', function ():
         'type' => 'string',
         'title' => 'entry',
         'minLength' => 1,
-    ]);
-    expect($schemaArray['x-item'])->not->toHaveKey('$schema');
+    ])->not->toHaveKey('$schema');
 });
 
 it('overwrites a keyword when set twice', function (): void {
@@ -103,13 +117,17 @@ it('serialises nested schema values inside keyword arrays', function (): void {
 
     $schemaArray = $stringSchema->toArray(includeSchemaRef: false);
 
-    expect($schemaArray['x-oneOf'][0])->toBe([
+    /** @var list<array<string, mixed>> $oneOf */
+    $oneOf = $schemaArray['x-oneOf'];
+
+    expect($oneOf[0])->toBe([
         'type' => 'string',
         'title' => 'a',
-    ]);
-    expect($schemaArray['x-oneOf'][1]['nested'])->toBe([
-        'type' => 'integer',
-        'title' => 'b',
-    ]);
-    expect($schemaArray['x-oneOf'][0])->not->toHaveKey('$schema');
+    ])
+        ->and($oneOf[1]['nested'])
+        ->toBe([
+            'type' => 'integer',
+            'title' => 'b',
+        ])
+        ->and($oneOf[0])->not->toHaveKey('$schema');
 });

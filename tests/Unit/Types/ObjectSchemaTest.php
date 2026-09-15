@@ -616,16 +616,22 @@ it('strips numeric-string property titles that restate the property name', funct
 
     $schemaArray = $objectSchema->toArray(includeSchemaRef: false);
 
-    expect($schemaArray['properties']['0'])->toBe([
-        'type' => 'string',
-    ]);
-    expect($schemaArray['properties']['1'])->toBe([
-        'type' => 'string',
-    ]);
-    expect($schemaArray['properties']['mon'])->toBe([
-        'type' => 'string',
-    ]);
-    expect($objectSchema->getPropertyKeys())->toBe(['0', '1', 'mon']);
+    /** @var array<array-key, mixed> $properties */
+    $properties = $schemaArray['properties'];
+    expect($properties)
+        ->toMatchArray([
+            '0' => [
+                'type' => 'string',
+            ],
+            '1' => [
+                'type' => 'string',
+            ],
+            'mon' => [
+                'type' => 'string',
+            ],
+        ])
+        ->and($objectSchema->getPropertyKeys())
+        ->toBe(['0', '1', 'mon']);
 });
 
 it('names the parent and offending schema when a property has no title', function (): void {
@@ -654,20 +660,27 @@ it('can define properties by name with property', function (): void {
 
     $schemaArray = $objectSchema->toArray(includeSchemaRef: false);
 
-    expect($schemaArray['properties'])->toHaveKeys(['name', 'age', 'email']);
-    expect($schemaArray['properties']['name'])->toBe([
-        'type' => 'string',
-        'minLength' => 1,
-    ]);
-    expect($schemaArray['properties']['age'])->toBe([
-        'type' => 'integer',
-    ]);
-    expect($schemaArray['properties']['email'])->toBe([
-        'type' => 'string',
-        'title' => 'Email Address',
-    ]);
-    expect($schemaArray['required'])->toBe(['name']);
-    expect($objectSchema->getPropertyKeys())->toBe(['name', 'age', 'email']);
+    /** @var array<string, mixed> $properties */
+    $properties = $schemaArray['properties'];
+
+    expect($properties)->toHaveKeys(['name', 'age', 'email'])
+        ->toMatchArray([
+            'name' => [
+                'type' => 'string',
+                'minLength' => 1,
+            ],
+            'age' => [
+                'type' => 'integer',
+            ],
+            'email' => [
+                'type' => 'string',
+                'title' => 'Email Address',
+            ],
+        ])
+        ->and($schemaArray['required'])
+        ->toBe(['name'])
+        ->and($objectSchema->getPropertyKeys())
+        ->toBe(['name', 'age', 'email']);
 });
 
 it('allows untitled nested schemas when names are supplied via property', function (): void {
@@ -675,7 +688,10 @@ it('allows untitled nested schemas when names are supplied via property', functi
 
     $schemaArray = $objectSchema->toArray(includeSchemaRef: false);
 
-    expect($schemaArray['properties']['nested'])->toBe([
+    /** @var array<string, mixed> $properties */
+    $properties = $schemaArray['properties'];
+
+    expect($properties['nested'])->toBe([
         'type' => 'object',
     ]);
 });
@@ -694,20 +710,16 @@ it('can mark specific properties as required by name', function (): void {
     $schemaArray = $objectSchema->toArray();
 
     expect($schemaArray)->toHaveKey('required', ['name', 'email'])
-        ->and($objectSchema->getRequiredProperties())->toBe(['name', 'email']);
-
-    expect(fn() => $objectSchema->validate([
-        'name' => 'John Doe',
-        'age' => 30,
-    ]))->toThrow(
-        SchemaException::class,
-        'The required properties (email) are missing',
-    );
-
-    expect(fn() => $objectSchema->validate([
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-    ]))->not->toThrow(SchemaException::class);
+        ->and($objectSchema->getRequiredProperties())->toBe(['name', 'email'])
+        ->and(fn() => $objectSchema->validate([
+            'name' => 'John Doe',
+            'age' => 30,
+        ]))
+        ->toThrow(SchemaException::class, 'The required properties (email) are missing')
+        ->and(fn() => $objectSchema->validate([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+        ]))->not->toThrow(SchemaException::class);
 });
 
 it('can require properties that are not yet defined', function (): void {
@@ -729,8 +741,9 @@ it('merges repeated properties and property calls rather than replacing', functi
 
     $schemaArray = $objectSchema->toArray(includeSchemaRef: false);
 
-    expect($schemaArray['properties'])->toHaveKeys(['placeholder', 'real', 'extra']);
-    expect($objectSchema->getPropertyKeys())->toBe(['placeholder', 'real', 'extra']);
+    expect($schemaArray['properties'])->toHaveKeys(['placeholder', 'real', 'extra'])
+        ->and($objectSchema->getPropertyKeys())
+        ->toBe(['placeholder', 'real', 'extra']);
 });
 
 it('requireAll uses property names from property including untitled schemas', function (): void {

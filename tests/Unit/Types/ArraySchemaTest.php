@@ -505,9 +505,7 @@ it('serialises nested items without a dialect URI or title', function (): void {
 
     $schemaArray = $arraySchema->toArray(includeSchemaRef: false);
 
-    expect($schemaArray['items'])->toHaveKey('type', 'string');
-    expect($schemaArray['items'])->not->toHaveKey('$schema');
-    expect($schemaArray['items'])->not->toHaveKey('title');
+    expect($schemaArray['items'])->toHaveKey('type', 'string')->not->toHaveKey('$schema')->not->toHaveKey('title');
 });
 
 it('serialises nested items the same way as tupleItems and additionalItems', function (): void {
@@ -519,15 +517,19 @@ it('serialises nested items the same way as tupleItems and additionalItems', fun
 
     $schemaArray = $objectSchema->toArray(includeSchemaRef: false);
 
-    expect($schemaArray['properties']['list']['items'])->toBe([
+    /** @var array<string, array<string, mixed>> $properties */
+    $properties = $schemaArray['properties'];
+
+    expect($properties['list']['items'])->toBe([
         'type' => 'string',
     ]);
-    expect($schemaArray['properties']['nested']['properties']['inner'])->toBe([
+    /** @var array<string, mixed> $nestedProperties */
+    $nestedProperties = $properties['nested']['properties'];
+    expect($nestedProperties['inner'])->toBe([
         'type' => 'string',
-    ]);
-    expect($schemaArray['properties']['tuple']['items'])->toBe([
-        [
+    ])
+        ->and($properties['tuple']['items'])
+        ->toBe([[
             'type' => 'string',
-        ],
-    ]);
+        ]]);
 });
